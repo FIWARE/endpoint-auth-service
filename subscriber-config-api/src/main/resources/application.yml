@@ -1,0 +1,57 @@
+micronaut:
+  application:
+    name: ${project.artifactId}
+
+  server:
+    port: 8080
+
+  metrics:
+    enabled: true
+    export:
+      prometheus:
+        step: PT2s
+        descriptions: false
+
+---
+endpoints:
+  metrics:
+    enabled: true
+  health:
+    enabled: true
+
+loggers:
+  levels:
+    ROOT: TRACE
+    io:
+      micronaut:
+        http:
+          client: TRACE
+---
+
+datasources:
+  default:
+    url: ${JDBC_URL:`jdbc:h2:mem:default;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE`}
+    username: ${JDBC_USER:sa}
+    password: ${JDBC_PASSWORD:""}
+    driverClassName: ${JDBC_DRIVER:org.h2.Driver}
+
+
+jpa:
+  default:
+    entity-scan:
+      packages:
+        - org.fiware.mintaka.persistence
+    properties:
+      hibernate:
+        hbm2ddl:
+          auto: none
+        # set to true if you want to see the queries.
+        show_sql: false
+
+---
+proxy:
+  listenerYamlPath: /home/stefanwiedemann/git/wistefan/sidecar-proxy/subscriber-config-api/src/main/resources/listener.yaml
+  clusterYamlPath: /home/stefanwiedemann/git/wistefan/sidecar-proxy/subscriber-config-api/src/main/resources//cluster.yaml
+
+iShare:
+  certificateFolderPath: /ishare/certs/

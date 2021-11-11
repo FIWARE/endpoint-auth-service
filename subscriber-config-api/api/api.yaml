@@ -1,0 +1,227 @@
+openapi: 3.0.3
+info:
+  description: 'This spec configuration api for the auth sidecar proxy'
+  version: latest
+  title: Sidecar Configuration API
+  contact:
+    email: stefan.wiedemann@fiware.org
+tags:
+  - name: SidecarConfiguration
+    description: "ConfigurationApi for setting up the sidecar proxy"
+servers:
+  - url: http://localhost:8080
+    description: "Local test server address."
+
+paths:
+  '/subscriber':
+    get:
+      tags:
+        - SidecarConfiguration
+      description: "Get all configured subscribers."
+      operationId: getSubscribers
+      responses:
+        '200':
+          description: "List of subscribers."
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SubscriberInfo'
+    post:
+      tags:
+        - SidecarConfiguration
+      description: "Create a new subscriber configuration."
+      operationId: createSubscriber
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubscriberRegistration'
+      responses:
+        '201':
+          description: "Created. Will return the subscriber id in the location header."
+        '400':
+          description: "Received an invalid registration."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: "Registration already exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/subscriber/{id}':
+    get:
+      tags:
+        - SidecarConfiguration
+      parameters:
+        - $ref: '#/components/parameters/id'
+      description: "Return the subscriber infromation for the given id."
+      operationId: getSubscriberInfo
+      responses:
+        '200':
+          description: "The information about the subscriber."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubscriberInfo'
+        '404':
+          description: "No such subscriber exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      tags:
+        - SidecarConfiguration
+      parameters:
+        - $ref: '#/components/parameters/id'
+      description: "Delete the subscriber for the given id."
+      operationId: deleteSubscriber
+      responses:
+        '204':
+          description: "The subscriber was successfully removed."
+        '404':
+          description: "No such subscriber exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+
+components:
+  parameters:
+    id:
+      name: id
+      description: "Id of the registered susbcriber."
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  schemas:
+    Id:
+      description: "Id of the registerd subscriber. Be aware: this has no connections to ids used by NGSI-LD Api."
+      type: string
+      format: uuid
+      example: "bf1957ad-d69e-4b81-ba84-599091a03150"
+    AuthType:
+      description: "Type of the authentication to be used."
+      type: string
+      enum:
+        - "iShare"
+    IShareCredentials:
+      description: "Credentials to be used for iShare authentication."
+      properties:
+        certificateChain:
+          description: "Certificate chain to be used in the x5c-header. Needs to be in pkcs12-cer format."
+          type: string
+        signingKey:
+          description: "Signing key to be used for the iShare JWT. Needs to be in pk8 format."
+          type: string
+        iShareClientId:
+          description: -|
+            "iSHARE identifier of the client to be used. Will be used for the 'iss' and 'sub' headers of the request."
+          type: string
+        iShareIdpId:
+          description: -|
+            "iSHARE identifier of the idp to be requested. Will be used for the 'aud' header of the request"
+          type: string
+        iShareIdpAddress:
+          description: -|
+            "Address of the iShare-compatible address to receive tokens from."
+          example: "https://ar.isharetest.net/connect/token"
+        requestGrantType:
+          description: "Grant type to be requested add the idp."
+          type: string
+          default: "client_credentials"
+      required:
+        - certificateChain
+        - signingKey
+        - iShareClientId
+        - iShareIdpId
+        - iShareIdpAddress
+    AuthCredentials:
+      description: "Type of the credentials to be used. Need to correspond with the authType."
+      oneOf:
+        - $ref: '#/components/schemas/IShareCredentials'
+    SubscriberInfo:
+      type: object
+      description: "Information about a registered subscriber."
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        domain:
+          description: "Domain that the subscriber will receive notifications at."
+          type: string
+          example: "mySubscriber.com"
+        path:
+          description: "Path that the subscriber will receive notifications at."
+          type: string
+          default: "/"
+          example: "/notfication/receive"
+        useHttps:
+          description: "Should the proxy forward the notfication via https."
+          type: boolean
+          default: false
+        authType:
+          $ref: '#/components/schemas/AuthType'
+    SubscriberRegistration:
+      type: object
+      description: "Information about a subscriber to be registerd."
+      properties:
+        domain:
+          description: "Domain that the subscriber will receive notifications at."
+          type: string
+          example: "mySubscriber.com"
+        port:
+          description: "Port that the subscriber will receive notifications at."
+          type: integer
+          default: 80
+        path:
+          description: "Path that the subscriber will receive notifications at."
+          type: string
+          default: "/"
+          example: "/notfication/receive"
+        useHttps:
+          description: "Should the proxy forward the notfication via https."
+          type: boolean
+          default: false
+        authType:
+          $ref: '#/components/schemas/AuthType'
+        authCredentials:
+          $ref: '#/components/schemas/AuthCredentials'
+      required:
+        - domain
+        - authCredentials
+        - authType
+    ProblemDetails:
+      type: object
+      description: "Error response as defined by NGSI-LD"
+      properties:
+        type:
+          description: "Type of the error as defined by https://datatracker.ietf.org/doc/html/rfc7807 "
+          type: string
+          format: uri
+        title:
+          description: "Title of the error as defined by https://datatracker.ietf.org/doc/html/rfc7807 "
+          type: string
+        detail:
+          description: "Detailed information about the problem if available."
+          type: string
+      required:
+        - type
+
+
+
+
+
+
+
+
+
+
+
