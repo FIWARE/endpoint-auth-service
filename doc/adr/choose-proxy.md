@@ -12,7 +12,7 @@ We need a proxy to handle outgoing requests. The usual runtime environment will 
 
 The proxy to be used will be [envoy](https://www.envoyproxy.io/).
 
-## Consequences
+## Rational
 
 - is maintained by a wide community, most notably the [CNCF](https://www.cncf.io/),  [Lyft](https://www.lyft.com/) and [Google](https://www.google.com/).
 - is build for cloud purposes

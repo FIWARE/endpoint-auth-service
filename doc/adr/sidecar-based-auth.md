@@ -14,7 +14,7 @@ not know about security concerns and should stay free of it.
 The auth-headers will be applied by a [sidecar-proxy](https://www.oreilly.com/library/view/designing-distributed-systems/9781491983638/ch02.html). All
 outgoing requests from the broker should be routed through the sidecar-proxy, that is responsible for adding the appropriate headers.
 
-## Consequences
+## Rational
 
 - the broker stays free of security concerns
 - development cycles of broker and sidecar don't need to be connected
