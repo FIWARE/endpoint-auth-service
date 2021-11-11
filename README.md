@@ -8,7 +8,7 @@ that envoy adds to the requests. To configure the whole setup, the [configuratio
 
 ## Overview
 
-![Proxy-Architecture](./arch-overview.svg)
+![Proxy-Architecture](./doc/arch-overview.svg)
 
 ## ADRs
 
