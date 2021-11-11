@@ -1,0 +1,75 @@
+resources:
+  # passthrough cluster to forward any http request that we do not manipulate untouched
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    # Don't change this without changing the dependent config inside the listener.yaml
+    name: passthrough
+    type: ORIGINAL_DST
+    connectTimeout: 10s
+    lbPolicy: CLUSTER_PROVIDED
+    original_dst_lb_config:
+      use_http_header: true
+ # passthrough cluster to forward any https request untouched
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    # Don't change this without changing the dependent config inside the listener.yaml
+    name: passthrough-https
+    type: ORIGINAL_DST
+    connectTimeout: 10s
+    lbPolicy: CLUSTER_PROVIDED
+  # Custer definition for accessing the authentication provider. For now, it expects it to be at port 7070
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    # Don't change this without changing the dependent config inside the listener.yaml
+    name: ext-authz
+    type: STRICT_DNS
+    connect_timeout: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: additional-service
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: 0.0.0.0
+                    port_value: 7070
+  {{#subscribers}}
+  # we use httpsPort as a helper here, since mustache can only check for existence, not for value
+  {{#httpsPort}}
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+     name: {{id}}
+     connect_timeout: 5s
+     type: STRICT_DNS
+     lb_policy: ROUND_ROBIN
+     load_assignment:
+       cluster_name: {{id}}
+       endpoints:
+         - lb_endpoints:
+             - endpoint:
+                 address:
+                   socket_address:
+                     protocol: TCP
+                     address: "{{domain}}"
+                     port_value: {{port}}
+     transport_socket:
+       name: envoy.transport_sockets.tls
+       typed_config:
+         "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+  {{/httpsPort}}
+  {{^httpsPort}}
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+      name: {{id}}
+      connect_timeout: 5s
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: {{id}}
+        endpoints:
+          - lb_endpoints:
+              - endpoint:
+                  address:
+                    socket_address:
+                      protocol: TCP
+                      address: "{{domain}}"
+                      port_value: {{port}}
+  {{/httpsPort}}
+  {{/subscribers}}

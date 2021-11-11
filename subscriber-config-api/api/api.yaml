@@ -91,6 +91,30 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
+  '/subscriber/{id}/{credential}':
+    put:
+      tags:
+        - SidecarConfiguration
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/credential'
+      description: "Update credential related configuration for a given subscriber."
+      operationId: updateCredentialConfiguration
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '204':
+          description: "The credential was successfully updated."
+        '404':
+          description: "No such subscriber or credential exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
 
 components:
   parameters:
@@ -102,6 +126,13 @@ components:
       schema:
         type: string
         format: uuid
+    credential:
+      name: credential
+      description: "The credential(part) to be updated. In case of iShare this could be signingKey or certificateChain for example."
+      in: path
+      required: true
+      schema:
+        type: string
   schemas:
     Id:
       description: "Id of the registerd subscriber. Be aware: this has no connections to ids used by NGSI-LD Api."
@@ -133,6 +164,8 @@ components:
         iShareIdpAddress:
           description: -|
             "Address of the iShare-compatible address to receive tokens from."
+          type: string
+          format: url
           example: "https://ar.isharetest.net/connect/token"
         requestGrantType:
           description: "Grant type to be requested add the idp."

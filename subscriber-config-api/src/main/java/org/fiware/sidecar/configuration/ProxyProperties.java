@@ -8,7 +8,7 @@ import lombok.Data;
 public class ProxyProperties {
 
 	/**
-	 * Path to the listener.yaml file used for configuration of the listeners in the envoy proxy.
+	 * Path to the listener.yaml.mustache file used for configuration of the listeners in the envoy proxy.
 	 */
 	private String listenerYamlPath;
 

@@ -1,10 +1,14 @@
 package org.fiware.sidecar.persistence;
 
-import io.micronaut.data.annotation.Repository;
+import io.micronaut.data.jdbc.annotation.JdbcRepository;
+import io.micronaut.data.model.query.builder.sql.Dialect;
 import io.micronaut.data.repository.CrudRepository;
 
-@Repository
-public interface SubscriberRepository extends CrudRepository<Subscriber, String> {
+import java.util.Optional;
+import java.util.UUID;
 
-	Subscriber findByDomainAndPath(String domain, String path);
+@JdbcRepository(dialect = Dialect.H2)
+ public interface SubscriberRepository extends CrudRepository<Subscriber, UUID> {
+
+	Optional<Subscriber> findByDomainAndPath(String domain, String path);
 }

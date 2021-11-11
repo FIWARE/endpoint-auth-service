@@ -4,17 +4,21 @@ import lombok.Data;
 import org.fiware.sidecar.model.AuthType;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import java.util.UUID;
 
 @Entity
 @Data
 public class Subscriber {
 
 	@Id
-	private String id;
+	@GeneratedValue
+	private UUID id;
 
 	private String domain;
 	private String path;
+	private int port;
 	private boolean useHttps;
 	private AuthType authType;
 	private String iShareClientId;

@@ -5,7 +5,7 @@ import lombok.Data;
 
 @ConfigurationProperties("iShare")
 @Data
-public class IShareAuth {
+public class IShareProperties {
 
 	/**
 	 * Path to the root folder for storing the

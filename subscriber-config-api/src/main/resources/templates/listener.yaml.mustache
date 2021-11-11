@@ -1,0 +1,82 @@
+resources:
+  # Listener to handle all incoming requests. Iptable based routing should send every outgoing traffic to envoy at 15001
+  - "@type": type.googleapis.com/envoy.config.listener.v3.Listener
+    name: envoy_listener
+    address:
+      socket_address:
+        address: 0.0.0.0
+        port_value: 15001
+    traffic_direction: OUTBOUND
+    listener_filters:
+      # tls inspector should ensure that we can passthrough tls requests untouched
+      - name: envoy.filters.listener.tls_inspector
+      # ensures that we can use the original destination of the request after the call
+      - name: envoy.filters.listener.original_dst
+    filter_chains:
+      # Filter chain to handle all https request. We will route them through untouched, since we cannot read and write there headers anyways
+      - name: https_chain
+        filter_chain_match:
+          transport_protocol: tls
+        filters:
+          - name: envoy.filters.network.tcp_proxy
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+              # Don't change this without changing the dependent config inside the cluster.yaml
+              cluster: passthrough-https
+              stat_prefix: https_passthrough
+      # Filter chain to handle all http traffic. This allows us to filter out request to routes we have a subscription registerd for.
+      - name: http_chain
+        filters:
+          - name: envoy.filters.network.http_connection_manager
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+              stat_prefix: ingress_http
+              codec_type: AUTO
+              route_config:
+                name: local_route
+                virtual_hosts:
+                  # the allow_any virtual_host will untouched passthrough every request that does not match one of the configured routes.
+                  - name: allow_any
+                    domains:
+                      - "*"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          # Don't change this without changing the dependent config inside the cluster.yaml
+                          cluster: passthrough
+                        typed_per_filter_config:
+                          envoy.filters.http.lua:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
+                            disabled: true
+                {{#subscribers}}
+                  - name: {{id}}
+                      domains:
+                        - "{{domain}}"
+                      routes:
+                        - match:
+                            prefix: "{{path}}"
+                          route:
+                            cluster: {{id}}
+                {{/subscribers}}
+              http_filters:
+               # lua filter to do the actual magic. It will make a call to the auth-provider in order to get the token and add it to the Authorization header of
+               # the request.
+               # In case of changes, assure that the corresponding cluster-name inside cluster.yaml does match
+               - name: envoy.filters.http.lua
+                 typed_config:
+                   "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
+                   inline_code: |
+                     function envoy_on_request(request_handle)
+                       local headers, body = request_handle:httpCall(
+                       "ext-authz",
+                       {
+                         [":method"] = "GET",
+                         [":path"] = "/token",
+                         [":authority"] = "ext-authz"
+                       },
+                       null,
+                       5000)
+                       request_handle:headers():add("Authorization", body)
+                     end
+               - name: envoy.filters.http.router
