@@ -1,4 +1,4 @@
-# Endpoint-Auth-Sidecar
+# Endpoint-Auth-Service
 
 In various use-cases, there is a need to apply authn/z to outgoing requests for components that do not handle this them-self(f.e. notifications in
 [NGSI-LD brokers](https://github.com/FIWARE/context.Orion-LD)). This sidecar provides that by adding an [envoy-proxy](https://www.envoyproxy.io) 
