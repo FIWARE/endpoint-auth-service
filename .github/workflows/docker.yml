@@ -39,6 +39,7 @@ jobs:
           tags: latest ${{ github.sha }}
           dockerfiles: |
             ./src/iptables-init/Dockerfile
+          context: ./src/iptables-init
 
       - name: Push To quay.io
         id: push-to-quay
@@ -49,7 +50,6 @@ jobs:
           registry: quay.io/wi_stefan
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-          context: ./src/iptables-init
 
   ishare-auth-provider:
     runs-on: ubuntu-latest
@@ -65,6 +65,7 @@ jobs:
           tags: latest ${{ github.sha }}
           dockerfiles: |
             ./src/ishare-auth-provider/Dockerfile
+          context: ./src/ishare-auth-provider
 
       - name: Push To quay.io
         id: push-to-quay
@@ -75,6 +76,5 @@ jobs:
           registry: quay.io/wi_stefan
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-          context: ./src/ishare-auth-provider
 
 
