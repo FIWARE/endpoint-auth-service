@@ -8,9 +8,9 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"time"
 
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 
