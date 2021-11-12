@@ -39,8 +39,8 @@ datasources:
 
 ---
 proxy:
-  listenerYamlPath: /envoy/config/listener.yaml
-  clusterYamlPath: /envoy/config/cluster.yaml
+  listenerYamlPath: ./listener.yaml
+  clusterYamlPath: ./cluster.yaml
 
 iShare:
-  certificateFolderPath: /ishare/certs
+  certificateFolderPath: ./ishare/certs

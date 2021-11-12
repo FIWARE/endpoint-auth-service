@@ -18,15 +18,16 @@ import java.nio.file.Path;
 public class FileBasedCertificateRepository implements IShareCredentialsRepository {
 
 	private static final String FILE_PATH_TEMPLATE = "%s/%s";
-	private static final String FOLDER_PATH = "%s/%s/%s";
+	private static final String FOLDER_PATH_TEMPLATE = "%s/%s";
 
 	private final IShareProperties iShareProperties;
 
+
 	@Override
-	public void saveCredentialsByDomainAndPath(String domain, String path, String key, String certChain) {
-		Path folderPath = buildFolderPath(domain, path);
+	public void saveCredentialsById(String id, String key, String certChain) {
+		Path folderPath = buildFolderPath(id);
 		if (Files.exists(buildFilePath(folderPath.toString(), IShareAuthCredentialType.KEY.getFileName())) || Files.exists(buildFilePath(folderPath.toString(), IShareAuthCredentialType.CERT_CHAIN.getFileName()))) {
-			throw new IllegalArgumentException(String.format("A certificate for %s/%s already exists.", domain, path));
+			throw new IllegalArgumentException(String.format("Credentials for %s already exists.", id));
 		}
 		if (!Files.exists(folderPath)) {
 			try {
@@ -35,41 +36,41 @@ public class FileBasedCertificateRepository implements IShareCredentialsReposito
 				throw new FolderCreationException("Was not able to create the requested folder.", e, folderPath.toString());
 			}
 		}
-		storeStringAt(IShareAuthCredentialType.KEY, domain, path, key);
-		storeStringAt(IShareAuthCredentialType.CERT_CHAIN, domain, path, certChain);
-	}
-
-	private void storeStringAt(IShareAuthCredentialType fileType, String domain, String path, String toStore) {
-		Path filePath = buildFilePath(buildFolderPath(domain, path).toString(), fileType.getFileName());
-		try {
-			Files.writeString(filePath, toStore);
-		} catch (IOException e) {
-			throw new FileCreationException("Was not able to create the requested file.", e, filePath.toString());
-		}
+		storeStringAt(IShareAuthCredentialType.KEY, id, key);
+		storeStringAt(IShareAuthCredentialType.CERT_CHAIN, id, certChain);
 	}
 
 	@Override
-	public void deleteCredentialsByDomainAndPath(String domain, String path) {
-		Path folderPath = buildFolderPath(domain, path);
+	public void deleteCredentialsById(String id) {
+		Path folderPath = buildFolderPath(id);
 		deleteFileAt(IShareAuthCredentialType.CERT_CHAIN, folderPath);
 		deleteFileAt(IShareAuthCredentialType.KEY, folderPath);
 	}
 
 	@Override
-	public void updateSigningKeyByDomainAndPath(String domain, String path, String key) {
+	public void updateSigningKeyById(String id, String key) {
 		try {
-			storeStringAt(IShareAuthCredentialType.KEY, domain, path, key);
+			storeStringAt(IShareAuthCredentialType.KEY, id, key);
 		} catch (RuntimeException e) {
 			throw new FileUpdateException("Was not able to update file.", e);
 		}
 	}
 
 	@Override
-	public void updateCertificateChainByDomainAndPath(String domain, String path, String certChain) {
+	public void updateCertificateChainById(String id, String certChain) {
 		try {
-			storeStringAt(IShareAuthCredentialType.CERT_CHAIN, domain, path, certChain);
+			storeStringAt(IShareAuthCredentialType.CERT_CHAIN, id, certChain);
 		} catch (RuntimeException e) {
 			throw new FileUpdateException("Was not able to update file.", e);
+		}
+	}
+
+	private void storeStringAt(IShareAuthCredentialType fileType, String id, String toStore) {
+		Path filePath = buildFilePath(buildFolderPath(id).toString(), fileType.getFileName());
+		try {
+			Files.writeString(filePath, toStore);
+		} catch (IOException e) {
+			throw new FileCreationException("Was not able to create the requested file.", e, filePath.toString());
 		}
 	}
 
@@ -81,12 +82,11 @@ public class FileBasedCertificateRepository implements IShareCredentialsReposito
 		}
 	}
 
-	private Path buildFolderPath(String domain, String path) {
+	private Path buildFolderPath(String id) {
 		return Path.of(
-				String.format(FOLDER_PATH,
+				String.format(FOLDER_PATH_TEMPLATE,
 						stripTrailingSlashes(iShareProperties.getCertificateFolderPath()),
-						stripTrailingSlashes(domain),
-						stripTrailingSlashes(path)));
+						id));
 	}
 
 	private String stripTrailingSlashes(String inputString) {

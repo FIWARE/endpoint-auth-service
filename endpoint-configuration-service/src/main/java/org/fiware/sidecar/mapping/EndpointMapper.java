@@ -1,5 +1,6 @@
 package org.fiware.sidecar.mapping;
 
+import org.fiware.sidecar.model.AuthInfoVO;
 import org.fiware.sidecar.model.AuthType;
 import org.fiware.sidecar.model.AuthTypeVO;
 import org.fiware.sidecar.model.EndpointInfoVO;
@@ -11,6 +12,7 @@ import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
 import org.mapstruct.Named;
 
+import java.util.Map;
 import java.util.UUID;
 
 @Mapper(componentModel = "jsr330")
@@ -27,10 +29,28 @@ public interface EndpointMapper {
 	Endpoint endpointRegistrationVoToEndpoint(EndpointRegistrationVO endpointRegistrationVO);
 
 	AuthType authTypeVoToAuthType(AuthTypeVO authTypeVO);
+
+	AuthTypeVO authTypeToAuthTypeVo(AuthType authType);
+
 	@Mappings({
 			@Mapping(source = "useHttps", target = "httpsPort", qualifiedByName = "useHttpsMustacheMapping")
 	})
 	MustacheEndpoint endpointToMustacheEndpoint(Endpoint endpoint);
+
+
+	default AuthInfoVO endpointToAuthInfoVo(Endpoint endpoint) {
+		AuthInfoVO authInfoVO = new AuthInfoVO();
+		authInfoVO.authType(authTypeToAuthTypeVo(endpoint.getAuthType()));
+		Map<String, Object> authInfoProperties = Map.of(
+				"credentialsFolder", endpoint.getId().toString(),
+				"iShareClientId", endpoint.getIShareClientId(),
+				"iShareIdpId", endpoint.getIShareIdpId(),
+				"iShareIdpAddress", endpoint.getIShareIdpAddress(),
+				"requestGrantType", endpoint.getRequestGrantType());
+		return authInfoVO.setAdditionalProperties(authInfoProperties);
+	}
+
+	// Implicitly used by the generated mappers
 
 	@Named("useHttpsMustacheMapping")
 	static String useHttpsMustacheMapping(boolean useHttps) {

@@ -7,7 +7,9 @@ info:
     email: stefan.wiedemann@fiware.org
 tags:
   - name: EndpointConfiguration
-    description: "EndpointConfigurationApi configuring sidecar-proxy's auth behaviour."
+    description: "Endpoints for configuring sidecar-proxy's auth behaviour."
+  - name: AuthConfiguration
+    description: "Endpoint for retrieving information intended to be used by the auth providers."
 servers:
   - url: http://localhost:8080
     description: "Local test server address."
@@ -54,7 +56,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  '/Endpoint/{id}':
+  '/endpoint/{id}':
     get:
       tags:
         - EndpointConfiguration
@@ -91,7 +93,7 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  '/Endpoint/{id}/{credential}':
+  '/endpoint/{id}/{credential}':
     put:
       tags:
         - EndpointConfiguration
@@ -115,7 +117,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-
+  '/auth':
+    get:
+      tags:
+        - AuthConfiguration
+      parameters:
+        - $ref: '#/components/parameters/domain'
+        - $ref: '#/components/parameters/path'
+      description: -|
+        "Get the auth information for the given domain/path combination."
+      operationId: getEndpointByDomainAndPath
+      responses:
+        '200':
+          description: "Information about the configured endpoint."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthInfo'
 components:
   parameters:
     id:
@@ -133,6 +151,22 @@ components:
       required: true
       schema:
         type: string
+    domain:
+      name: domain
+      description: "Domain to get the information for."
+      in: query
+      required: true
+      schema:
+        type: string
+      example: "myEndpoint.com"
+    path:
+      name: path
+      description: "Path to get the infromation for."
+      in: query
+      required: true
+      schema:
+        type: string
+      example: "/my/endpoint/path"
   schemas:
     Id:
       description: "Id of the registered endpoint. Be aware: this has no connections to ids used by NGSI-LD Api."
@@ -144,6 +178,14 @@ components:
       type: string
       enum:
         - "iShare"
+    AuthInfo:
+      description: -|
+        "Authentication information to be used by the providers. Its a generic object that needs to be defined for each auth-type."
+      type: object
+      properties:
+        authType:
+          $ref: '#/components/schemas/AuthType'
+      additionalProperties: true
     IShareCredentials:
       description: "Credentials to be used for iShare authentication."
       properties:

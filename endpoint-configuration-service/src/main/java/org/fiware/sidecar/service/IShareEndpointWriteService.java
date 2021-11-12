@@ -33,16 +33,16 @@ public class IShareEndpointWriteService implements EndpointWriteService {
 	}
 
 	@Override
-	public void createEndpoint(EndpointRegistrationVO subscriberRegistrationVO) {
+	public void createEndpoint(UUID id, EndpointRegistrationVO subscriberRegistrationVO) {
 		try {
-			iShareCredentialsRepository.saveCredentialsByDomainAndPath(
-					subscriberRegistrationVO.getDomain(),
-					subscriberRegistrationVO.getPath(),
+			iShareCredentialsRepository.saveCredentialsById(
+					id.toString(),
 					subscriberRegistrationVO.getAuthCredentials().signingKey(),
 					subscriberRegistrationVO.getAuthCredentials().certificateChain());
 		} catch (FolderCreationException | FileCreationException e) {
 			try {
-				iShareCredentialsRepository.deleteCredentialsByDomainAndPath(subscriberRegistrationVO.getDomain(), subscriberRegistrationVO.getPath());
+				// we explicitly delete, in case it was only paritally created
+				iShareCredentialsRepository.deleteCredentialsById(id.toString());
 			} catch (DeletionException deletionException) {
 				log.warn("Rollback deletion failed, we will bubble the original exception and log the deletion to debug.");
 				log.debug("Deletion exception: ", deletionException);
@@ -57,9 +57,8 @@ public class IShareEndpointWriteService implements EndpointWriteService {
 		Optional<Endpoint> optionalEndpoint = endpointRepository.findById(id);
 		if (optionalEndpoint.isPresent()) {
 			iShareCredentialsRepository
-					.deleteCredentialsByDomainAndPath(
-							optionalEndpoint.get().getDomain(),
-							optionalEndpoint.get().getPath());
+					.deleteCredentialsById(
+							optionalEndpoint.get().getId().toString());
 		}
 	}
 
@@ -70,8 +69,8 @@ public class IShareEndpointWriteService implements EndpointWriteService {
 				.findById(id).orElseThrow(() -> new IllegalArgumentException(String.format("Endpoint %s not found.", id)));
 
 		switch (IShareAuthCredentialType.getForCredentialType(credentialType)) {
-			case CERT_CHAIN -> iShareCredentialsRepository.updateCertificateChainByDomainAndPath(endpoint.getDomain(), endpoint.getPath(), credentialBody);
-			case KEY -> iShareCredentialsRepository.updateSigningKeyByDomainAndPath(endpoint.getDomain(), endpoint.getPath(), credentialBody);
+			case CERT_CHAIN -> iShareCredentialsRepository.updateCertificateChainById(endpoint.getId().toString(), credentialBody);
+			case KEY -> iShareCredentialsRepository.updateSigningKeyById(endpoint.getId().toString(), credentialBody);
 			default -> throw new CredentialsConfigNotFound(
 					"IShare does not support updating the requested credentials.",
 					credentialType,

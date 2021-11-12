@@ -51,7 +51,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 
 		// type specific creations
 		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()))
-				.createEndpoint(endpointRegistrationVO);
+				.createEndpoint(subscriber.getId(), endpointRegistrationVO);
 
 		// update the envoy configuration
 		envoyUpdateService.applyConfiguration();

@@ -20,9 +20,10 @@ public interface EndpointWriteService {
 
 	/**
 	 * Do all creations that are required for this specific endpoint type
+	 * @param  uuid id of the endpoint to be created
 	 * @param endpointRegistrationVO the endpoint registration to create the endpoint of
 	 */
-	void createEndpoint(EndpointRegistrationVO endpointRegistrationVO);
+	void createEndpoint(UUID uuid, EndpointRegistrationVO endpointRegistrationVO);
 
 	/**
 	 * Delete everything specific for this endpoint type
