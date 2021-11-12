@@ -2,15 +2,11 @@ package org.fiware.sidecar.exception;
 
 public class FileCreationException extends RuntimeException {
 
-	private final String filePath;
-
-	public FileCreationException(String message, String filePath) {
+	public FileCreationException(String message) {
 		super(message);
-		this.filePath = filePath;
 	}
 
-	public FileCreationException(String message, Throwable cause, String filePath) {
+	public FileCreationException(String message, Throwable cause) {
 		super(message, cause);
-		this.filePath = filePath;
 	}
 }

@@ -22,7 +22,6 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
@@ -92,19 +91,19 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 				StreamSupport
 						.stream(endpointRepository.findAll().spliterator(), true)
 						.map(endpointMapper::endpointToEndpointInfoVo)
-						.collect(Collectors.toList()));
+						.toList());
 	}
 
 	@Override
 	public HttpResponse<Object> updateCredentialConfiguration(UUID id, String credential, String body) {
-		Optional<Endpoint> optionalSubscriber = endpointRepository.findById(id);
-		if (!optionalSubscriber.isPresent()) {
-			HttpResponse.notFound(String.format("Subscriber %s does not exist.", id));
+		Optional<Endpoint> optionalEndpoint = endpointRepository.findById(id);
+		if (optionalEndpoint.isEmpty()) {
+			return HttpResponse.notFound(String.format("Subscriber %s does not exist.", id));
 		}
 		try {
-			getServiceForAuthType(optionalSubscriber.get().getAuthType()).updateEndpointCredential(id, credential, body);
+			getServiceForAuthType(optionalEndpoint.get().getAuthType()).updateEndpointCredential(id, credential, body);
 		} catch (CredentialsConfigNotFound e) {
-			HttpResponse.notFound(
+			return HttpResponse.notFound(
 					String.format("Credential %s does not exist for subscriber %s. Only %s are supported.",
 							e.getCredential(),
 							id,

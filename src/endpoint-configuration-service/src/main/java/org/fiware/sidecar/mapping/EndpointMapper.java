@@ -9,7 +9,6 @@ import org.fiware.sidecar.model.MustacheEndpoint;
 import org.fiware.sidecar.persistence.Endpoint;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
-import org.mapstruct.Mappings;
 import org.mapstruct.Named;
 
 import java.util.Map;
@@ -20,21 +19,18 @@ public interface EndpointMapper {
 
 	EndpointInfoVO endpointToEndpointInfoVo(Endpoint subscriber);
 
-	@Mappings({
-			@Mapping(source = "authCredentials.iShareClientId", target = "IShareClientId"),
-			@Mapping(source = "authCredentials.iShareIdpId", target = "IShareIdpId"),
-			@Mapping(source = "authCredentials.iShareIdpAddress", target = "IShareIdpAddress"),
-			@Mapping(source = "authCredentials.requestGrantType", target = "requestGrantType"),
-	})
+	@Mapping(source = "authCredentials.iShareClientId", target = "IShareClientId")
+	@Mapping(source = "authCredentials.iShareIdpId", target = "IShareIdpId")
+	@Mapping(source = "authCredentials.iShareIdpAddress", target = "IShareIdpAddress")
+	@Mapping(source = "authCredentials.requestGrantType", target = "requestGrantType")
 	Endpoint endpointRegistrationVoToEndpoint(EndpointRegistrationVO endpointRegistrationVO);
 
 	AuthType authTypeVoToAuthType(AuthTypeVO authTypeVO);
 
 	AuthTypeVO authTypeToAuthTypeVo(AuthType authType);
 
-	@Mappings({
-			@Mapping(source = "useHttps", target = "httpsPort", qualifiedByName = "useHttpsMustacheMapping")
-	})
+
+	@Mapping(source = "useHttps", target = "httpsPort", qualifiedByName = "useHttpsMustacheMapping")
 	MustacheEndpoint endpointToMustacheEndpoint(Endpoint endpoint);
 
 
@@ -57,7 +53,7 @@ public interface EndpointMapper {
 		return useHttps ? "https" : null;
 	}
 
-	default UUID StringToUUID(String value) {
+	default UUID stringToUUID(String value) {
 		return UUID.fromString(value);
 	}
 

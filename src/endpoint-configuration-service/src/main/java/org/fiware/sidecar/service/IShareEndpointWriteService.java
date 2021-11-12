@@ -17,7 +17,6 @@ import javax.inject.Singleton;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.stream.Collectors;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -76,7 +75,7 @@ public class IShareEndpointWriteService implements EndpointWriteService {
 					credentialType,
 					Arrays.stream(IShareAuthCredentialType.values())
 							.map(IShareAuthCredentialType::getCredentialType)
-							.collect(Collectors.toList()));
+							.toList());
 		}
 	}
 }

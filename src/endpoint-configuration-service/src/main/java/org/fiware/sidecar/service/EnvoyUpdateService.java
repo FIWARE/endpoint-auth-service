@@ -16,7 +16,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
@@ -42,7 +41,7 @@ public class EnvoyUpdateService {
 		List<MustacheEndpoint> mustacheSubscriberList = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
 				.map(endpointMapper::endpointToMustacheEndpoint)
-				.collect(Collectors.toList());
+				.toList();
 
 		Map<String, Object> mustacheRenderContext = Map.of("endpoints", mustacheSubscriberList);
 

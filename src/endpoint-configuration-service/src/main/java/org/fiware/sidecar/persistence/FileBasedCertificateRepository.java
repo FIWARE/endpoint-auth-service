@@ -33,7 +33,7 @@ public class FileBasedCertificateRepository implements IShareCredentialsReposito
 			try {
 				Files.createDirectories(folderPath);
 			} catch (IOException e) {
-				throw new FolderCreationException("Was not able to create the requested folder.", e, folderPath.toString());
+				throw new FolderCreationException("Was not able to create the requested folder.", e);
 			}
 		}
 		storeStringAt(IShareAuthCredentialType.KEY, id, key);
@@ -70,7 +70,7 @@ public class FileBasedCertificateRepository implements IShareCredentialsReposito
 		try {
 			Files.writeString(filePath, toStore);
 		} catch (IOException e) {
-			throw new FileCreationException("Was not able to create the requested file.", e, filePath.toString());
+			throw new FileCreationException("Was not able to create the requested file.", e);
 		}
 	}
 
@@ -78,7 +78,7 @@ public class FileBasedCertificateRepository implements IShareCredentialsReposito
 		try {
 			Files.delete(buildFilePath(folderPath.toString(), fileType.getFileName()));
 		} catch (IOException e) {
-			throw new DeletionException(String.format("Was not able to delete %s.", folderPath), e, folderPath.toString());
+			throw new DeletionException(String.format("Was not able to delete %s.", folderPath), e);
 		}
 	}
 
