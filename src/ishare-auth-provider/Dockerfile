@@ -1,4 +1,4 @@
-FROM golang/1.17.3-alpine
+FROM golang:1.17.3-alpine
 
 ENV SERVER_PORT="8080"
 ENV CONFIGURATION_SERVICE_URL="http://endpoint-configuration-service:8080"
