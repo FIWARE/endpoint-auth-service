@@ -21,6 +21,7 @@ jobs:
 
       - name: Build&Push image
         run: |
+          cd src/endpoint-configuration-service/
           mvn versions:set -DnewVersion=latest
           mvn clean install deploy -DskipTests -Dimage.tag=latest -Dimage.registry="quay.io/"
 
@@ -48,6 +49,7 @@ jobs:
           registry: quay.io/wi_stefan
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+          context: ./src/iptables-init
 
   ishare-auth-provider:
     runs-on: ubuntu-latest
@@ -73,6 +75,6 @@ jobs:
           registry: quay.io/wi_stefan
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-
+          context: ./src/ishare-auth-provider
 
 
