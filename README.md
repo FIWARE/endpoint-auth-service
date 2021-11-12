@@ -3,9 +3,9 @@
 In various use-cases, there is a need to apply authn/z to outgoing requests for components that do not handle this them-self(f.e. notifications in
 [NGSI-LD brokers](https://github.com/FIWARE/context.Orion-LD)). This sidecar provides that by adding an [envoy-proxy](https://www.envoyproxy.io) 
 as [sidecar](https://www.oreilly.com/library/view/designing-distributed-systems/9781491983638/ch02.html) to the component that gets forwarded all 
-outgoing requests via ip-tables(see [iptables-init](./iptables-init)). The sidecar-proxy does request auth-information at the [auth-provider](./auth-provider) 
+outgoing requests via ip-tables(see [iptables-init](./src/iptables-init)). The sidecar-proxy does request auth-information at the [auth-provider](./src/auth-provider) 
 and adds it to the requests accordingly. The endpoints to be handled and there auth-information can be configured through
-[endpoint-configuration-service](./endpoint-configuration-service).
+[endpoint-configuration-service](./src/endpoint-configuration-service).
 
 ## Overview
 
