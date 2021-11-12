@@ -1,9 +1,8 @@
-FROM golang:1.17
+FROM golang/1.17.3-alpine
 
-ENV IDP_URL="https://idp-happypets-shop.i4trust-dev.fiware.io/oauth2/token"
-ENV IDP_ID="EU.EORI.NLHAPPYPETS"
-ENV CLIENT_ID="EU.EORI.NLHAPPYPETS"
 ENV SERVER_PORT="8080"
+ENV CONFIGURATION_SERVICE_URL="http://endpoint-configuration-service:8080"
+ENV CERTIFICATE_FOLDER="/mounted-certs"
 
 WORKDIR /go/src/app
 COPY ./go.mod ./go.mod
@@ -13,4 +12,4 @@ COPY ./auth.go ./auth.go
 RUN go get -d -v ./...
 RUN go install -v ./...
 
-CMD ["auth-provider"]
+CMD ["ishare-auth-provider"]
