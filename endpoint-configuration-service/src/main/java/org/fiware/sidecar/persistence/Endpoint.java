@@ -10,7 +10,7 @@ import java.util.UUID;
 
 @Entity
 @Data
-public class Subscriber {
+public class Endpoint {
 
 	@Id
 	@GeneratedValue

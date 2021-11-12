@@ -3,7 +3,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.fiware.sidecar</groupId>
-    <artifactId>SubscriberConfigApi</artifactId>
+    <artifactId>endpoint-configuration-service</artifactId>
     <version>0.1</version>
 
     <parent>
@@ -291,7 +291,7 @@
                             <goal>generate</goal>
                         </goals>
                         <configuration>
-                            <inputSpec>${project.basedir}/api/api.yaml</inputSpec>
+                            <inputSpec>../api/endpoint-configuration-api.yaml</inputSpec>
                             <apiPackage>org.fiware.sidecar.api</apiPackage>
                             <strictSpec>true</strictSpec>
                             <modelPackage>org.fiware.sidecar.model</modelPackage>

@@ -1,21 +1,19 @@
 package org.fiware.sidecar.service;
 
-import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.sidecar.configuration.ProxyProperties;
 import org.fiware.sidecar.exception.EnvoyUpdateException;
-import org.fiware.sidecar.mapping.SubscriberMapper;
-import org.fiware.sidecar.model.MustacheSubscriber;
-import org.fiware.sidecar.persistence.SubscriberRepository;
+import org.fiware.sidecar.mapping.EndpointMapper;
+import org.fiware.sidecar.model.MustacheEndpoint;
+import org.fiware.sidecar.persistence.EndpointRepository;
 
 import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.io.StringWriter;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -27,8 +25,8 @@ import java.util.stream.StreamSupport;
 public class EnvoyUpdateService {
 
 	private final MustacheFactory mustacheFactory;
-	private final SubscriberRepository subscriberRepository;
-	private final SubscriberMapper subscriberMapper;
+	private final EndpointRepository endpointRepository;
+	private final EndpointMapper endpointMapper;
 	private final ProxyProperties proxyProperties;
 
 	private Mustache listenerTemplate;
@@ -41,12 +39,12 @@ public class EnvoyUpdateService {
 	}
 
 	public void applyConfiguration() {
-		List<MustacheSubscriber> mustacheSubscriberList = StreamSupport
-				.stream(subscriberRepository.findAll().spliterator(), true)
-				.map(subscriberMapper::subscriberToMustacheSubscriber)
+		List<MustacheEndpoint> mustacheSubscriberList = StreamSupport
+				.stream(endpointRepository.findAll().spliterator(), true)
+				.map(endpointMapper::endpointToMustacheEndpoint)
 				.collect(Collectors.toList());
 
-		Map<String, Object> mustacheRenderContext = Map.of("subscribers", mustacheSubscriberList);
+		Map<String, Object> mustacheRenderContext = Map.of("endpoints", mustacheSubscriberList);
 
 		try {
 			FileWriter listenerFileWriter = new FileWriter(proxyProperties.getListenerYamlPath());

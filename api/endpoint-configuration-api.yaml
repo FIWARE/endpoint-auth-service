@@ -1,47 +1,47 @@
 openapi: 3.0.3
 info:
-  description: 'This spec configuration api for the auth sidecar proxy'
-  version: latest
-  title: Sidecar Configuration API
+  description: 'This spec provides the configuration-api for the endpoint-auth-sidecar.'
+  version: 0.0.1
+  title: Endpoint Configuration API
   contact:
     email: stefan.wiedemann@fiware.org
 tags:
-  - name: SidecarConfiguration
-    description: "ConfigurationApi for setting up the sidecar proxy"
+  - name: EndpointConfiguration
+    description: "EndpointConfigurationApi configuring sidecar-proxy's auth behaviour."
 servers:
   - url: http://localhost:8080
     description: "Local test server address."
 
 paths:
-  '/subscriber':
+  '/endpoint':
     get:
       tags:
-        - SidecarConfiguration
-      description: "Get all configured subscribers."
-      operationId: getSubscribers
+        - EndpointConfiguration
+      description: "Get all configured endpoints."
+      operationId: getEndpoints
       responses:
         '200':
-          description: "List of subscribers."
+          description: "List of endpoints."
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/SubscriberInfo'
+                  $ref: '#/components/schemas/EndpointInfo'
     post:
       tags:
-        - SidecarConfiguration
-      description: "Create a new subscriber configuration."
-      operationId: createSubscriber
+        - EndpointConfiguration
+      description: "Create a new endpoint configuration."
+      operationId: createEndpoint
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/SubscriberRegistration'
+              $ref: '#/components/schemas/EndpointRegistration'
       responses:
         '201':
-          description: "Created. Will return the subscriber id in the location header."
+          description: "Created. Will return the endpoint id in the location header."
         '400':
           description: "Received an invalid registration."
           content:
@@ -54,51 +54,51 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  '/subscriber/{id}':
+  '/Endpoint/{id}':
     get:
       tags:
-        - SidecarConfiguration
+        - EndpointConfiguration
       parameters:
         - $ref: '#/components/parameters/id'
-      description: "Return the subscriber infromation for the given id."
-      operationId: getSubscriberInfo
+      description: "Return the endpoint information for the given id."
+      operationId: getEndpointInfo
       responses:
         '200':
-          description: "The information about the subscriber."
+          description: "The information about the endpoint."
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SubscriberInfo'
+                $ref: '#/components/schemas/EndpointInfo'
         '404':
-          description: "No such subscriber exists."
+          description: "No such endpoint exists."
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
     delete:
       tags:
-        - SidecarConfiguration
+        - EndpointConfiguration
       parameters:
         - $ref: '#/components/parameters/id'
-      description: "Delete the subscriber for the given id."
-      operationId: deleteSubscriber
+      description: "Delete the endpoint for the given id."
+      operationId: deleteEndpoint
       responses:
         '204':
-          description: "The subscriber was successfully removed."
+          description: "The endpoint was successfully removed."
         '404':
-          description: "No such subscriber exists."
+          description: "No such endpoint exists."
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ProblemDetails'
-  '/subscriber/{id}/{credential}':
+  '/Endpoint/{id}/{credential}':
     put:
       tags:
-        - SidecarConfiguration
+        - EndpointConfiguration
       parameters:
         - $ref: '#/components/parameters/id'
         - $ref: '#/components/parameters/credential'
-      description: "Update credential related configuration for a given subscriber."
+      description: "Update credential related configuration for a given endpoint."
       operationId: updateCredentialConfiguration
       requestBody:
         required: true
@@ -110,7 +110,7 @@ paths:
         '204':
           description: "The credential was successfully updated."
         '404':
-          description: "No such subscriber or credential exists."
+          description: "No such endpoint or credential exists."
           content:
             application/json:
               schema:
@@ -120,7 +120,7 @@ components:
   parameters:
     id:
       name: id
-      description: "Id of the registered susbcriber."
+      description: "Id of the registered endpoint."
       in: path
       required: true
       schema:
@@ -135,7 +135,7 @@ components:
         type: string
   schemas:
     Id:
-      description: "Id of the registerd subscriber. Be aware: this has no connections to ids used by NGSI-LD Api."
+      description: "Id of the registered endpoint. Be aware: this has no connections to ids used by NGSI-LD Api."
       type: string
       format: uuid
       example: "bf1957ad-d69e-4b81-ba84-599091a03150"
@@ -181,46 +181,46 @@ components:
       description: "Type of the credentials to be used. Need to correspond with the authType."
       oneOf:
         - $ref: '#/components/schemas/IShareCredentials'
-    SubscriberInfo:
+    EndpointInfo:
       type: object
-      description: "Information about a registered subscriber."
+      description: "Information about a registered endpoint."
       properties:
         id:
           $ref: '#/components/schemas/Id'
         domain:
-          description: "Domain that the subscriber will receive notifications at."
+          description: "Domain that the Endpoint will receive notifications at."
           type: string
-          example: "mySubscriber.com"
+          example: "myEndpoint.com"
         path:
-          description: "Path that the subscriber will receive notifications at."
+          description: "Path that the Endpoint will receive notifications at."
           type: string
           default: "/"
-          example: "/notfication/receive"
+          example: "/notification/receive"
         useHttps:
-          description: "Should the proxy forward the notfication via https."
+          description: "Should the proxy forward the notifications via https."
           type: boolean
           default: false
         authType:
           $ref: '#/components/schemas/AuthType'
-    SubscriberRegistration:
+    EndpointRegistration:
       type: object
-      description: "Information about a subscriber to be registerd."
+      description: "Information about a Endpoint to be registered."
       properties:
         domain:
-          description: "Domain that the subscriber will receive notifications at."
+          description: "Domain that the endpoint will receive notifications at."
           type: string
-          example: "mySubscriber.com"
+          example: "myEndpoint.com"
         port:
-          description: "Port that the subscriber will receive notifications at."
+          description: "Port that the endpoint will receive notifications at."
           type: integer
           default: 80
         path:
-          description: "Path that the subscriber will receive notifications at."
+          description: "Path that the endpoint will receive notifications at."
           type: string
           default: "/"
-          example: "/notfication/receive"
+          example: "/notification/receive"
         useHttps:
-          description: "Should the proxy forward the notfication via https."
+          description: "Should the proxy forward the notification via https."
           type: boolean
           default: false
         authType:
@@ -247,14 +247,3 @@ components:
           type: string
       required:
         - type
-
-
-
-
-
-
-
-
-
-
-

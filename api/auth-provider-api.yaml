@@ -1,0 +1,72 @@
+openapi: 3.0.3
+info:
+  description: 'This spec provides the api for the auth-providers to be used by the sidecar-proxy.'
+  version: 0.0.1
+  title: Auth Provider API
+  contact:
+    email: stefan.wiedemann@fiware.org
+tags:
+  - name: AuthProvider
+    description: "AuthProvider api to be used by the sidecar-proxy."
+servers:
+  - url: http://localhost:8080
+    description: "Local test server address."
+
+paths:
+  '/auth':
+    get:
+      tags:
+        - AuthProvider
+      parameters:
+        - $ref: '#/components/parameters/domain'
+        - $ref: '#/components/parameters/path'
+      description: "Get auth information for the given endpoint."
+      operationId: getAuth
+      responses:
+        '200':
+          description: "List of endpoints."
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AuthInfo'
+        '404':
+          description: "No information for the requested endpoint exists."
+components:
+  parameters:
+    domain:
+      name: domain
+      description: "Domain to get the information for."
+      in: query
+      required: true
+      schema:
+        type: string
+      example: "myEndpoint.com"
+    path:
+      name: path
+      description: "Path to get the infromation for."
+      in: query
+      required: true
+      schema:
+        type: string
+      example: "/my/endpoint/path"
+  schemas:
+    HeaderEntry:
+      type: object
+      description: "Contains one headername-value combination."
+      properties:
+        name:
+          type: string
+          example: "Authorization"
+        value:
+          type: string
+          example: "myBearerToken"
+      required:
+        - name
+        - value
+    AuthInfo:
+      type: array
+      description: "A list of headers to be set for auth."
+      items:
+        $ref: '#/components/schemas/HeaderEntry'

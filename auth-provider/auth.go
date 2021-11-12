@@ -18,10 +18,26 @@ import (
 	"github.com/google/uuid"
 )
 
+/**
+* Name of the files containing the signing key. Needs to be the same as used by the configuration-service.
+ */
+const keyfile = "key.pem"
+
+/**
+* Name of the files containing the certificate chain. Needs to be the same as used by the configuration-service.
+ */
+const certChainFile = "cert.cer"
+
+/**
+* Global var to held the basefolder to the credentials for all domain/path combinations.
+ */
+var credentialsBaseFolder string
+
 func main() {
 	router := gin.Default()
 	router.GET("/token", getToken)
 	serverPort := os.Getenv("SERVER_PORT")
+	credentialsBaseFolder = os.Getenv("CERTIFICATE_FOLDER")
 	if serverPort == "" {
 		log.Fatal("No server port was provided")
 	}
@@ -29,6 +45,10 @@ func main() {
 }
 
 func getToken(c *gin.Context) {
+
+	domain := c.Query("domain")
+	path := c.Query("path")
+	credentialsFolderPath := buildCredentialsFolderPath(domain, path)
 
 	var randomUuid uuid.UUID
 	var err error
@@ -53,7 +73,7 @@ func getToken(c *gin.Context) {
 	})
 
 	// read key file
-	priv, err := ioutil.ReadFile("./certs/token.pem")
+	priv, err := ioutil.ReadFile(credentialsFolderPath + keyfile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -65,7 +85,7 @@ func getToken(c *gin.Context) {
 	}
 
 	// read certificate file and set it in the token header
-	cert, err := ioutil.ReadFile("./certs/token.cer")
+	cert, err := ioutil.ReadFile(credentialsFolderPath + certChainFile)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -98,4 +118,16 @@ func getToken(c *gin.Context) {
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 	c.String(http.StatusOK, res["access_token"].(string))
+}
+
+/**
+* Build the path to the credentials folder for the given domain/path combination. It will include the trailing /
+ */
+func buildCredentialsFolderPath(domain string, path string) string {
+
+	domainFolder := credentialsBaseFolder + "/" + domain + "/"
+	if string(path[len(path)-1:]) != "/" {
+		return domainFolder + path + "/"
+	}
+	return domainFolder + path
 }

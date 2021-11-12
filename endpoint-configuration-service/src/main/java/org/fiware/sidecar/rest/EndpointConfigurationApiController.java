@@ -5,21 +5,17 @@ import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.fiware.sidecar.api.SidecarConfigurationApi;
+import org.fiware.sidecar.api.EndpointConfigurationApi;
 import org.fiware.sidecar.exception.CredentialsConfigNotFound;
-import org.fiware.sidecar.exception.DeletionException;
-import org.fiware.sidecar.exception.FileCreationException;
-import org.fiware.sidecar.exception.FolderCreationException;
-import org.fiware.sidecar.mapping.SubscriberMapper;
+import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.model.AuthType;
 import org.fiware.sidecar.model.AuthTypeVO;
-import org.fiware.sidecar.model.SubscriberInfoVO;
-import org.fiware.sidecar.model.SubscriberRegistrationVO;
-import org.fiware.sidecar.persistence.IShareCredentialsRepository;
-import org.fiware.sidecar.persistence.Subscriber;
-import org.fiware.sidecar.persistence.SubscriberRepository;
+import org.fiware.sidecar.model.EndpointInfoVO;
+import org.fiware.sidecar.model.EndpointRegistrationVO;
+import org.fiware.sidecar.persistence.Endpoint;
+import org.fiware.sidecar.persistence.EndpointRepository;
+import org.fiware.sidecar.service.EndpointWriteService;
 import org.fiware.sidecar.service.EnvoyUpdateService;
-import org.fiware.sidecar.service.SubscriberWriteService;
 
 import javax.transaction.Transactional;
 import java.net.URI;
@@ -32,30 +28,30 @@ import java.util.stream.StreamSupport;
 @Slf4j
 @Controller
 @RequiredArgsConstructor
-public class SidecarConfigurationApiController implements SidecarConfigurationApi {
+public class EndpointConfigurationApiController implements EndpointConfigurationApi {
 
-	private final List<SubscriberWriteService> subscriberWriteServices;
-	private final SubscriberRepository subscriberRepository;
-	private final SubscriberMapper subscriberMapper;
+	private final List<EndpointWriteService> subscriberWriteServices;
+	private final EndpointRepository endpointRepository;
+	private final EndpointMapper endpointMapper;
 	private final EnvoyUpdateService envoyUpdateService;
 
 	@Transactional
 	@Override
-	public HttpResponse<Object> createSubscriber(SubscriberRegistrationVO subscriberRegistrationVO) {
+	public HttpResponse<Object> createEndpoint(EndpointRegistrationVO endpointRegistrationVO) {
 
-		if (!subscriberRegistrationVO.authType().equals(AuthTypeVO.ISHARE)) {
+		if (!endpointRegistrationVO.authType().equals(AuthTypeVO.ISHARE)) {
 			throw new UnsupportedOperationException("Currently only iShare-authentication is supported.");
 		}
 
-		if (subscriberRepository.findByDomainAndPath(subscriberRegistrationVO.getDomain(), subscriberRegistrationVO.getPath()).isPresent()) {
+		if (endpointRepository.findByDomainAndPath(endpointRegistrationVO.getDomain(), endpointRegistrationVO.getPath()).isPresent()) {
 			return HttpResponse.status(HttpStatus.CONFLICT);
 		}
 
-		Subscriber subscriber = subscriberRepository.save(subscriberMapper.subscriberRegistrationVoToSubscriber(subscriberRegistrationVO));
+		Endpoint subscriber = endpointRepository.save(endpointMapper.endpointRegistrationVoToEndpoint(endpointRegistrationVO));
 
 		// type specific creations
-		getServiceForAuthType(subscriberMapper.authTypeVoToAuthType(subscriberRegistrationVO.authType()))
-				.createSubscriber(subscriberRegistrationVO);
+		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()))
+				.createEndpoint(endpointRegistrationVO);
 
 		// update the envoy configuration
 		envoyUpdateService.applyConfiguration();
@@ -65,11 +61,11 @@ public class SidecarConfigurationApiController implements SidecarConfigurationAp
 
 	@Transactional
 	@Override
-	public HttpResponse<Object> deleteSubscriber(UUID id) {
-		Optional<Subscriber> optionalSubscriber = subscriberRepository.findById(id);
+	public HttpResponse<Object> deleteEndpoint(UUID id) {
+		Optional<Endpoint> optionalSubscriber = endpointRepository.findById(id);
 		if (optionalSubscriber.isPresent()) {
-			subscriberRepository.deleteById(id);
-			getServiceForAuthType(optionalSubscriber.get().getAuthType()).deleteSubscriber(id);
+			endpointRepository.deleteById(id);
+			getServiceForAuthType(optionalSubscriber.get().getAuthType()).deleteEndpoint(id);
 
 			// update the envoy configuration
 			envoyUpdateService.applyConfiguration();
@@ -80,10 +76,10 @@ public class SidecarConfigurationApiController implements SidecarConfigurationAp
 	}
 
 	@Override
-	public HttpResponse<SubscriberInfoVO> getSubscriberInfo(UUID id) {
-		Optional<SubscriberInfoVO> optionalSubscriberInfoVO = subscriberRepository
+	public HttpResponse<EndpointInfoVO> getEndpointInfo(UUID id) {
+		Optional<EndpointInfoVO> optionalSubscriberInfoVO = endpointRepository
 				.findById(id)
-				.map(subscriberMapper::subscriberToSubscriberInfoVo);
+				.map(endpointMapper::endpointToEndpointInfoVo);
 		if (optionalSubscriberInfoVO.isPresent()) {
 			return HttpResponse.ok(optionalSubscriberInfoVO.get());
 		}
@@ -91,22 +87,22 @@ public class SidecarConfigurationApiController implements SidecarConfigurationAp
 	}
 
 	@Override
-	public HttpResponse<List<SubscriberInfoVO>> getSubscribers() {
+	public HttpResponse<List<EndpointInfoVO>> getEndpoints() {
 		return HttpResponse.ok(
 				StreamSupport
-						.stream(subscriberRepository.findAll().spliterator(), true)
-						.map(subscriberMapper::subscriberToSubscriberInfoVo)
+						.stream(endpointRepository.findAll().spliterator(), true)
+						.map(endpointMapper::endpointToEndpointInfoVo)
 						.collect(Collectors.toList()));
 	}
 
 	@Override
 	public HttpResponse<Object> updateCredentialConfiguration(UUID id, String credential, String body) {
-		Optional<Subscriber> optionalSubscriber = subscriberRepository.findById(id);
+		Optional<Endpoint> optionalSubscriber = endpointRepository.findById(id);
 		if (!optionalSubscriber.isPresent()) {
 			HttpResponse.notFound(String.format("Subscriber %s does not exist.", id));
 		}
 		try {
-			getServiceForAuthType(optionalSubscriber.get().getAuthType()).updateSubscriberCredential(id, credential, body);
+			getServiceForAuthType(optionalSubscriber.get().getAuthType()).updateEndpointCredential(id, credential, body);
 		} catch (CredentialsConfigNotFound e) {
 			HttpResponse.notFound(
 					String.format("Credential %s does not exist for subscriber %s. Only %s are supported.",
@@ -120,7 +116,7 @@ public class SidecarConfigurationApiController implements SidecarConfigurationAp
 		return HttpResponse.noContent();
 	}
 
-	private SubscriberWriteService getServiceForAuthType(AuthType authType) {
+	private EndpointWriteService getServiceForAuthType(AuthType authType) {
 		return subscriberWriteServices
 				.stream()
 				.filter(sws -> sws.supportedAuthType()

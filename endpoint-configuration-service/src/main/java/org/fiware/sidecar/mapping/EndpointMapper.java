@@ -2,10 +2,10 @@ package org.fiware.sidecar.mapping;
 
 import org.fiware.sidecar.model.AuthType;
 import org.fiware.sidecar.model.AuthTypeVO;
-import org.fiware.sidecar.model.MustacheSubscriber;
-import org.fiware.sidecar.model.SubscriberInfoVO;
-import org.fiware.sidecar.model.SubscriberRegistrationVO;
-import org.fiware.sidecar.persistence.Subscriber;
+import org.fiware.sidecar.model.EndpointInfoVO;
+import org.fiware.sidecar.model.EndpointRegistrationVO;
+import org.fiware.sidecar.model.MustacheEndpoint;
+import org.fiware.sidecar.persistence.Endpoint;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.Mappings;
@@ -14,9 +14,9 @@ import org.mapstruct.Named;
 import java.util.UUID;
 
 @Mapper(componentModel = "jsr330")
-public interface SubscriberMapper {
+public interface EndpointMapper {
 
-	SubscriberInfoVO subscriberToSubscriberInfoVo(Subscriber subscriber);
+	EndpointInfoVO endpointToEndpointInfoVo(Endpoint subscriber);
 
 	@Mappings({
 			@Mapping(source = "authCredentials.iShareClientId", target = "IShareClientId"),
@@ -24,13 +24,13 @@ public interface SubscriberMapper {
 			@Mapping(source = "authCredentials.iShareIdpAddress", target = "IShareIdpAddress"),
 			@Mapping(source = "authCredentials.requestGrantType", target = "requestGrantType"),
 	})
-	Subscriber subscriberRegistrationVoToSubscriber(SubscriberRegistrationVO subscriberRegistrationVO);
+	Endpoint endpointRegistrationVoToEndpoint(EndpointRegistrationVO endpointRegistrationVO);
 
 	AuthType authTypeVoToAuthType(AuthTypeVO authTypeVO);
 	@Mappings({
 			@Mapping(source = "useHttps", target = "httpsPort", qualifiedByName = "useHttpsMustacheMapping")
 	})
-	MustacheSubscriber subscriberToMustacheSubscriber(Subscriber subscriber);
+	MustacheEndpoint endpointToMustacheEndpoint(Endpoint endpoint);
 
 	@Named("useHttpsMustacheMapping")
 	static String useHttpsMustacheMapping(boolean useHttps) {

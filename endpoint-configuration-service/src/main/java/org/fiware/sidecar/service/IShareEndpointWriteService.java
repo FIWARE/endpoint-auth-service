@@ -7,11 +7,11 @@ import org.fiware.sidecar.exception.DeletionException;
 import org.fiware.sidecar.exception.FileCreationException;
 import org.fiware.sidecar.exception.FolderCreationException;
 import org.fiware.sidecar.model.AuthType;
-import org.fiware.sidecar.model.SubscriberRegistrationVO;
+import org.fiware.sidecar.model.EndpointRegistrationVO;
 import org.fiware.sidecar.model.ishare.IShareAuthCredentialType;
+import org.fiware.sidecar.persistence.Endpoint;
+import org.fiware.sidecar.persistence.EndpointRepository;
 import org.fiware.sidecar.persistence.IShareCredentialsRepository;
-import org.fiware.sidecar.persistence.Subscriber;
-import org.fiware.sidecar.persistence.SubscriberRepository;
 
 import javax.inject.Singleton;
 import java.util.Arrays;
@@ -22,10 +22,10 @@ import java.util.stream.Collectors;
 @Slf4j
 @RequiredArgsConstructor
 @Singleton
-public class IShareSubscriberWriteService implements SubscriberWriteService {
+public class IShareEndpointWriteService implements EndpointWriteService {
 
 	private final IShareCredentialsRepository iShareCredentialsRepository;
-	private final SubscriberRepository subscriberRepository;
+	private final EndpointRepository endpointRepository;
 
 	@Override
 	public AuthType supportedAuthType() {
@@ -33,7 +33,7 @@ public class IShareSubscriberWriteService implements SubscriberWriteService {
 	}
 
 	@Override
-	public void createSubscriber(SubscriberRegistrationVO subscriberRegistrationVO) {
+	public void createEndpoint(EndpointRegistrationVO subscriberRegistrationVO) {
 		try {
 			iShareCredentialsRepository.saveCredentialsByDomainAndPath(
 					subscriberRegistrationVO.getDomain(),
@@ -53,25 +53,25 @@ public class IShareSubscriberWriteService implements SubscriberWriteService {
 	}
 
 	@Override
-	public void deleteSubscriber(UUID id) {
-		Optional<Subscriber> optionalSubscriber = subscriberRepository.findById(id);
-		if (optionalSubscriber.isPresent()) {
+	public void deleteEndpoint(UUID id) {
+		Optional<Endpoint> optionalEndpoint = endpointRepository.findById(id);
+		if (optionalEndpoint.isPresent()) {
 			iShareCredentialsRepository
 					.deleteCredentialsByDomainAndPath(
-							optionalSubscriber.get().getDomain(),
-							optionalSubscriber.get().getPath());
+							optionalEndpoint.get().getDomain(),
+							optionalEndpoint.get().getPath());
 		}
 	}
 
 	@Override
-	public void updateSubscriberCredential(UUID id, String credentialType, String credentialBody) throws CredentialsConfigNotFound {
+	public void updateEndpointCredential(UUID id, String credentialType, String credentialBody) throws CredentialsConfigNotFound {
 
-		Subscriber subscriber = subscriberRepository
-				.findById(id).orElseThrow(() -> new IllegalArgumentException(String.format("Subscriber %s not found.", id)));
+		Endpoint endpoint = endpointRepository
+				.findById(id).orElseThrow(() -> new IllegalArgumentException(String.format("Endpoint %s not found.", id)));
 
 		switch (IShareAuthCredentialType.getForCredentialType(credentialType)) {
-			case CERT_CHAIN -> iShareCredentialsRepository.updateCertificateChainByDomainAndPath(subscriber.getDomain(), subscriber.getPath(), credentialBody);
-			case KEY -> iShareCredentialsRepository.updateSigningKeyByDomainAndPath(subscriber.getDomain(), subscriber.getPath(), credentialBody);
+			case CERT_CHAIN -> iShareCredentialsRepository.updateCertificateChainByDomainAndPath(endpoint.getDomain(), endpoint.getPath(), credentialBody);
+			case KEY -> iShareCredentialsRepository.updateSigningKeyByDomainAndPath(endpoint.getDomain(), endpoint.getPath(), credentialBody);
 			default -> throw new CredentialsConfigNotFound(
 					"IShare does not support updating the requested credentials.",
 					credentialType,
