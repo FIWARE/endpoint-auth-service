@@ -35,6 +35,16 @@ resources:
               route_config:
                 name: local_route
                 virtual_hosts:
+                  {{#endpoints}}
+                  - name: {{id}}
+                    domains:
+                      - "{{domain}}"
+                    routes:
+                      - match:
+                          prefix: "{{path}}"
+                        route:
+                          cluster: {{id}}
+                  {{/endpoints}}
                   # the allow_any virtual_host will untouched passthrough every request that does not match one of the configured routes.
                   - name: allow_any
                     domains:
@@ -49,16 +59,6 @@ resources:
                           envoy.filters.http.lua:
                             "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
                             disabled: true
-                {{#endpoints}}
-                  - name: {{id}}
-                    domains:
-                      - "{{domain}}"
-                    routes:
-                      - match:
-                          prefix: "{{path}}"
-                        route:
-                          cluster: {{id}}
-                {{/endpoints}}
               http_filters:
                # lua filter to do the actual magic. It will make a call to the auth-provider in order to get the token and add it to the Authorization header of
                # the request.
