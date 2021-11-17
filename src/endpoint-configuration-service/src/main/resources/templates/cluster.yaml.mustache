@@ -49,10 +49,10 @@ resources:
                     protocol: TCP
                     address: "{{domain}}"
                     port_value: {{port}}
-     transport_socket:
-       name: envoy.transport_sockets.tls
-       typed_config:
-         "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
   {{/httpsPort}}
   {{^httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
