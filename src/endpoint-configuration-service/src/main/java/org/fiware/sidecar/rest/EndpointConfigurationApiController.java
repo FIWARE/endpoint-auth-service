@@ -60,7 +60,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 
 	@Transactional
 	@Override
-	public HttpResponse<Object> deleteEndpoint(Long id) {
+	public HttpResponse<Object> deleteEndpoint(UUID id) {
 		Optional<Endpoint> optionalSubscriber = endpointRepository.findById(id);
 		if (optionalSubscriber.isPresent()) {
 			endpointRepository.deleteById(id);
@@ -75,7 +75,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 	}
 
 	@Override
-	public HttpResponse<EndpointInfoVO> getEndpointInfo(Long id) {
+	public HttpResponse<EndpointInfoVO> getEndpointInfo(UUID id) {
 		Optional<EndpointInfoVO> optionalSubscriberInfoVO = endpointRepository
 				.findById(id)
 				.map(endpointMapper::endpointToEndpointInfoVo);
@@ -92,7 +92,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 	}
 
 	@Override
-	public HttpResponse<Object> updateCredentialConfiguration(Long id, String credential, String body) {
+	public HttpResponse<Object> updateCredentialConfiguration(UUID id, String credential, String body) {
 		Optional<Endpoint> optionalEndpoint = endpointRepository.findById(id);
 		if (optionalEndpoint.isEmpty()) {
 			return HttpResponse.notFound(String.format("Subscriber %s does not exist.", id));

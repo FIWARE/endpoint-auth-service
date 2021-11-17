@@ -8,7 +8,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @JdbcRepository(dialect = Dialect.H2)
- public interface EndpointRepository extends CrudRepository<Endpoint, Long> {
+ public interface EndpointRepository extends CrudRepository<Endpoint, UUID> {
 
 	Optional<Endpoint> findByDomainAndPath(String domain, String path);
 }

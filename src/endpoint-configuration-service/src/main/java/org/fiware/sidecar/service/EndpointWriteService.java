@@ -23,13 +23,13 @@ public interface EndpointWriteService {
 	 * @param  uuid id of the endpoint to be created
 	 * @param endpointRegistrationVO the endpoint registration to create the endpoint of
 	 */
-	void createEndpoint(Long uuid, EndpointRegistrationVO endpointRegistrationVO);
+	void createEndpoint(UUID uuid, EndpointRegistrationVO endpointRegistrationVO);
 
 	/**
 	 * Delete everything specific for this endpoint type
 	 * @param uuid id of the endpoint to be deleted.
 	 */
-	void deleteEndpoint(Long uuid);
+	void deleteEndpoint(UUID uuid);
 
 	/**
 	 * Update type specific credential parts
@@ -37,5 +37,5 @@ public interface EndpointWriteService {
 	 * @param credentialType type of the credential to be updated(f.e. signingKey, certificateChain, username, password)
 	 * @param credentialBody body holding the credential information
 	 */
-	void updateEndpointCredential(Long id, String  credentialType, String  credentialBody) throws CredentialsConfigNotFound;
+	void updateEndpointCredential(UUID id, String  credentialType, String  credentialBody) throws CredentialsConfigNotFound;
 }
