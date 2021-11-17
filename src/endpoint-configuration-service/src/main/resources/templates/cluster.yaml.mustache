@@ -33,7 +33,6 @@ resources:
                     address: 0.0.0.0
                     port_value: 7070
   {{#endpoints}}
-  # we use httpsPort as a helper here, since mustache can only check for existence, not for value
   {{#httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
      name: {{id}}
