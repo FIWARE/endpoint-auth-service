@@ -57,7 +57,7 @@ resources:
                       - match:
                           prefix: "{{path}}"
                         route:
-                          cluster: {{id}}
+                          cluster: c-{{id}}
                 {{/endpoints}}
               http_filters:
                # lua filter to do the actual magic. It will make a call to the auth-provider in order to get the token and add it to the Authorization header of

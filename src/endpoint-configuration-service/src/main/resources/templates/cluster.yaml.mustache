@@ -35,12 +35,12 @@ resources:
   {{#endpoints}}
   {{#httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-     name: {{id}}
+     name: c-{{id}}
      connect_timeout: 5s
      type: STRICT_DNS
      lb_policy: ROUND_ROBIN
      load_assignment:
-       cluster_name: {{id}}
+       cluster_name: c-{{id}}
        endpoints:
          - lb_endpoints:
              - endpoint:
@@ -56,12 +56,12 @@ resources:
   {{/httpsPort}}
   {{^httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    name: my-test-cluster
+    name: c-{{id}}
     connect_timeout: 5s
     type: STRICT_DNS
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: {{id}}
+      cluster_name: c-{{id}}
       endpoints:
         - lb_endpoints:
             - endpoint:
