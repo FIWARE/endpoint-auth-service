@@ -68,15 +68,18 @@ resources:
                    "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
                    inline_code: |
                      function envoy_on_request(request_handle)
-                       local headers, body = request_handle:httpCall(
-                       "ext-authz",
-                       {
-                         [":method"] = "GET",
-                         [":path"] = "/token",
-                         [":authority"] = "ext-authz"
-                       },
-                       null,
-                       5000)
-                       request_handle:headers():add("Authorization", body)
-                     end
+                      local domain = request_handle:headers():get(":authority")
+                      local path = request_handle:headers():get(":path")
+
+                      local headers, body = request_handle:httpCall(
+                      "ext-authz",
+                      {
+                        [":method"] = "GET",
+                        [":path"] = "/token?domain=" .. domain .. "&path=" .. path,
+                        [":authority"] = "ext-authz"
+                      },
+                      null,
+                      5000)
+                      request_handle:headers():add("Authorization", body)
+                    end
                - name: envoy.filters.http.router
