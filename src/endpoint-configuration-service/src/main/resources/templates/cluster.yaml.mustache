@@ -56,7 +56,7 @@ resources:
   {{/httpsPort}}
   {{^httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    name: {{id}}
+    name: my-test-cluster
     connect_timeout: 5s
     type: STRICT_DNS
     lb_policy: ROUND_ROBIN
