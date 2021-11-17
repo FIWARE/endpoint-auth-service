@@ -23,7 +23,7 @@ resources:
     connect_timeout: 1s
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: additional-service
+      cluster_name: ext-authz
       endpoints:
         - lb_endpoints:
             - endpoint:
