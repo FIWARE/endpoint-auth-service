@@ -50,14 +50,14 @@ resources:
                             "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
                             disabled: true
                 {{#endpoints}}
-                  - name: {{id}}
+                  - name: "{{id}}"
                     domains:
                       - "{{domain}}"
                     routes:
                       - match:
                           prefix: "{{path}}"
                         route:
-                          cluster: {{id}}
+                          cluster: "{{id}}"
                 {{/endpoints}}
               http_filters:
                # lua filter to do the actual magic. It will make a call to the auth-provider in order to get the token and add it to the Authorization header of
