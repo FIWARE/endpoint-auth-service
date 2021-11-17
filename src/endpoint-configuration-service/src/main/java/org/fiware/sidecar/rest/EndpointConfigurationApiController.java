@@ -79,10 +79,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		Optional<EndpointInfoVO> optionalSubscriberInfoVO = endpointRepository
 				.findById(id)
 				.map(endpointMapper::endpointToEndpointInfoVo);
-		if (optionalSubscriberInfoVO.isPresent()) {
-			return HttpResponse.ok(optionalSubscriberInfoVO.get());
-		}
-		return null;
+		return optionalSubscriberInfoVO.<HttpResponse<EndpointInfoVO>>map(HttpResponse::ok).orElse(null);
 	}
 
 	@Override
