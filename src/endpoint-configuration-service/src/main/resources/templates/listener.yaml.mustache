@@ -64,7 +64,7 @@ resources:
                       "ext-authz",
                       {
                         [":method"] = "GET",
-                        [":path"] = "/token?domain=" .. domain .. "&path=" .. path,
+                        [":path"] = "/auth?domain=" .. domain .. "&path=" .. path,
                         [":authority"] = "ext-authz"
                       },
                       null,
