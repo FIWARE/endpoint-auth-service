@@ -32,7 +32,7 @@ public class IShareEndpointWriteService implements EndpointWriteService {
 	}
 
 	@Override
-	public void createEndpoint(UUID id, EndpointRegistrationVO subscriberRegistrationVO) {
+	public void createEndpoint(Long id, EndpointRegistrationVO subscriberRegistrationVO) {
 		try {
 			iShareCredentialsRepository.saveCredentialsById(
 					id.toString(),
@@ -52,7 +52,7 @@ public class IShareEndpointWriteService implements EndpointWriteService {
 	}
 
 	@Override
-	public void deleteEndpoint(UUID id) {
+	public void deleteEndpoint(Long id) {
 		Optional<Endpoint> optionalEndpoint = endpointRepository.findById(id);
 		if (optionalEndpoint.isPresent()) {
 			iShareCredentialsRepository
@@ -62,7 +62,7 @@ public class IShareEndpointWriteService implements EndpointWriteService {
 	}
 
 	@Override
-	public void updateEndpointCredential(UUID id, String credentialType, String credentialBody) throws CredentialsConfigNotFound {
+	public void updateEndpointCredential(Long id, String credentialType, String credentialBody) throws CredentialsConfigNotFound {
 
 		Endpoint endpoint = endpointRepository
 				.findById(id).orElseThrow(() -> new IllegalArgumentException(String.format("Endpoint %s not found.", id)));

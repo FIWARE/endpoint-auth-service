@@ -142,8 +142,8 @@ components:
       in: path
       required: true
       schema:
-        type: string
-        format: uuid
+        type: integer
+        format: int64
     credential:
       name: credential
       description: "The credential(part) to be updated. In case of iShare this could be signingKey or certificateChain for example."
@@ -170,9 +170,9 @@ components:
   schemas:
     Id:
       description: "Id of the registered endpoint. Be aware: this has no connections to ids used by NGSI-LD Api."
-      type: string
-      format: uuid
-      example: "bf1957ad-d69e-4b81-ba84-599091a03150"
+      type: integer
+      format: int64
+      example: 1234567
     AuthType:
       description: "Type of the authentication to be used."
       type: string

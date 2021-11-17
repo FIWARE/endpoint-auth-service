@@ -14,7 +14,7 @@ public class Endpoint {
 
 	@Id
 	@GeneratedValue
-	private UUID id;
+	private Long id;
 
 	private String domain;
 	private String path;

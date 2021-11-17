@@ -16,42 +16,111 @@ spec:
     spec:
       serviceAccount: proxy-root-runner
       volumes:
-      - name: envoy-config
+      - name: envoy-configmap
         configMap:
           name: envoy-config
-      - name: certs
-        configMap:
-          name: certs
+      - name: envoy-config-folder
+        emptyDir: {}
       initContainers:
-      - image: wistefan/sidecar-init
+      - image: wistefan/resource-updater
+        name: init-resources
+        imagePullPolicy: Always
+        env:
+          - name: RUN_AS_INIT
+            value: "true"
+        volumeMounts:
+        - name: envoy-configmap
+          mountPath: /configmap-folder/
+        - name: envoy-config-folder
+          mountPath: /proxy-config/
+      - image: quay.io/wi_stefan/init-iptables
         name: init
         imagePullPolicy: Always
         securityContext:
           privileged: true
       containers:
+      # the makeup-broker
       - image: k8s.gcr.io/echoserver:1.4
         name: echo
         securityContext:
           privileged: true
-      - image: wistefan/go-auth
-        name: auth
-        env:
-          - name: SERVER_PORT
-            value: "7070"
-          - name: IDP_URL
-            value: "http://idp-happypets-shop.i4trust-dev.fiware.io/oauth2/token"
-        volumeMounts:
-        - name: certs
-          mountPath: /go/src/app/certs/
       - image: envoyproxy/envoy:v1.20.0
         name: envoy
         args: ["-l trace", "-c /etc/envoy/envoy.yaml"]
         securityContext:
           runAsUser: 1337
         volumeMounts:
-        - name: envoy-config
+        - name: envoy-config-folder
           mountPath: /etc/envoy/
+      - image: wistefan/resource-updater
+        name: update-resources
+        imagePullPolicy: Always
+        volumeMounts:
+        - name: envoy-configmap
+          mountPath: /configmap-folder/
+        - name: envoy-config-folder
+          mountPath: /proxy-config/
 
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: configuration
+  namespace: proxy-test
+spec:
+  selector:
+    matchLabels:
+      app: configuration
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: configuration
+    spec:
+      serviceAccount: proxy-root-runner
+      volumes:
+        - name: certs-folder
+          emptyDir: {}
+        - name: proxy-config
+          emptyDir: {}
+      containers:
+        - image: quay.io/wi_stefan/ishare-auth-provider
+          name: auth
+          env:
+            - name: SERVER_PORT
+              value: "7070"
+            - name: CONFIGURATION_SERVICE_URL
+              # loopback can be used, since they are co-located
+              value: "http://0.0.0.0:8080"
+            - name: CERTIFICATE_FOLDER
+              value: "/go/src/app/certs/"
+          volumeMounts:
+            - name: certs-folder
+              mountPath: /go/src/app/certs/
+        - image: quay.io/wi_stefan/endpoint-configuration-service
+          imagePullPolicy: Always
+          name: config-service
+          env:
+            - name: PROXY_LISTENER_YAML_PATH
+              value: "/envoy-config/listener.yaml"
+            - name: PROXY_CLUSTER_YAML_PATH
+              value: "/envoy-config/cluster.yaml"
+            - name: I_SHARE_CERTIFICATE_FOLDER_PATH
+              value: "/ishare/certs"
+          volumeMounts:
+            - name: certs-folder
+              mountPath: /ishare/certs
+            - name: proxy-config
+              mountPath: /envoy-config
+        - image: wistefan/configmap-updater
+          imagePullPolicy: Always
+          name: updater
+          env:
+            - name: PROXY_CONFIG_FOLDER
+              value: /proxy-config
+          volumeMounts:
+            - name: proxy-config
+              mountPath: /proxy-config
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -94,6 +163,21 @@ spec:
     protocol: TCP
   selector:
     app: additional
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: configuration-service
+  labels:
+    app: configuration
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+    protocol: TCP
+  selector:
+    app: configuration
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -246,14 +330,3 @@ data:
         path: /etc/envoy/cluster.yaml
       lds_config:
         path: /etc/envoy/listener.yaml
----
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: certs
-  namespace: proxy-test
-data:
-  token.pem: |
-    <insert key>
-  token.cer: |
-    <insert certificate>
