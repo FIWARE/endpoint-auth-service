@@ -33,6 +33,7 @@ resources:
                   - name: {{id}}
                     domains:
                       - "{{domain}}"
+                      - "{{domain}}:{{port}}"
                     routes:
                       - match:
                           prefix: "{{path}}"
