@@ -29,18 +29,18 @@ resources:
               route_config:
                 name: local_route
                 virtual_hosts:
-#                  - name: allow_any
-#                    domains:
-#                      - "*"
-#                    routes:
-#                      - match:
-#                          prefix: "/"
-#                        route:
-#                          cluster: passthrough
-#                        typed_per_filter_config:
-#                          envoy.filters.http.lua:
-#                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-#                            disabled: true
+                  - name: allow_any
+                    domains:
+                      - "*"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          cluster: passthrough
+                        typed_per_filter_config:
+                          envoy.filters.http.lua:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
+                            disabled: true
                 {{#endpoints}}
                   - name: {{id}}
                     domains:
