@@ -57,10 +57,11 @@ resources:
                  typed_config:
                    "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
                    inline_code: |
+                     local json = require "json"
                      function envoy_on_request(request_handle)
                       local domain = request_handle:headers():get(":authority")
                       local path = request_handle:headers():get(":path")
-
+                      # calls the ext-authz cluster, wich points to the auth-provider
                       local headers, body = request_handle:httpCall(
                       "ext-authz",
                       {
@@ -70,6 +71,9 @@ resources:
                       },
                       null,
                       5000)
-                      request_handle:headers():add("Authorization", body)
+
+                      local jsonString = tostring(body)
+                      local jsonArray = json.decode(jsonString)
+                      for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
                      end
                - name: envoy.filters.http.router
