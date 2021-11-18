@@ -61,7 +61,6 @@ resources:
                      function envoy_on_request(request_handle)
                       local domain = request_handle:headers():get(":authority")
                       local path = request_handle:headers():get(":path")
-                      # calls the ext-authz cluster, wich points to the auth-provider
                       local headers, body = request_handle:httpCall(
                       "ext-authz",
                       {
