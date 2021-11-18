@@ -5,10 +5,11 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-
 	"os"
 	"time"
 
@@ -188,7 +189,10 @@ func getAuth(c *gin.Context) {
 	// decode and return
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
-	log.Warn(resp.Body)
+
+	b, _ := io.ReadAll(resp.Body)
+
+	fmt.Println(string(b))
 
 	headersList := &HeadersList{Array: []string{"Authorization", res["access_token"].(string)}}
 	encjsonHeaders, err := json.Marshal(headersList)
