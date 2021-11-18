@@ -40,18 +40,18 @@ resources:
                         route:
                           cluster: {{id}}
                 {{/endpoints}}
-                  - name: allow_any
-                    domains:
-                      - "*"
-                    routes:
-                      - match:
-                          prefix: "/"
-                        route:
-                          cluster: passthrough
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
+#                  - name: allow_any
+#                    domains:
+#                      - "*"
+#                    routes:
+#                      - match:
+#                          prefix: "/"
+#                        route:
+#                          cluster: passthrough
+#                        typed_per_filter_config:
+#                          envoy.filters.http.lua:
+#                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
+#                            disabled: true
               http_filters:
                - name: envoy.filters.http.lua
                  typed_config:
