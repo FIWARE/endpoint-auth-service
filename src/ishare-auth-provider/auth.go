@@ -116,7 +116,7 @@ func getAuth(c *gin.Context) {
 
 	authInfo, err := getAuthInformation(domain, path)
 	if err != nil {
-		log.Warn("Was not able to retrieve auth-info.")
+		log.Warn("Was not able to retrieve auth-info.", err)
 		c.String(http.StatusBadGateway, "Was not able to retrieve auth info from the config-service.")
 		return
 	}
@@ -128,7 +128,7 @@ func getAuth(c *gin.Context) {
 	randomUuid, err = uuid.NewRandom()
 
 	if err != nil {
-		log.Warn("Was not able to generate a uuid.")
+		log.Warn("Was not able to generate a uuid.", err)
 		c.String(http.StatusInternalServerError, "Failed to generate a uuid.")
 		return
 	}
@@ -163,7 +163,7 @@ func getAuth(c *gin.Context) {
 	// sign the token
 	signedToken, err := jwtToken.SignedString(key)
 	if err != nil {
-		log.Warn("Was not able to sign the jwt.")
+		log.Warn("Was not able to sign the jwt.", err)
 		c.String(http.StatusInternalServerError, "Error signing the request jwt.")
 		return
 	}
@@ -180,7 +180,7 @@ func getAuth(c *gin.Context) {
 	// get the token
 	resp, err := http.PostForm(authInfo.IShareIdpAddress, data)
 	if err != nil {
-		log.Warn("Was not able to get the token from the idp.")
+		log.Warn("Was not able to get the token from the idp.", err)
 		c.String(http.StatusBadGateway, "Was not able to get the token from the idp.")
 		return
 	}
@@ -192,7 +192,7 @@ func getAuth(c *gin.Context) {
 	headersList := &HeadersList{Array: []string{"Authorization", res["access_token"].(string)}}
 	encjsonHeaders, err := json.Marshal(headersList)
 	if err != nil {
-		log.Warn("Was not able to build a headerList to return.")
+		log.Warn("Was not able to build a headerList to return.", err)
 		c.String(http.StatusInternalServerError, "Error building the response.")
 		return
 	}
@@ -203,14 +203,14 @@ func getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error
 	// read key file
 	priv, err := ioutil.ReadFile(credentialsFolderPath + keyfile)
 	if err != nil {
-		log.Warn("Was not able to read the key file.")
+		log.Warn("Was not able to read the key file.", err)
 		return key, err
 	}
 
 	// parse key file
 	key, err = jwt.ParseRSAPrivateKeyFromPEM(priv)
 	if err != nil {
-		log.Warn("Was not able to parse the key.")
+		log.Warn("Was not able to parse the key.", err)
 		return key, err
 	}
 
@@ -221,7 +221,7 @@ func getEncodedCertificate(credentialsFolderPath string) (encodedCert string, er
 	// read certificate file and set it in the token header
 	cert, err := ioutil.ReadFile(credentialsFolderPath + certChainFile)
 	if err != nil {
-		log.Warn("Was not able to read the certificateChain file.")
+		log.Warn("Was not able to read the certificateChain file.", err)
 		return encodedCert, err
 	}
 	certCer, _ := pem.Decode(cert)
