@@ -29,6 +29,16 @@ resources:
               route_config:
                 name: local_route
                 virtual_hosts:
+                {{#endpoints}}
+                  - name: {{id}}
+                    domains:
+                      - "{{domain}}"
+                    routes:
+                      - match:
+                          prefix: "{{path}}"
+                        route:
+                          cluster: {{id}}
+                {{/endpoints}}
                   - name: allow_any
                     domains:
                       - "*"
@@ -41,16 +51,6 @@ resources:
                           envoy.filters.http.lua:
                             "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
                             disabled: true
-                {{#endpoints}}
-                  - name: {{id}}
-                    domains:
-                      - "{{domain}}"
-                    routes:
-                      - match:
-                          prefix: "{{path}}"
-                        route:
-                          cluster: {{id}}
-                {{/endpoints}}
               http_filters:
                - name: envoy.filters.http.lua
                  typed_config:
