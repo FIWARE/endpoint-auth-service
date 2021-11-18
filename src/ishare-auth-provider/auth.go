@@ -84,7 +84,7 @@ func main() {
 
 func getAuthInformation(domain string, path string) (authInfo AuthInfo, err error) {
 
-	req, err := http.NewRequest("GET", configurationServiceUrl, nil)
+	req, err := http.NewRequest("GET", configurationServiceUrl+"/auth", nil)
 
 	if err != nil {
 		log.Warn("Was not able to build a request. Invalid configuration server url.", err)
