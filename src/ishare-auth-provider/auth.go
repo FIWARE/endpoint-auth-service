@@ -187,8 +187,9 @@ func getAuth(c *gin.Context) {
 
 	// decode and return
 	var res map[string]interface{}
-
 	json.NewDecoder(resp.Body).Decode(&res)
+	log.Warn(res)
+
 	headersList := &HeadersList{Array: []string{"Authorization", res["access_token"].(string)}}
 	encjsonHeaders, err := json.Marshal(headersList)
 	if err != nil {
