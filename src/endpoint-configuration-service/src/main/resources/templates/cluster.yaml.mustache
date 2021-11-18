@@ -1,13 +1,4 @@
 resources:
-  # passthrough cluster to forward any http request that we do not manipulate untouched
-  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    # Don't change this without changing the dependent config inside the listener.yaml
-    name: passthrough
-    type: ORIGINAL_DST
-    connectTimeout: 10s
-    lbPolicy: CLUSTER_PROVIDED
-    original_dst_lb_config:
-      use_http_header: true
  # passthrough cluster to forward any https request untouched
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     # Don't change this without changing the dependent config inside the listener.yaml
@@ -72,3 +63,12 @@ resources:
                     port_value: {{port}}
   {{/httpsPort}}
   {{/endpoints}}
+  # passthrough cluster to forward any http request that we do not manipulate untouched
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    # Don't change this without changing the dependent config inside the listener.yaml
+    name: passthrough
+    type: ORIGINAL_DST
+    connectTimeout: 10s
+    lbPolicy: CLUSTER_PROVIDED
+    original_dst_lb_config:
+      use_http_header: true
