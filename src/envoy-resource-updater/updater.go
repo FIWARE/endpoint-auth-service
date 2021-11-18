@@ -80,14 +80,14 @@ func updateDynamicResources() {
 		log.Printf("clusterYamlFile. Get err   #%v ", err)
 	}
 
-	err = os.WriteFile(proxyConfigFolder+"/listener.yaml.o", listenerYamlFile, 0644)
-	if err != nil {
-		log.Warn("Was not able to copy listener.yaml.", err)
-	}
-
 	err = os.WriteFile(proxyConfigFolder+"/cluster.yaml.o", clusterYamlFile, 0644)
 	if err != nil {
 		log.Warn("Was not able to copy cluster.yaml.", err)
+	}
+
+	err = os.WriteFile(proxyConfigFolder+"/listener.yaml.o", listenerYamlFile, 0644)
+	if err != nil {
+		log.Warn("Was not able to copy listener.yaml.", err)
 	}
 
 	err = os.WriteFile(proxyConfigFolder+"/envoy.yaml.o", envoyYamlFile, 0644)
