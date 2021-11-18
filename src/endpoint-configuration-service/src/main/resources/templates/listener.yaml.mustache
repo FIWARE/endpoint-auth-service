@@ -39,6 +39,10 @@ resources:
                           prefix: "{{path}}"
                         route:
                           cluster: {{id}}
+                        typed_per_filter_config:
+                          envoy.filters.http.lua:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
+                            disabled: false
                 {{/endpoints}}
                   - name: allow_any
                     domains:
