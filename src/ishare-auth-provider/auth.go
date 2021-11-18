@@ -5,8 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -53,12 +51,15 @@ type AuthInfo struct {
 	IShareIdpID       string `json:"iShareIdpId"`
 }
 
+type Header struct {
+	name  string
+	value string
+}
+
 /**
 * Struct to contain headers to be returned by the auth provider.
  */
-type HeadersList struct {
-	Array []string
-}
+type HeadersList []Header
 
 func main() {
 
@@ -104,7 +105,7 @@ func getAuthInformation(domain string, path string) (authInfo AuthInfo, err erro
 	// decode and return
 	err = json.NewDecoder(resp.Body).Decode(&authInfo)
 	if err != nil {
-		log.Warn("Was not able to decode that auth response.", err)
+		log.Warn("Was not able to decode the auth response.", err)
 		return authInfo, err
 	}
 	return authInfo, nil
@@ -190,18 +191,10 @@ func getAuth(c *gin.Context) {
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 
-	b, _ := io.ReadAll(resp.Body)
+	header := Header{"Authorization", res["access_token"].(string)}
+	headersList := HeadersList{header}
 
-	fmt.Println(string(b))
-
-	headersList := &HeadersList{Array: []string{"Authorization", res["access_token"].(string)}}
-	encjsonHeaders, err := json.Marshal(headersList)
-	if err != nil {
-		log.Warn("Was not able to build a headerList to return.", err)
-		c.String(http.StatusInternalServerError, "Error building the response.")
-		return
-	}
-	c.JSON(http.StatusOK, encjsonHeaders)
+	c.JSON(http.StatusOK, headersList)
 }
 
 func getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error) {
