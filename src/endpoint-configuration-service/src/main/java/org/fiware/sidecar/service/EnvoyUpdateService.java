@@ -14,6 +14,8 @@ import javax.annotation.PostConstruct;
 import javax.inject.Singleton;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
@@ -38,12 +40,28 @@ public class EnvoyUpdateService {
 	}
 
 	public void applyConfiguration() {
+
 		List<MustacheEndpoint> mustacheSubscriberList = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
 				.map(endpointMapper::endpointToMustacheEndpoint)
 				.toList();
 
 		Map<String, Object> mustacheRenderContext = Map.of("endpoints", mustacheSubscriberList);
+
+		if(!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
+			try {
+				Files.createFile(Path.of(proxyProperties.getListenerYamlPath()));
+			} catch (IOException e) {
+				throw new EnvoyUpdateException("Was not able to create listener.yaml", e);
+			}
+		}
+		if(!Files.exists(Path.of(proxyProperties.getClusterYamlPath()))) {
+			try {
+				Files.createFile(Path.of(proxyProperties.getClusterYamlPath()));
+			} catch (IOException e) {
+				throw new EnvoyUpdateException("Was not able to create cluster.yaml", e);
+			}
+		}
 
 		try {
 			FileWriter listenerFileWriter = new FileWriter(proxyProperties.getListenerYamlPath());

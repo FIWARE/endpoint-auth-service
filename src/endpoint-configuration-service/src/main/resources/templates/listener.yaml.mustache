@@ -58,7 +58,6 @@ resources:
                    "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
                    inline_code: |
                      function envoy_on_request(request_handle)
-                      request_handle:logWarn("+++++++++++++++++++++++++ On REQUEST")
                       local domain = request_handle:headers():get(":authority")
                       local path = request_handle:headers():get(":path")
 
