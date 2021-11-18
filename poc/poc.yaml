@@ -180,6 +180,21 @@ spec:
     app: configuration
 ---
 apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  labels:
+    app: configuration
+spec:
+  ports:
+  - port: 7070
+    targetPort: 7070
+    name: http
+    protocol: TCP
+  selector:
+    app: configuration
+---
+apiVersion: v1
 kind: ConfigMap
 metadata:
   name: envoy-config
@@ -229,14 +244,6 @@ data:
                       envoy.filters.http.lua:
                         "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
                         disabled: true
-                - name: local_service
-                  domains:
-                  - "additional-service"
-                  routes:
-                  - match:
-                      prefix: "/"
-                    route:
-                      cluster: additional-service
               http_filters:
               - name: envoy.filters.http.lua
                 typed_config:
@@ -250,7 +257,7 @@ data:
                       "ext-authz",
                       {
                         [":method"] = "GET",
-                        [":path"] = "/token?domain=" .. domain .. "&path=" .. path,
+                        [":path"] = "/auth?domain=" .. domain .. "&path=" .. path,
                         [":authority"] = "ext-authz"
                       },
                       null,
@@ -278,7 +285,7 @@ data:
         connect_timeout: 1s
         lb_policy: ROUND_ROBIN
         load_assignment:
-          cluster_name: additional-service
+          cluster_name: ext-authz
           endpoints:
           - lb_endpoints:
             - endpoint:
@@ -287,40 +294,6 @@ data:
                     protocol: TCP
                     address: 0.0.0.0
                     port_value: 7070
-      - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-        name: additional-service
-        connect_timeout: 5s
-        type: STRICT_DNS
-        lb_policy: ROUND_ROBIN
-        load_assignment:
-          cluster_name: additional-service
-          endpoints:
-          - lb_endpoints:
-            - endpoint:
-                address:
-                  socket_address:
-                    protocol: TCP
-                    address: "additional-service"
-                    port_value: 80
-      - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-        name: additional-service-tls
-        connect_timeout: 5s
-        type: STRICT_DNS
-        lb_policy: ROUND_ROBIN
-        load_assignment:
-          cluster_name: additional-service-tls
-          endpoints:
-          - lb_endpoints:
-            - endpoint:
-                address:
-                  socket_address:
-                    protocol: TCP
-                    address: "additional-service"
-                    port_value: 443
-        transport_socket:
-          name: envoy.transport_sockets.tls  
-          typed_config:  
-            "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
   envoy.yaml: |
     node:
       cluster: passthrough
