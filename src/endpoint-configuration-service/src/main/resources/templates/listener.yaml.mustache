@@ -73,6 +73,9 @@ resources:
 
                       local jsonString = tostring(body)
                       local jsonArray = json.decode(jsonString)
+                      request_handle:logWarn(jsonString)
+                      request_handle:logWarn(jsonArray)
+
                       for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
                      end
                - name: envoy.filters.http.router
