@@ -52,8 +52,8 @@ type AuthInfo struct {
 }
 
 type Header struct {
-	name  string
-	value string
+	Name  string `json:"name"`
+	Value string `json:"value"`
 }
 
 /**
