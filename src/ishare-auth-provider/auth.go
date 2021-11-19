@@ -123,8 +123,6 @@ func getAuth(c *gin.Context) {
 		return
 	}
 
-	log.Info(authInfo)
-
 	credentialsFolderPath := buildCredentialsFolderPath(authInfo.CredentialsFolder)
 
 	var randomUuid uuid.UUID
@@ -188,15 +186,12 @@ func getAuth(c *gin.Context) {
 		c.String(http.StatusBadGateway, "Was not able to get the token from the idp.")
 		return
 	}
-	log.Info(resp.Body)
-
 	// decode and return
 	var res map[string]interface{}
 	json.NewDecoder(resp.Body).Decode(&res)
 
 	header := Header{"Authorization", res["access_token"].(string)}
 	headersList := HeadersList{header}
-	log.Info(headersList)
 
 	c.JSON(http.StatusOK, headersList)
 }
