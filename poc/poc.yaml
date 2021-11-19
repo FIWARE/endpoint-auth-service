@@ -22,7 +22,7 @@ spec:
       - name: envoy-config-folder
         emptyDir: {}
       initContainers:
-      - image: wistefan/resource-updater
+      - image: quay.io/wi_stefan/envoy-resource-updater
         name: init-resources
         imagePullPolicy: Always
         env:
@@ -44,7 +44,8 @@ spec:
         name: echo
         securityContext:
           privileged: true
-      - image: envoyproxy/envoy:v1.20.0
+      - image: quay.io/wi_stefan/envoy
+        imagePullPolicy: Always
         name: envoy
         args: ["-l trace", "-c /etc/envoy/envoy.yaml"]
         securityContext:
@@ -52,7 +53,7 @@ spec:
         volumeMounts:
         - name: envoy-config-folder
           mountPath: /etc/envoy/
-      - image: wistefan/resource-updater
+      - image: quay.io/wi_stefan/envoy-resource-updater
         name: update-resources
         imagePullPolicy: Always
         volumeMounts:
@@ -112,7 +113,7 @@ spec:
               mountPath: /ishare/certs
             - name: proxy-config
               mountPath: /envoy-config
-        - image: wistefan/configmap-updater
+        - image: quay.io/wi_stefan/envoy-configmap-updater
           imagePullPolicy: Always
           name: updater
           env:
