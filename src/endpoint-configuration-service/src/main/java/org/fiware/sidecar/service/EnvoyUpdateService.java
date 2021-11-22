@@ -16,6 +16,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
@@ -46,16 +47,25 @@ public class EnvoyUpdateService {
 				.map(endpointMapper::endpointToMustacheEndpoint)
 				.toList();
 
-		Map<String, Object> mustacheRenderContext = Map.of("endpoints", mustacheSubscriberList);
 
-		if(!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
+		ProxyProperties.AddressConfig socketAddress = proxyProperties.getSocketAddress();
+		ProxyProperties.AddressConfig authAddress = proxyProperties.getExternalAuth();
+
+		Map<String, Object> mustacheRenderContext = new HashMap<>();
+		mustacheRenderContext.put("socket-address", socketAddress.getAddress());
+		mustacheRenderContext.put("socket-port", socketAddress.getPort());
+		mustacheRenderContext.put("auth-service-address", authAddress.getAddress());
+		mustacheRenderContext.put("auth-service-port", authAddress.getPort());
+		mustacheRenderContext.put("endpoints", mustacheSubscriberList);
+
+		if (!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
 			try {
 				Files.createFile(Path.of(proxyProperties.getListenerYamlPath()));
 			} catch (IOException e) {
 				throw new EnvoyUpdateException("Was not able to create listener.yaml", e);
 			}
 		}
-		if(!Files.exists(Path.of(proxyProperties.getClusterYamlPath()))) {
+		if (!Files.exists(Path.of(proxyProperties.getClusterYamlPath()))) {
 			try {
 				Files.createFile(Path.of(proxyProperties.getClusterYamlPath()));
 			} catch (IOException e) {

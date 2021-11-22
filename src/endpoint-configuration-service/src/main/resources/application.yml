@@ -38,7 +38,14 @@ datasources:
     dialect: H2
 
 ---
+
 proxy:
+  externalAuth:
+    address: auth-service
+    port: 7070
+  socketAddress:
+    address: 0.0.0.0
+    port: 15001
   listenerYamlPath: ./listener.yaml
   clusterYamlPath: ./cluster.yaml
 
