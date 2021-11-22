@@ -11,6 +11,7 @@ import (
 
 var proxyConfigFolder string
 var configMapFolder string
+var runAsInit bool
 
 func main() {
 
@@ -23,6 +24,7 @@ func main() {
 	}
 
 	if runAsInit {
+		updateStaticResources()
 		updateDynamicResources()
 		return
 	}
@@ -60,10 +62,24 @@ func main() {
 	<-done
 }
 
-// logs a little weird, but envoy listens to mv-events in the filesystem. To trigger such event,
+func updateStaticResources() {
+	// only required if we run as an init container, since dynamic reload is unsupported for the envoy.yaml anyways
+	if runAsInit {
+
+		envoyYamlFile, err := ioutil.ReadFile(configMapFolder + "/envoy.yaml")
+		if err != nil {
+			log.Printf("envoyYamlFile. Get err   #%v ", err)
+		}
+		err = os.WriteFile(proxyConfigFolder+"/envoy.yaml", envoyYamlFile, 0644)
+		if err != nil {
+			log.Warn("Was not able to copy envoy.yaml.", err)
+		}
+	}
+}
+
+// looks a little weird, but envoy listens to mv-events in the filesystem. To trigger such event,
 // we copy the updated configmap to the config dir and than move(os.Rename) it to the configuration location.
 func updateDynamicResources() {
-	log.Println("Update dynamic resources")
 
 	listenerYamlFile, err := ioutil.ReadFile(configMapFolder + "/listener.yaml")
 	if err != nil {
@@ -71,11 +87,6 @@ func updateDynamicResources() {
 	}
 
 	clusterYamlFile, err := ioutil.ReadFile(configMapFolder + "/cluster.yaml")
-	if err != nil {
-		log.Printf("clusterYamlFile. Get err   #%v ", err)
-	}
-
-	envoyYamlFile, err := ioutil.ReadFile(configMapFolder + "/envoy.yaml")
 	if err != nil {
 		log.Printf("clusterYamlFile. Get err   #%v ", err)
 	}
@@ -90,11 +101,6 @@ func updateDynamicResources() {
 		log.Warn("Was not able to copy listener.yaml.", err)
 	}
 
-	err = os.WriteFile(proxyConfigFolder+"/envoy.yaml.o", envoyYamlFile, 0644)
-	if err != nil {
-		log.Warn("Was not able to copy envoy.yaml.", err)
-	}
-
 	// first move the cluster yaml to trigger its reload, before the listeners are loaded.
 	err = os.Rename(proxyConfigFolder+"/cluster.yaml.o", proxyConfigFolder+"/cluster.yaml")
 	if err != nil {
@@ -104,8 +110,5 @@ func updateDynamicResources() {
 	if err != nil {
 		log.Warn("Was not able to move listener.yaml.", err)
 	}
-	err = os.Rename(proxyConfigFolder+"/envoy.yaml.o", proxyConfigFolder+"/envoy.yaml")
-	if err != nil {
-		log.Warn("Was not able to move envoy.yaml.", err)
-	}
+
 }
