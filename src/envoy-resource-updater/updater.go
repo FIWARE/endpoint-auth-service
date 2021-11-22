@@ -45,7 +45,7 @@ func main() {
 					return
 				}
 				log.Println("event:", event)
-				if event.Op&fsnotify.Create == fsnotify.Create {
+				if event.Op&fsnotify.Create == fsnotify.Create || event.Op&fsnotify.Write == fsnotify.Write {
 					updateDynamicResources()
 				}
 			case err, ok := <-watcher.Errors:
