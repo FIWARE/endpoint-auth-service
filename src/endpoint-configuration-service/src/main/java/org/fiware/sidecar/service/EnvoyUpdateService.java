@@ -73,20 +73,19 @@ public class EnvoyUpdateService {
 			}
 		}
 
-		try {
-			FileWriter listenerFileWriter = new FileWriter(proxyProperties.getListenerYamlPath());
-			listenerTemplate.execute(listenerFileWriter, mustacheRenderContext).flush();
-			listenerFileWriter.close();
-		} catch (IOException e) {
-			throw new EnvoyUpdateException("Was not able to update listener.yaml", e);
-		}
+		// BE AWARE: Order matters here. Due to the dynamic resource updates of envoy, first updating the listeners can lead to illegally referencing clusters
+		// that do not yet exist.
+		updateEnvoyConfig(proxyProperties.getClusterYamlPath(), clusterTemplate, mustacheRenderContext, "Was not able to update cluster.yaml");
+		updateEnvoyConfig(proxyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
+	}
 
+	private void updateEnvoyConfig(String proxyProperties, Mustache clusterTemplate, Map<String, Object> mustacheRenderContext, String message) {
 		try {
-			FileWriter clusterFileWriter = new FileWriter(proxyProperties.getClusterYamlPath());
+			FileWriter clusterFileWriter = new FileWriter(proxyProperties);
 			clusterTemplate.execute(clusterFileWriter, mustacheRenderContext).flush();
 			clusterFileWriter.close();
 		} catch (IOException e) {
-			throw new EnvoyUpdateException("Was not able to update cluster.yaml", e);
+			throw new EnvoyUpdateException(message, e);
 		}
 	}
 
