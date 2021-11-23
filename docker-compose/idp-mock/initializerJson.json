@@ -1,0 +1,12 @@
+[
+  {
+    "httpRequest": {
+      "path": "/oauth2/token"
+    },
+    "httpResponse": {
+      "body": {
+        "access_token": "myIShareToken"
+      }
+    }
+  }
+]
