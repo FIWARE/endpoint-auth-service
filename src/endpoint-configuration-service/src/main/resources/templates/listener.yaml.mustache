@@ -59,8 +59,13 @@ resources:
                    inline_code: |
                      local json = (loadfile "/lua-json/json.lua")()
                      function envoy_on_request(request_handle)
-                      local domain = request_handle:headers():get(":authority")
+                      local fullDomain = request_handle:headers():get(":authority")
                       local path = request_handle:headers():get(":path")
+                      local domain
+                      for domainPart in string.gmatch(fullDomain, '([^:]+)') do 
+                        domain = domainPart
+                        break
+                      end
                       local headers, body = request_handle:httpCall(
                       "ext-authz",
                       {
