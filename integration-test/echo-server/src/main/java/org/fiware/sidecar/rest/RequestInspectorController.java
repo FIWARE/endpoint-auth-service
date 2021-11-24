@@ -37,11 +37,17 @@ public class RequestInspectorController {
 
 	@Get("/headers/{header}")
 	public HttpResponse<String> getHeaderFromLastRequest(String header) {
+		if (lastRequest == null) {
+			return HttpResponse.notFound();
+		}
 		return HttpResponse.ok(lastRequest.getHeaders().get(header));
 	}
 
 	@Get("/body")
 	public HttpResponse<Object> getBodyFromLastRequest() {
+		if (lastRequest == null) {
+			return HttpResponse.notFound();
+		}
 		return HttpResponse.ok(lastRequest.getBody().orElse(null));
 	}
 }
