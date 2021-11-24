@@ -9,13 +9,7 @@ micronaut:
 
 loggers:
   levels:
-    ROOT: TRACE
-    io:
-      micronaut:
-        http:
-          client: TRACE
-
-
+    ROOT: INFO
 ---
 inspector:
   port: 9999

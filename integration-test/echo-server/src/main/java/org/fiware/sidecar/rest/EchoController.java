@@ -50,7 +50,7 @@ public class EchoController {
 				.stream()
 				.collect(Collectors.toMap(Map.Entry::getKey,e -> e.getValue().stream().findFirst().orElse("")));
 
-		log.debug("{}  {}: Body: {}, Headers: {}",
+		log.info("{}  {}: Body: {}, Headers: {}",
 				request.getMethod(),
 				request.getPath(),
 				request.getBody().map(Object::toString).orElse("null"),
