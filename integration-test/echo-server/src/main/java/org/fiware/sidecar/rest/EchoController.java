@@ -22,25 +22,50 @@ public class EchoController {
 
 	private final RequestInspectorController requestInspectorController;
 
+	// CATCH ALL MAPPINGS
+
+	@Get
+	public HttpResponse<Object> getEmptyEcho(HttpRequest request) {
+		return echoRequest(request);
+	}
+
+	@Post
+	public HttpResponse<Object> postEmptyEcho(HttpRequest request) {
+		return echoRequest(request);
+	}
+
+	@Put
+	public HttpResponse<Object> putEmptyEcho(HttpRequest request) {
+		return echoRequest(request);
+	}
+
+	@Delete
+	public HttpResponse<Object> deleteEmptyEcho(HttpRequest request) {
+		return echoRequest(request);
+	}
+
 	@Get("/{+path}")
-	public HttpResponse<Object> getEcho(HttpRequest request, String path) {
+	public HttpResponse<Object> getEcho(HttpRequest request) {
 		return echoRequest(request);
 	}
 
 	@Post("/{+path}")
-	public HttpResponse<Object> postEcho(HttpRequest request, String path) {
+	public HttpResponse<Object> postEcho(HttpRequest request) {
 		return echoRequest(request);
 	}
 
 	@Put("/{+path}")
-	public HttpResponse<Object> putEcho(HttpRequest request, String path) {
+	public HttpResponse<Object> putEcho(HttpRequest request) {
 		return echoRequest(request);
 	}
 
 	@Delete("/{+path}")
-	public HttpResponse<Object> deleteEcho(HttpRequest request, String path) {
+	public HttpResponse<Object> deleteEcho(HttpRequest request) {
 		return echoRequest(request);
 	}
+
+
+	// REQUEST HANDLING
 
 	private MutableHttpResponse echoRequest(HttpRequest request) {
 		//store for inspection
@@ -48,7 +73,7 @@ public class EchoController {
 
 		Map<String, String> headers = request.getHeaders().asMap().entrySet()
 				.stream()
-				.collect(Collectors.toMap(Map.Entry::getKey,e -> e.getValue().stream().findFirst().orElse("")));
+				.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().stream().findFirst().orElse("")));
 
 		log.info("{}  {}: Body: {}, Headers: {}",
 				request.getMethod(),
