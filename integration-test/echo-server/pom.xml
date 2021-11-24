@@ -240,7 +240,7 @@
                 <artifactId>jib-maven-plugin</artifactId>
                 <configuration>
                     <from>
-                        <image>openjdk:${jdk.version}-alpine</image>
+                        <image>gcr.io/distroless/java:${jdk.version}</image>
                     </from>
                     <to>
                         <image>${image.registry}${image.repository}/${artifactId}:${image.tag}</image>
