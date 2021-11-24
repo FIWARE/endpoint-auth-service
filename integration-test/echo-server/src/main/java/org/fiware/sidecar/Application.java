@@ -1,6 +1,5 @@
 package org.fiware.sidecar;
 
-import io.micronaut.context.annotation.Factory;
 import io.micronaut.runtime.Micronaut;
 
 /**

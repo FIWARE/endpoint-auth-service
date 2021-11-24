@@ -5,7 +5,6 @@ import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Controller;
 import io.micronaut.http.annotation.Get;
-import lombok.Getter;
 import lombok.Setter;
 
 import java.util.Map;
@@ -29,7 +28,7 @@ public class RequestInspectorController {
 		}
 		Map<String, String> headers = lastRequest.getHeaders().asMap().entrySet()
 				.stream()
-				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().stream().findFirst().orElse("")));
+				.collect(Collectors.toMap(Map.Entry::getKey,e -> e.getValue().stream().findFirst().orElse("")));
 
 		response.headers(headers);
 

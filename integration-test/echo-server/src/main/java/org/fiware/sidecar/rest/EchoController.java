@@ -48,12 +48,12 @@ public class EchoController {
 
 		Map<String, String> headers = request.getHeaders().asMap().entrySet()
 				.stream()
-				.collect(Collectors.toMap(e -> e.getKey(), e -> e.getValue().stream().findFirst().orElse("")));
+				.collect(Collectors.toMap(Map.Entry::getKey,e -> e.getValue().stream().findFirst().orElse("")));
 
 		log.debug("{}  {}: Body: {}, Headers: {}",
 				request.getMethod(),
 				request.getPath(),
-				request.getBody().map(b -> b.toString()).orElse("null"),
+				request.getBody().map(Object::toString).orElse("null"),
 				headers);
 
 		MutableHttpResponse response = HttpResponse.ok();
