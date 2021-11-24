@@ -48,6 +48,3 @@ proxy:
     port: 15001
   listenerYamlPath: ./listener.yaml
   clusterYamlPath: ./cluster.yaml
-
-iShare:
-  certificateFolderPath: ./ishare/certs

@@ -108,7 +108,6 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		}
 
 		// update of credentials do not demand an update of the envoy configuration, since envoy stays free of security concerns.
-
 		return HttpResponse.noContent();
 	}
 

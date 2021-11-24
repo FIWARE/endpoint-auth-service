@@ -189,15 +189,9 @@ components:
     IShareCredentials:
       description: "Credentials to be used for iShare authentication."
       properties:
-        certificateChain:
-          description: "Certificate chain to be used in the x5c-header. Needs to be in pkcs12-cer format."
-          type: string
-        signingKey:
-          description: "Signing key to be used for the iShare JWT. Needs to be in pk8 format."
-          type: string
         iShareClientId:
           description: -|
-            "iSHARE identifier of the client to be used. Will be used for the 'iss' and 'sub' headers of the request."
+            "iSHARE identifier of the dataprovider in this dataspace."
           type: string
         iShareIdpId:
           description: -|
@@ -214,8 +208,6 @@ components:
           type: string
           default: "client_credentials"
       required:
-        - certificateChain
-        - signingKey
         - iShareClientId
         - iShareIdpId
         - iShareIdpAddress
