@@ -1,0 +1,21 @@
+micronaut:
+  application:
+    name: ${project.artifactId}
+
+  server:
+    port: 6061
+
+---
+
+loggers:
+  levels:
+    ROOT: TRACE
+    io:
+      micronaut:
+        http:
+          client: TRACE
+
+
+---
+inspector:
+  port: 9999
