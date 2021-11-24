@@ -1,0 +1,49 @@
+resources:
+ # passthrough cluster to forward any https request untouched
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    # Don't change this without changing the dependent config inside the listener.yaml
+    name: passthrough-https
+    type: ORIGINAL_DST
+    connectTimeout: 10s
+    lbPolicy: CLUSTER_PROVIDED
+  # Custer definition for accessing the authentication provider. For now, it expects it to be at port 7070
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    # Don't change this without changing the dependent config inside the listener.yaml
+    name: ext-authz
+    type: STRICT_DNS
+    connect_timeout: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: ext-authz
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: auth-service
+                    port_value: 7070
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: 9c8a611d-63da-4c1c-9a4a-0eb3cce9a3c6
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: 9c8a611d-63da-4c1c-9a4a-0eb3cce9a3c6
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: "web.de"
+                    port_value: 80
+  # passthrough cluster to forward any http request that we do not manipulate untouched
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    # Don't change this without changing the dependent config inside the listener.yaml
+    name: passthrough
+    type: ORIGINAL_DST
+    connectTimeout: 10s
+    lbPolicy: CLUSTER_PROVIDED
+    original_dst_lb_config:
+      use_http_header: true

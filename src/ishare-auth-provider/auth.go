@@ -8,7 +8,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,16 +27,6 @@ const keyfile = "key.pem"
 * Name of the files containing the certificate chain. Needs to be the same as used by the configuration-service.
  */
 const certChainFile = "cert.cer"
-
-/**
-* Global var to held the basefolder to the credentials for all domain/path combinations.
- */
-var credentialsBaseFolder string
-
-/**
-* URL of the configuration service.
- */
-var configurationServiceUrl string
 
 /**
 * Struct for holding the required auth info.
@@ -60,29 +49,6 @@ type Header struct {
 * Struct to contain headers to be returned by the auth provider.
  */
 type HeadersList []Header
-
-func main() {
-
-	router := gin.Default()
-	router.GET("/auth", getAuth)
-
-	serverPort := os.Getenv("SERVER_PORT")
-	configurationServiceUrl = os.Getenv("CONFIGURATION_SERVICE_URL")
-	credentialsBaseFolder = os.Getenv("CERTIFICATE_FOLDER")
-
-	if serverPort == "" {
-		log.Fatal("No server port was provided.")
-	}
-	if configurationServiceUrl == "" {
-		log.Fatal("No URL for the configuration service was provided.")
-	}
-
-	if credentialsBaseFolder == "" {
-		log.Fatal("No credentials base folder was provided.")
-	}
-
-	router.Run("0.0.0.0:" + serverPort)
-}
 
 func getAuthInformation(domain string, path string) (authInfo AuthInfo, err error) {
 
@@ -123,7 +89,8 @@ func getAuth(c *gin.Context) {
 		return
 	}
 
-	credentialsFolderPath := buildCredentialsFolderPath(authInfo.CredentialsFolder)
+	// the files are stored in folders namend by the clientId
+	credentialsFolderPath := buildCredentialsFolderPath(authInfo.IShareClientID)
 
 	var randomUuid uuid.UUID
 

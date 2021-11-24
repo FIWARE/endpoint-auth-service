@@ -9,7 +9,7 @@ and adds it to the requests accordingly. The endpoints to be handled and there a
 
 ## Overview
 
-![Proxy-Architecture](./doc/arch-overview.svg)
+![Proxy-Architecture](./doc/img/arch-overview.svg)
 
 The architecture consists of 2 main components:
 - the sidecar-proxy to intercept and manipulate outgoing requests
@@ -27,9 +27,10 @@ in order to prevent a new auth-flow for every request.
 - [Add authentication via a sidecar-proxy](./doc/adr/sidecar-based-auth.md)
 - [Use envoy as proxy](./doc/adr/choose-proxy.md)
 - [Use mustache templating for envoy config](./doc/adr/mustache-templating.md)
-- [Deploy the iShare-auth-provider as a sidecar to the configuration-service](./doc/adr/ishare-auth-as-config-sidecar.md)
+- [Implement auth-providers as separate components](./doc/adr/authprovider-as-separate-component.md)
 
 ## APIs
 
 - [Endpoint-Configuration-API](./api/endpoint-configuration-api.yaml)
 - [Auth-Provider-API](./api/auth-provider-api.yaml)
+- [iShare-Credentials-Management-API](./api/ishare-credentials-management-api.yaml)

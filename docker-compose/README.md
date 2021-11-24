@@ -45,9 +45,21 @@ To start-up the environment run ```docker-compose up``` inside the [docker-compo
 
 A request scenario will use the following path(numbers belong to the corresponding one in the diagram):
 
+1. Client sends client credentials to the credentials-management api of the auth-provider: 
+   ```
+   curl --request POST 'localhost:7070/credentials/EU.EORI.CLIENTID' \
+        --header 'Content-Type: application/json' \
+        --data-raw '{
+           "certificateChain": "<INSERT_CERTIFICATE>",
+           "signingKey": "<INSERT_SIGNING_KEY>"
+        }'
+   ```
+   The auth provider stores the credentials inside its own filesystem.
 
-1. Client send configuration request to the config-service:
-    ```curl curl --location --request POST 'localhost:9090/endpoint' \
+
+2. Client send configuration request to the config-service:
+    ``` 
+    curl --request POST 'localhost:9090/endpoint' \
     --header 'Content-Type: application/json' \
     --data-raw '{
       "domain": "localhost",
@@ -56,8 +68,6 @@ A request scenario will use the following path(numbers belong to the correspondi
       "useHttps": false,
       "authType": "iShare",
       "authCredentials": {
-        "certificateChain": "<INSERT_CERTIFICATE>",
-        "signingKey": "<INSERT_SIGNING_KEY>",
         "iShareClientId": "EU.EORI.CLIENTID",
         "iShareIdpId": "EU.EORI.IDPID",
         "iShareIdpAddress": "http://localhost:1080/oauth2/token",
@@ -67,48 +77,48 @@ A request scenario will use the following path(numbers belong to the correspondi
     ```
 
 
-2. 
+3.
    - Config-Service generates and writes listener.yaml and cluster.yaml to be used by envoy
    - Persists the configuration info inside H2
    - writes certificate and signing-key to be used by the auth-provider
 
 
-3. 
+4.
    - resource-updater receives write-event from the filesystem
    - resource-updater copies config to the envoy-config volume
 
 
-4. 
+5.
    - envoy notices move-event from the filesystem(triggered by the copy from the resource-updater)
    - envoy reloads cluster and listener configuration
 
 
-5.
+6.
     Test-Client sends(unauthorized) request to the echo-server:```curl localhost:6060```
 
 
-6.
+7.
     Iptables redirect port 6060 to (localhost)15001.
 
 
-7.
+8.
     Envoy filter for domain "localhost" and path "/"(as configured in 1) matches and is handled by the [lua-filter](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/lua_filter).
     The filter sends a request to the auth-provider.
 
 
-8.
+9.
     Auth-provider requests [auth-info](../api/endpoint-configuration-api.yaml#L120) from the config-service.
 
 
-9.
+10.
     Auth-provider reads the certificate and signing-key from the folder received in the auth-info and generates an [iShare-JWT](https://dev.ishareworks.org/introduction/jwt.html)
     with it.
 
 
-10.
+11.
     Auth-provider requests a token with the generated JWT. Will receive the "myIShareToken" mock-response and answer the token to envoy.
 
 
-11.
+12.
     Envoy adds the received token to the request and forwards it to the echo-server at localhost:6060. The second [iptables-rule](./iptables.sh#8) makes 
     sure that the request does not get intercepted again.

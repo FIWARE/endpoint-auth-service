@@ -38,7 +38,6 @@ public interface EndpointMapper {
 		AuthInfoVO authInfoVO = new AuthInfoVO();
 		authInfoVO.authType(authTypeToAuthTypeVo(endpoint.getAuthType()));
 		Map<String, Object> authInfoProperties = Map.of(
-				"credentialsFolder", endpoint.getId().toString(),
 				"iShareClientId", endpoint.getIShareClientId(),
 				"iShareIdpId", endpoint.getIShareIdpId(),
 				"iShareIdpAddress", endpoint.getIShareIdpAddress(),

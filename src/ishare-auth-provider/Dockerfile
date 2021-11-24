@@ -5,9 +5,7 @@ ENV CONFIGURATION_SERVICE_URL="http://endpoint-configuration-service:8080"
 ENV CERTIFICATE_FOLDER="/mounted-certs"
 
 WORKDIR /go/src/app
-COPY ./go.mod ./go.mod
-COPY ./go.sum ./go.sum
-COPY ./auth.go ./auth.go
+COPY ./ ./
 
 RUN go get -d -v ./...
 RUN go install -v ./...
