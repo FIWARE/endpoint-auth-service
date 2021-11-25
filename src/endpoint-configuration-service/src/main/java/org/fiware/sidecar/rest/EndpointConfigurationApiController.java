@@ -1,5 +1,6 @@
 package org.fiware.sidecar.rest;
 
+import io.micronaut.core.util.AntPathMatcher;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
