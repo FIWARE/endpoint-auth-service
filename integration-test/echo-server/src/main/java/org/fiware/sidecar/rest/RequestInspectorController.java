@@ -4,6 +4,7 @@ import io.micronaut.http.HttpRequest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.MutableHttpResponse;
 import io.micronaut.http.annotation.Controller;
+import io.micronaut.http.annotation.Delete;
 import io.micronaut.http.annotation.Get;
 import lombok.Setter;
 
@@ -28,11 +29,19 @@ public class RequestInspectorController {
 		}
 		Map<String, String> headers = lastRequest.getHeaders().asMap().entrySet()
 				.stream()
-				.collect(Collectors.toMap(Map.Entry::getKey,e -> e.getValue().stream().findFirst().orElse("")));
+				.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().stream().findFirst().orElse("")));
 
+		headers.put("Requested-Path", lastRequest.getPath());
 		response.headers(headers);
 
+
 		return response;
+	}
+
+	@Delete("/last")
+	public HttpResponse<Object> deleteLastRequest() {
+		lastRequest = null;
+		return HttpResponse.noContent();
 	}
 
 	@Get("/headers/{header}")
