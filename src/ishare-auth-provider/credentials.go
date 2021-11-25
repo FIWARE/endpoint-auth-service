@@ -31,7 +31,7 @@ func getCredentialsList(c *gin.Context) {
 		return
 	}
 
-	var credentialsList []string
+	credentialsList := []string{}
 
 	for _, folder := range folders {
 		if folder.IsDir() {
