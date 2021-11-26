@@ -42,6 +42,12 @@ resources:
                           prefix: "{{path}}"
                         route:
                           cluster: {{id}}
+                    {{#passthrough}}
+                        typed_per_filter_config:
+                          envoy.filters.http.lua:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
+                            disabled: true
+                    {{/passthrough}}
                   {{/endpoints}}
                 {{/virtualHosts}}
                   - name: allow_any

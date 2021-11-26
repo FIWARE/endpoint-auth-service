@@ -31,7 +31,7 @@ import java.util.stream.StreamSupport;
 @Singleton
 public class EnvoyUpdateService {
 
-	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used","/",  null, 0);
+	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used", "/", null, "true", 0);
 
 	private final MustacheFactory mustacheFactory;
 	private final EndpointRepository endpointRepository;
@@ -109,10 +109,10 @@ public class EnvoyUpdateService {
 	}
 
 	private List<MustacheEndpoint> addPassThroughIfNoRoot(List<MustacheEndpoint> originalList) {
-		Optional<MustacheEndpoint> optionalRootEndpoint =originalList.stream()
+		Optional<MustacheEndpoint> optionalRootEndpoint = originalList.stream()
 				.filter(mustacheEndpoint -> mustacheEndpoint.path().equals(PASSTHROUGH_ENDPOINT.path()))
 				.findAny();
-		if(optionalRootEndpoint.isEmpty()) {
+		if (optionalRootEndpoint.isEmpty()) {
 			originalList.add(PASSTHROUGH_ENDPOINT);
 		}
 		return originalList;
