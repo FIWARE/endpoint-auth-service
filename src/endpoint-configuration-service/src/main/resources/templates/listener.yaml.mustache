@@ -29,17 +29,21 @@ resources:
               route_config:
                 name: local_route
                 virtual_hosts:
-                {{#endpoints}}
-                  - name: {{id}}
+                {{#virtualHosts}}
+                  - name: {{domain}}
                     domains:
                       - '{{domain}}'
+                  {{#ports}}
                       - '{{domain}}:{{port}}'
+                  {{/ports}}
                     routes:
+                  {{#endpoints}}
                       - match:
                           prefix: "{{path}}"
                         route:
                           cluster: {{id}}
-                {{/endpoints}}
+                  {{/endpoints}}
+                {{/virtualHosts}}
                   - name: allow_any
                     domains:
                       - "*"

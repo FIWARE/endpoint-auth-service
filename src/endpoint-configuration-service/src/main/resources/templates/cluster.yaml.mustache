@@ -1,14 +1,10 @@
 resources:
- # passthrough cluster to forward any https request untouched
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    # Don't change this without changing the dependent config inside the listener.yaml
     name: passthrough-https
     type: ORIGINAL_DST
     connectTimeout: 10s
     lbPolicy: CLUSTER_PROVIDED
-  # Custer definition for accessing the authentication provider. For now, it expects it to be at port 7070
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    # Don't change this without changing the dependent config inside the listener.yaml
     name: ext-authz
     type: STRICT_DNS
     connect_timeout: 1s
@@ -17,12 +13,12 @@ resources:
       cluster_name: ext-authz
       endpoints:
         - lb_endpoints:
-            - endpoint:
-                address:
-                  socket_address:
-                    protocol: TCP
-                    address: {{auth-service-address}}
-                    port_value: {{auth-service-port}}
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: {{auth-service-address}}
+                  port_value: {{auth-service-port}}
   {{#endpoints}}
   {{#httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
@@ -34,12 +30,12 @@ resources:
       cluster_name: {{id}}
       endpoints:
         - lb_endpoints:
-            - endpoint:
-                address:
-                  socket_address:
-                    protocol: TCP
-                    address: "{{domain}}"
-                    port_value: {{port}}
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: "{{domain}}"
+                  port_value: {{port}}
     transport_socket:
       name: envoy.transport_sockets.tls
       typed_config:
@@ -55,17 +51,15 @@ resources:
       cluster_name: {{id}}
       endpoints:
         - lb_endpoints:
-            - endpoint:
-                address:
-                  socket_address:
-                    protocol: TCP
-                    address: "{{domain}}"
-                    port_value: {{port}}
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: "{{domain}}"
+                  port_value: {{port}}
   {{/httpsPort}}
   {{/endpoints}}
-  # passthrough cluster to forward any http request that we do not manipulate untouched
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    # Don't change this without changing the dependent config inside the listener.yaml
     name: passthrough
     type: ORIGINAL_DST
     connectTimeout: 10s

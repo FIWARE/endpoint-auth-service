@@ -17,7 +17,7 @@ import java.util.Comparator;
 @RequiredArgsConstructor
 public class AuthConfigurationApiController implements AuthConfigurationApi {
 
-	private final PathPartMatcher pathPartMatcher = new PathPartMatcher();
+	private static final PathPartMatcher PATH_PART_MATCHER = new PathPartMatcher();
 
 	private final EndpointRepository endpointRepository;
 	private final EndpointMapper endpointMapper;
@@ -27,17 +27,11 @@ public class AuthConfigurationApiController implements AuthConfigurationApi {
 	public HttpResponse<AuthInfoVO> getEndpointByDomainAndPath(String domain, String path) {
 
 		return endpointRepository.findByDomain(domain).stream()
-				.filter(endpoint -> pathPartMatcher.matchesPartly(path, endpoint.getPath()))
+				.filter(endpoint -> PATH_PART_MATCHER.matchesPartly(path, endpoint.getPath()))
 				// we want the longest match(e.g. /test instead of / when /test/path is asked)
 				.max(Comparator.comparingInt(endpoint -> endpoint.getPath().length()))
 				.map(endpointMapper::endpointToAuthInfoVo)
 				.map(HttpResponse::ok)
 				.orElse(HttpResponse.notFound());
-	}
-
-	private class PathPartMatcher extends AntPathMatcher {
-		public boolean matchesPartly(String pattern, String source) {
-			return doMatch(pattern, source, false);
-		}
 	}
 }

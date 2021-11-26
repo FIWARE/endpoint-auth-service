@@ -8,6 +8,8 @@ import org.fiware.sidecar.configuration.ProxyProperties;
 import org.fiware.sidecar.exception.EnvoyUpdateException;
 import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.model.MustacheEndpoint;
+import org.fiware.sidecar.model.MustachePort;
+import org.fiware.sidecar.model.MustacheVirtualHost;
 import org.fiware.sidecar.persistence.EndpointRepository;
 
 import javax.annotation.PostConstruct;
@@ -16,15 +18,20 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
 @RequiredArgsConstructor
 @Singleton
 public class EnvoyUpdateService {
+
+	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used","/",  null, 0);
 
 	private final MustacheFactory mustacheFactory;
 	private final EndpointRepository endpointRepository;
@@ -42,10 +49,31 @@ public class EnvoyUpdateService {
 
 	public void applyConfiguration() {
 
-		List<MustacheEndpoint> mustacheSubscriberList = StreamSupport
+		List<MustacheEndpoint> mustacheEndpoints = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
 				.map(endpointMapper::endpointToMustacheEndpoint)
 				.toList();
+
+
+		Map<String, List<MustacheEndpoint>> endpointMap = StreamSupport
+				.stream(endpointRepository.findAll().spliterator(), true)
+				.map(endpointMapper::endpointToMustacheEndpoint)
+				.collect(Collectors.toMap(MustacheEndpoint::domain, me -> new ArrayList<>(List.of(me)), (v1, v2) -> {
+					v1.addAll(v2);
+					return v1;
+				}));
+
+		List<MustacheVirtualHost> mustacheVirtualHosts = endpointMap
+				.entrySet().stream()
+				.map(entry -> new MustacheVirtualHost(
+						entry.getKey(),
+						entry.getValue().stream()
+								.map(MustacheEndpoint::port)
+								.distinct()
+								.map(MustachePort::new)
+								.collect(Collectors.toSet()),
+						addPassThroughIfNoRoot(entry.getValue())))
+				.collect(Collectors.toList());
 
 
 		ProxyProperties.AddressConfig socketAddress = proxyProperties.getSocketAddress();
@@ -56,7 +84,8 @@ public class EnvoyUpdateService {
 		mustacheRenderContext.put("socket-port", socketAddress.getPort());
 		mustacheRenderContext.put("auth-service-address", authAddress.getAddress());
 		mustacheRenderContext.put("auth-service-port", authAddress.getPort());
-		mustacheRenderContext.put("endpoints", mustacheSubscriberList);
+		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
+		mustacheRenderContext.put("endpoints", mustacheEndpoints);
 
 		if (!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
 			try {
@@ -77,6 +106,16 @@ public class EnvoyUpdateService {
 		// that do not yet exist.
 		updateEnvoyConfig(proxyProperties.getClusterYamlPath(), clusterTemplate, mustacheRenderContext, "Was not able to update cluster.yaml");
 		updateEnvoyConfig(proxyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
+	}
+
+	private List<MustacheEndpoint> addPassThroughIfNoRoot(List<MustacheEndpoint> originalList) {
+		Optional<MustacheEndpoint> optionalRootEndpoint =originalList.stream()
+				.filter(mustacheEndpoint -> mustacheEndpoint.path().equals(PASSTHROUGH_ENDPOINT.path()))
+				.findAny();
+		if(optionalRootEndpoint.isEmpty()) {
+			originalList.add(PASSTHROUGH_ENDPOINT);
+		}
+		return originalList;
 	}
 
 	private void updateEnvoyConfig(String proxyProperties, Mustache clusterTemplate, Map<String, Object> mustacheRenderContext, String message) {

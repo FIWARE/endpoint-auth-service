@@ -29,15 +29,19 @@ resources:
               route_config:
                 name: local_route
                 virtual_hosts:
-                  - name: 9c8a611d-63da-4c1c-9a4a-0eb3cce9a3c6
+                  - name: localhost
                     domains:
-                      - 'web.de'
-                      - 'web.de:80'
+                      - 'localhost'
+                      - 'localhost:6060'
                     routes:
+                      - match:
+                          prefix: "/test"
+                        route:
+                          cluster: 50b26e75-c0d8-4648-bb8b-f53e1c7e9857
                       - match:
                           prefix: "/"
                         route:
-                          cluster: 9c8a611d-63da-4c1c-9a4a-0eb3cce9a3c6
+                          cluster: aa443514-303f-458f-a436-0e4e3f6f137a
                   - name: allow_any
                     domains:
                       - "*"
@@ -57,8 +61,13 @@ resources:
                    inline_code: |
                      local json = (loadfile "/lua-json/json.lua")()
                      function envoy_on_request(request_handle)
-                      local domain = request_handle:headers():get(":authority")
+                      local fullDomain = request_handle:headers():get(":authority")
                       local path = request_handle:headers():get(":path")
+                      local domain
+                      for domainPart in string.gmatch(fullDomain, '([^:]+)') do 
+                        domain = domainPart
+                        break
+                      end
                       local headers, body = request_handle:httpCall(
                       "ext-authz",
                       {

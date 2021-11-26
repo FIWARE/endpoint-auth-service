@@ -34,3 +34,7 @@ in order to prevent a new auth-flow for every request.
 - [Endpoint-Configuration-API](./api/endpoint-configuration-api.yaml)
 - [Auth-Provider-API](./api/auth-provider-api.yaml)
 - [iShare-Credentials-Management-API](./api/ishare-credentials-management-api.yaml)
+
+## Why not use mTLS?
+
+TODO: describe that mTLS is just another option and can be used together, outline similarities to improve understandability
