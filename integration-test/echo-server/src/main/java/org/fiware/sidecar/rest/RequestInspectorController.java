@@ -38,7 +38,7 @@ public class RequestInspectorController {
 		return response;
 	}
 
-	@Delete("/last")
+	@Delete
 	public HttpResponse<Object> deleteLastRequest() {
 		lastRequest = null;
 		return HttpResponse.noContent();
