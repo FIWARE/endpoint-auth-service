@@ -19,6 +19,9 @@
 
         <!-- lazy dev -->
         <version.org.projectlombok>1.18.22</version.org.projectlombok>
+
+        <!-- test deps -->
+        <version.org.awaitility>4.0.3</version.org.awaitility>
     </properties>
 
     <dependencyManagement>
@@ -126,6 +129,13 @@
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>
+            <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.awaitility</groupId>
+            <artifactId>awaitility</artifactId>
+            <version>${version.org.awaitility}</version>
             <scope>test</scope>
         </dependency>
     </dependencies>

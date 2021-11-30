@@ -15,11 +15,23 @@ Feature: Add iShare tokens to requests.
     Then Data-Consumer should receive a request with an authorization-header.
 
   Scenario: Data-Consumer receive authorized requests at a sub-path.
-    Given Data-Consumer sub-path is configured as an iShare endpoint.
+    Given Data-Consumer subpath is configured as an iShare endpoint.
+    When Data-Provider sends a request to the data-consumer's root path.
+    Then Data-Consumer should receive a request without an authorization-header.
+
+  Scenario: Data-Consumer receive authorized requests at a sub-path with multiple configured paths.
+    Given Data-Consumer subpath is configured as an iShare endpoint.
+    And Data-Consumer anotherpath is configured as an iShare endpoint.
     When Data-Provider sends a request to the data-consumer's root path.
     Then Data-Consumer should receive a request without an authorization-header.
 
   Scenario: Data-Consumer receives authorized requests only at a sub-path, root stays untouched.
-    Given Data-Consumer sub-path is configured as an iShare endpoint.
+    Given Data-Consumer subpath is configured as an iShare endpoint.
     When Data-Provider sends a request to a sub-path of the data-consumer.
     Then Data-Consumer should receive a request with an authorization-header.
+#
+#  Scenario: Data-Consumer receives authorized requests only at multiple sub-path, root stays untouched.
+#    Given Data-Consumer subpath is configured as an iShare endpoint.
+#    And Data-Consumer anotherpath is configured as an iShare endpoint.
+#    When Data-Provider sends a request to a sub-path of the data-consumer.
+#    Then Data-Consumer should receive a request with an authorization-header.

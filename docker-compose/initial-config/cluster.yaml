@@ -11,6 +11,10 @@ resources:
     type: ORIGINAL_DST
     connectTimeout: 10s
     lbPolicy: CLUSTER_PROVIDED
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: ext-authz
     type: STRICT_DNS
@@ -24,5 +28,5 @@ resources:
             address:
               socket_address:
                 protocol: TCP
-                address: 0.0.0.0
+                address: localhost
                 port_value: 7070

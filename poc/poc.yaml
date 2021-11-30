@@ -51,7 +51,7 @@ spec:
         securityContext:
           runAsUser: 1337
         volumeMounts:
-        - name: envoy-config-folder
+        - name: envoy-configmap
           mountPath: /etc/envoy/
       - image: quay.io/wi_stefan/envoy-resource-updater
         name: update-resources

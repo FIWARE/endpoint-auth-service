@@ -2,20 +2,38 @@ version: "3.5"
 services:
 
   # the setup runs on host-network to allow the iptable manipulation needed for the tests.
-
+  echo-server2:
+    image: k8s.gcr.io/echoserver:1.4
+    hostname: echo2
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.8
+        
   echo-server:
-    image: cilium/echoserver
+    image: quay.io/wi_stefan/echo-server
     hostname: echo
-    network_mode: host
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.2
+    expose:
+     - "6060"
+     - "6061"
     environment:
-      - PORT=6060
+      - MICRONAUT_SERVER_PORT=6060
+      - INSPECTOR_PORT=6061
 
   envoy:
     image: quay.io/wi_stefan/envoy
     hostname: envoy
     # required for writing the intial config and iptable to match
     user: root
-    network_mode: host
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.3
+    expose:
+      - "15001"
+    ports:
+      - 15001:15001
     entrypoint: ./initial-config/init.sh
     volumes:
       - envoy-config:/etc/envoy
@@ -24,7 +42,9 @@ services:
   resource-updater:
     image: quay.io/wi_stefan/envoy-resource-updater
     hostname: update-resources
-    network_mode: host
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.4
     # required to write at the mounted volumes
     user: root
     volumes:
@@ -35,43 +55,54 @@ services:
   config-service:
     image: quay.io/wi_stefan/endpoint-configuration-service
     hostname: config-service
-    network_mode: host
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.5
+    expose:
+     - "9090"
     # required to write at the mounted volumes
     user: root
     environment:
       - PROXY_LISTENER_YAML_PATH=/envoy-config/listener.yaml
       - PROXY_CLUSTER_YAML_PATH=/envoy-config/cluster.yaml
-      - I_SHARE_CERTIFICATE_FOLDER_PATH=/ishare/certs
-      - PROXY_SOCKET_ADDRESS_ADDRESS=0.0.0.0
-      - PROXY_EXTERNAL_AUTH_ADDRESS=localhost
+      - PROXY_EXTERNAL_AUTH_ADDRESS=auth-provider
       - PROXY_EXTERNAL_AUTH_PORT=7070
       - MICRONAUT_SERVER_PORT=9090
     volumes:
       - map-folder:/envoy-config:rw
-      - ishare-certs:/ishare/certs:rw
       
   auth-provider:
     image: quay.io/wi_stefan/ishare-auth-provider 
     hostname: auth-provider
-    network_mode: host
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.6
+    expose:
+     - "7070"
     environment:
       - SERVER_PORT=7070
-      - CONFIGURATION_SERVICE_URL=http://localhost:9090
-      - CERTIFICATE_FOLDER=/go/src/app/certs/
-    volumes:
-      - ishare-certs:/go/src/app/certs
-
+      - CONFIGURATION_SERVICE_URL=http://config-service:9090
+      
   ishare-idp-mock:
     image: mockserver/mockserver:mockserver-5.11.2
     hostname: idp-mock
-    network_mode: host
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.7
+    expose:
+     - "1080"
     environment: 
       - MOCKSERVER_PROPERTY_FILE=/config/mockserver.properties
     volumes:
       - ./idp-mock:/config
 
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
 
 volumes:
   map-folder: ~
   envoy-config: ~
-  ishare-certs: ~

@@ -8,7 +8,7 @@ resources:
     traffic_direction: OUTBOUND
     listener_filters:
     - name: envoy.filters.listener.tls_inspector
-    - name: envoy.filters.listener.original_dst  
+    - name: envoy.filters.listener.original_dst
     filter_chains:
     - name: https_chain
       filter_chain_match: 

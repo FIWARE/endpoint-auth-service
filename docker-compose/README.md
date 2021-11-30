@@ -11,14 +11,11 @@ In order to run the whole service in a local environment, a docker-compose setup
 
 ![Dev-Setup](../doc/img/compose-dev-setup.svg)
 
-The development-setup runs on the host-network to allow the iptables-manipulations defined in [iptables.sh](./iptables.sh).
-This script can be used to setup the iptables to redirect everything that is send to 6060 to 15001. That will redirect the traffic
+The development-setup runs on a dedicated network with fixed ip-addresse to allow the iptables-manipulations defined in [iptables.sh](./iptables.sh).
+This script can be used to setup the iptables to redirect everything that is send to 6060 on that networks ip-range to 15001. This will redirect the traffic
 to the echo-server to envoy. It also includes a rule to RETURN everything from the root-userspace, in order to jump out of envoy and
 not potentially harm the whole host. If those configurations do not fit your needs, you need to setup up such behaviour differently
 depending on your system.
-
-> :warning:  Since the setup runs on host-network, the ports 1080,6060,7070 and 9090 are required. If they are not available, update the 
-> [compose-file](./docker-compose.yaml) with working values.
 
 The setup includes the following components:
 
@@ -47,7 +44,7 @@ A request scenario will use the following path(numbers belong to the correspondi
 
 1. Client sends client credentials to the credentials-management api of the auth-provider: 
    ```
-   curl --request POST 'localhost:7070/credentials/EU.EORI.CLIENTID' \
+   curl --request POST '10.5.0.6:7070/credentials/EU.EORI.CLIENTID' \
         --header 'Content-Type: application/json' \
         --data-raw '{
            "certificateChain": "<INSERT_CERTIFICATE>",
@@ -59,10 +56,10 @@ A request scenario will use the following path(numbers belong to the correspondi
 
 2. Client send configuration request to the config-service:
     ``` 
-    curl --request POST 'localhost:9090/endpoint' \
+    curl --request POST '10.5.0.5:9090/endpoint' \
     --header 'Content-Type: application/json' \
     --data-raw '{
-      "domain": "localhost",
+      "domain": "10.5.0.2",
       "port": 6060,
       "path": "/",
       "useHttps": false,
