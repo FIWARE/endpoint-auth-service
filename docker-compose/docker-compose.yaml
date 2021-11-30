@@ -2,12 +2,6 @@ version: "3.5"
 services:
 
   # the setup runs on host-network to allow the iptable manipulation needed for the tests.
-  echo-server2:
-    image: k8s.gcr.io/echoserver:1.4
-    hostname: echo2
-    networks:
-      test-network:
-        ipv4_address: 10.5.0.8
         
   echo-server:
     image: quay.io/wi_stefan/echo-server
@@ -18,6 +12,19 @@ services:
     expose:
      - "6060"
      - "6061"
+    environment:
+      - MICRONAUT_SERVER_PORT=6060
+      - INSPECTOR_PORT=6061
+
+  echo-server-2:
+    image: quay.io/wi_stefan/echo-server
+    hostname: echo-2
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.8
+    expose:
+    - "6060"
+    - "6061"
     environment:
       - MICRONAUT_SERVER_PORT=6060
       - INSPECTOR_PORT=6061

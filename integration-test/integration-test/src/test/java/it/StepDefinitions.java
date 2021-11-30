@@ -2,6 +2,7 @@ package it;
 
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
+import io.cucumber.java.an.E;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
@@ -31,6 +32,7 @@ public class StepDefinitions {
 	private static final String CONFIG_HOST = "10.5.0.5";
 	private static final String AUTH_HOST = "10.5.0.6";
 	private static final String ECHO_HOST = "10.5.0.2";
+	private static final String ECHO_2_HOST = "10.5.0.8";
 	private static final String IDP_HOST = "10.5.0.7";
 
 	public static final int WAIT_TIMEOUT = 1000;
@@ -231,6 +233,13 @@ public class StepDefinitions {
 		OkHttpClient okHttpClient = new OkHttpClient();
 		okHttpClient.newCall(request).execute();
 
+
+		Request requestEcho2 = new Request.Builder()
+				.method("DELETE", null)
+				.url(String.format("http://%s:6061/last", ECHO_2_HOST))
+				.build();
+		okHttpClient.newCall(request).execute();
+
 		// wait a second, so that envoy has time to update its config
 		sleep(WAIT_TIMEOUT);
 	}
@@ -261,6 +270,32 @@ public class StepDefinitions {
 		okHttpClient.newCall(request).execute();
 	}
 
+	@When("Data-Provider sends a request to the data-consumer-2's root path.")
+	public void client_sends_a_request_to_the_echo_server_2() throws Exception {
+
+		// call 6060 since that is the intercepted path to echo-server
+		Request request = new Request.Builder()
+				// currently required in local setups
+				.header("x-envoy-original-dst-host", String.format("%s:6060", ECHO_2_HOST))
+				.url(String.format("http://%s:6060/", ECHO_2_HOST))
+				.build();
+		OkHttpClient okHttpClient = new OkHttpClient();
+		okHttpClient.newCall(request).execute();
+	}
+
+	@When("Data-Provider sends a request to a sub-path of the data-consumer-2.")
+	public void client_sends_a_request_to_a_sub_path_of_the_echo_server_2() throws Exception {
+
+		// call 6060 since that is the intercepted path to echo-server
+		Request request = new Request.Builder()
+				// currently required in local setups
+				.header("x-envoy-original-dst-host", String.format("%s:6060", ECHO_2_HOST))
+				.url(String.format("http://%s:6060/subpath", ECHO_2_HOST))
+				.build();
+		OkHttpClient okHttpClient = new OkHttpClient();
+		okHttpClient.newCall(request).execute();
+	}
+
 	@Then("Data-Consumer should receive a request with an authorization-header.")
 	public void echo_server_should_receive_a_request_with_an_authorization_header() throws Exception {
 
@@ -272,11 +307,33 @@ public class StepDefinitions {
 		Assertions.assertEquals("myIShareToken", response.body().string(), "The auth-token as it is provided by the mock-idp should have been sent.");
 	}
 
+	@Then("Data-Consumer-2 should receive a request with an authorization-header.")
+	public void echo_server_2_should_receive_a_request_with_an_authorization_header() throws Exception {
+
+		Request request = new Request.Builder()
+				.url(String.format("http://%s:6061/last/headers/authorization", ECHO_2_HOST))
+				.build();
+		OkHttpClient okHttpClient = new OkHttpClient();
+		Response response = okHttpClient.newCall(request).execute();
+		Assertions.assertEquals("myIShareToken", response.body().string(), "The auth-token as it is provided by the mock-idp should have been sent.");
+	}
+
 	@Then("Data-Consumer should receive a request without an authorization-header.")
 	public void echo_server_should_receive_a_request_without_an_authorization_header() throws Exception {
 
 		Request request = new Request.Builder()
 				.url(String.format("http://%s:6061/last/headers/authorization", ECHO_HOST))
+				.build();
+		OkHttpClient okHttpClient = new OkHttpClient();
+		Response response = okHttpClient.newCall(request).execute();
+		Assertions.assertEquals("", response.body().string(), "No auth token should have been added.");
+	}
+
+	@Then("Data-Consumer-2 should receive a request without an authorization-header.")
+	public void echo_server_2_should_receive_a_request_without_an_authorization_header() throws Exception {
+
+		Request request = new Request.Builder()
+				.url(String.format("http://%s:6061/last/headers/authorization", ECHO_2_HOST))
 				.build();
 		OkHttpClient okHttpClient = new OkHttpClient();
 		Response response = okHttpClient.newCall(request).execute();
