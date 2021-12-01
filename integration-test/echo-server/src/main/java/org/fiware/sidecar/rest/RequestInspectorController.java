@@ -42,7 +42,8 @@ public class RequestInspectorController {
 		Map<String, String> headers = request.getHeaders().asMap().entrySet()
 				.stream()
 				.collect(Collectors.toMap(Map.Entry::getKey, e -> e.getValue().stream().findFirst().orElse("")));
-		return new StoredRequest(headers, body);
+		String path = request.getPath();
+		return new StoredRequest(headers, body, path);
 	}
 
 	@Get

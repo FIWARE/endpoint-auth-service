@@ -11,4 +11,5 @@ public class StoredRequest {
 
 	private final Map<String, String> headers;
 	private final Object body;
+	private final String path;
 }
