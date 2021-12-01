@@ -69,7 +69,7 @@ public class EchoController {
 
 	private MutableHttpResponse echoRequest(HttpRequest request) {
 		//store for inspection
-		requestInspectorController.setLastRequest(request);
+		requestInspectorController.addLastRequest(request);
 
 		Map<String, String> headers = request.getHeaders().asMap().entrySet()
 				.stream()
