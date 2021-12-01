@@ -22,6 +22,9 @@ public class RequestInspectorController {
 	}
 
 	private HttpRequest getLastStoredRequest() {
+		if(lastRequests.isEmpty()) {
+			return null;
+		}
 		return lastRequests.get(lastRequests.size() - 1);
 	}
 
