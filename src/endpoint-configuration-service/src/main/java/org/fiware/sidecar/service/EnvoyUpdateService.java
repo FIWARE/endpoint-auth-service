@@ -51,7 +51,7 @@ public class EnvoyUpdateService {
 	}
 
 	@Scheduled(fixedDelay = "${proxy.updateInterval}")
-	private void applyConfiguration() {
+	void applyConfiguration() {
 
 		List<MustacheEndpoint> mustacheEndpoints = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
