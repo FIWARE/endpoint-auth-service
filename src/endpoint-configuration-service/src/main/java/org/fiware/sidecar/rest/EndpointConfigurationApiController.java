@@ -33,7 +33,6 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 	private final List<EndpointWriteService> subscriberWriteServices;
 	private final EndpointRepository endpointRepository;
 	private final EndpointMapper endpointMapper;
-	private final EnvoyUpdateService envoyUpdateService;
 
 	@Transactional
 	@Override
@@ -53,9 +52,6 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()))
 				.createEndpoint(subscriber.getId(), endpointRegistrationVO);
 
-		// update the envoy configuration
-		envoyUpdateService.applyConfiguration();
-
 		return HttpResponse.created(URI.create(subscriber.getId().toString()));
 	}
 
@@ -66,9 +62,6 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		if (optionalSubscriber.isPresent()) {
 			endpointRepository.deleteById(id);
 			getServiceForAuthType(optionalSubscriber.get().getAuthType()).deleteEndpoint(id);
-
-			// update the envoy configuration
-			envoyUpdateService.applyConfiguration();
 
 			return HttpResponse.noContent();
 		}

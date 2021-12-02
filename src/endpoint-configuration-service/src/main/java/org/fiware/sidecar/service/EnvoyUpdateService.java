@@ -2,6 +2,8 @@ package org.fiware.sidecar.service;
 
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
+import io.micronaut.context.annotation.Context;
+import io.micronaut.scheduling.annotation.Scheduled;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.sidecar.configuration.ProxyProperties;
@@ -23,12 +25,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 @Slf4j
 @RequiredArgsConstructor
-@Singleton
+@Context
 public class EnvoyUpdateService {
 
 	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used", "/", null, "true", 0);
@@ -47,7 +50,8 @@ public class EnvoyUpdateService {
 		clusterTemplate = mustacheFactory.compile("./templates/cluster.yaml.mustache");
 	}
 
-	public void applyConfiguration() {
+	@Scheduled(fixedDelay = "${proxy.updateInterval}")
+	private void applyConfiguration() {
 
 		List<MustacheEndpoint> mustacheEndpoints = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
