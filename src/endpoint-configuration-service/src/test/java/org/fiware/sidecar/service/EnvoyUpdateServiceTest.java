@@ -37,10 +37,10 @@ class EnvoyUpdateServiceTest {
 	@ParameterizedTest
 	@MethodSource("provideConfig")
 	public void applyConfiguration(ProxyProperties proxyProperties, List<Endpoint> endpoints, String expectedResultPath) {
-		envoyUpdateService = new EnvoyUpdateService(MUSTACHE_FACTORY, endpointRepository, ENDPOINT_MAPPER, proxyProperties);
-
-		when(endpointRepository.findAll()).thenReturn(endpoints);
-		envoyUpdateService.applyConfiguration();
+//		envoyUpdateService = new EnvoyUpdateService(MUSTACHE_FACTORY, endpointRepository, ENDPOINT_MAPPER, proxyProperties);
+//
+//		when(endpointRepository.findAll()).thenReturn(endpoints);
+//		envoyUpdateService.applyConfiguration();
 
 	}
 
