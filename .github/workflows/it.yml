@@ -42,10 +42,10 @@ jobs:
     - name: run-compose
       id: compose
       env:
-        - ENVOY_IMAGE: envoy
-        - RESOURCE_UPDATER_IMAGE: envoy-resource-updater
-        - CONFIG_SERVICE_IMAGE: wi_stefan/endpoint-configuration-service:local
-        - AUTH_PROVIDER_IMAGE: ishare-auth-provider
+        ENVOY_IMAGE: envoy
+        RESOURCE_UPDATER_IMAGE: envoy-resource-updater
+        CONFIG_SERVICE_IMAGE: wi_stefan/endpoint-configuration-service:local
+        AUTH_PROVIDER_IMAGE: ishare-auth-provider
       run: |
         cd integration-test/integration-test/
         mvn clean install
