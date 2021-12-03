@@ -54,7 +54,6 @@ jobs:
       run: |
         docker ps
         sleep 20s
-        curl -v http://localhost:6061/last
-        curl -v http://10.5.0.8:6061/last
+        curl -v http://10.5.0.5:9090/health
         cd integration-test/integration-test/
         # mvn clean install
