@@ -51,6 +51,8 @@ jobs:
 
     - name: run-test
       id: test
+      env:
+        CUCUMBER_PUBLISH_ENABLED: true
       run: |
         cd integration-test/integration-test/
         mvn clean install
