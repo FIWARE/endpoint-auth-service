@@ -30,7 +30,7 @@ services:
       - INSPECTOR_PORT=6061
 
   envoy:
-    image: quay.io/wi_stefan/envoy
+    image: ${ENVOY_IMAGE:-quay.io/wi_stefan/envoy}
     hostname: envoy
     # required for writing the intial config and iptable to match
     user: root
@@ -47,7 +47,7 @@ services:
       - ./initial-config:/initial-config
 
   resource-updater:
-    image: quay.io/wi_stefan/envoy-resource-updater
+    image: ${RESOURCE_UPDATER_IMAGE:-quay.io/wi_stefan/envoy-resource-updater}
     hostname: update-resources
     networks:
       test-network:
@@ -60,7 +60,7 @@ services:
 
 
   config-service:
-    image: quay.io/wi_stefan/endpoint-configuration-service
+    image: ${CONFIG_SERVICE_IMAGE:-quay.io/wi_stefan/endpoint-configuration-service}
     hostname: config-service
     networks:
       test-network:
@@ -79,7 +79,7 @@ services:
       - map-folder:/envoy-config:rw
       
   auth-provider:
-    image: quay.io/wi_stefan/ishare-auth-provider 
+    image: ${AUTH_PROVIDER_IMAGE:-quay.io/wi_stefan/ishare-auth-provider}
     hostname: auth-provider
     networks:
       test-network:

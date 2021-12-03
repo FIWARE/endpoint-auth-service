@@ -15,7 +15,6 @@ import org.fiware.sidecar.model.MustacheVirtualHost;
 import org.fiware.sidecar.persistence.EndpointRepository;
 
 import javax.annotation.PostConstruct;
-import javax.inject.Singleton;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -25,7 +24,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.ScheduledExecutorService;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 

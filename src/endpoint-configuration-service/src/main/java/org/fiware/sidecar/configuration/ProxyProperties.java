@@ -2,14 +2,18 @@ package org.fiware.sidecar.configuration;
 
 import io.micronaut.context.annotation.ConfigurationBuilder;
 import io.micronaut.context.annotation.ConfigurationProperties;
+import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.checkerframework.checker.units.qual.A;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 
 @ConfigurationProperties("proxy")
 @Data
+@AllArgsConstructor
+@NoArgsConstructor
 public class ProxyProperties {
 
 	/**
@@ -40,6 +44,8 @@ public class ProxyProperties {
 
 	@Setter
 	@Getter
+	@AllArgsConstructor
+	@NoArgsConstructor
 	public static class AddressConfig {
 
 		private String address;

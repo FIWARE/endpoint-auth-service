@@ -1,0 +1,49 @@
+name: Integration-test
+
+on:
+  push
+
+jobs:
+
+  it:
+    runs-on: ubuntu-latest
+
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-java@v1
+      with:
+        java-version: '17'
+        java-package: jdk
+
+    - name: build-auth-provider
+      id: auth-provider
+      run: docker build -f ./src/ishare-auth-provider/Dockerfile ./src/ishare-auth-provider -t ishare-auth-provider
+
+    - name: build-resource-updater
+      id: resource-updater
+      run: docker build -f ./src/envoy-resource-updater/Dockerfile ./src/envoy-resource-updater -t envoy-resource-updater
+
+    - name: build-envoy
+      id: envoy
+      run: docker build -f ./envoy/Dockerfile ./envoy -t envoy
+
+    - name: build-config-service
+      id: config-service
+      run: |
+        cd src/endpoint-configuration-service/
+        mvn clean install deploy -DskipTests -Dimage.tag=local
+
+    - name: ip-tables
+      id: ip-tables
+      run:
+
+    - name: run-compose
+      id: compose
+      env:
+        - ENVOY_IMAGE: envoy
+        - RESOURCE_UPDATER_IMAGE: envoy-resource-updater
+        - CONFIG_SERVICE_IMAGE: wi_stefan/endpoint-configuration-service:local
+        - AUTH_PROVIDER_IMAGE: ishare-auth-provider
+      run: |
+        cd integration-test/integration-test/
+        mvn clean install

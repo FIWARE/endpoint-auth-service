@@ -19,6 +19,7 @@ import org.fiware.sidecar.service.EndpointWriteService;
 import org.fiware.sidecar.service.EnvoyUpdateService;
 
 import javax.transaction.Transactional;
+import javax.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -46,13 +47,13 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 			return HttpResponse.status(HttpStatus.CONFLICT);
 		}
 
-		Endpoint subscriber = endpointRepository.save(endpointMapper.endpointRegistrationVoToEndpoint(endpointRegistrationVO));
+		Endpoint endpoint = endpointRepository.save(endpointMapper.endpointRegistrationVoToEndpoint(endpointRegistrationVO));
 
 		// type specific creations
 		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()))
-				.createEndpoint(subscriber.getId(), endpointRegistrationVO);
+				.createEndpoint(endpoint.getId(), endpointRegistrationVO);
 
-		return HttpResponse.created(URI.create(subscriber.getId().toString()));
+		return HttpResponse.created(URI.create(endpoint.getId().toString()));
 	}
 
 	@Transactional

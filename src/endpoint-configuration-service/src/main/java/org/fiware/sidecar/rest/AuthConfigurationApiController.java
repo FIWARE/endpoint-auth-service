@@ -22,7 +22,6 @@ public class AuthConfigurationApiController implements AuthConfigurationApi {
 	private final EndpointRepository endpointRepository;
 	private final EndpointMapper endpointMapper;
 
-
 	@Override
 	public HttpResponse<AuthInfoVO> getEndpointByDomainAndPath(String domain, String path) {
 
