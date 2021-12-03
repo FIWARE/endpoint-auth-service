@@ -43,7 +43,7 @@ public class StepDefinitions {
 	private static final String ECHO_2_HOST = "10.5.0.8";
 	private static final String IDP_HOST = "10.5.0.7";
 
-	public static final int WAIT_TIMEOUT = 5000;
+	public static final int WAIT_TIMEOUT = 3000;
 	private static EndpointConfigurationApi endpointConfigurationApi;
 
 	{
