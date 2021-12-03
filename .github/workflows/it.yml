@@ -53,6 +53,8 @@ jobs:
       id: test
       run: |
         docker ps
+        sleep 20s
         curl http://localhost:6061/last
+        curl http://10.5.0.8:6061/last
         cd integration-test/integration-test/
         mvn clean install
