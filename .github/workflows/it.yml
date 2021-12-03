@@ -30,7 +30,7 @@ jobs:
       id: config-service
       run: |
         cd src/endpoint-configuration-service/
-        mvn clean install jib:dockerBuild -DskipTests -Dimage.tag=local
+        mvn clean install jib:dockerBuild -DskipTests
 
     - name: ip-tables
       id: ip-tables
@@ -38,13 +38,12 @@ jobs:
         cd docker-compose/
         sudo ./iptables.sh
 
-
     - name: run-compose
       id: compose
       env:
         ENVOY_IMAGE: envoy
         RESOURCE_UPDATER_IMAGE: envoy-resource-updater
-        CONFIG_SERVICE_IMAGE: wi_stefan/endpoint-configuration-service:local
+        CONFIG_SERVICE_IMAGE: wi_stefan/endpoint-configuration-service
         AUTH_PROVIDER_IMAGE: ishare-auth-provider
       run: |
         cd docker-compose/
