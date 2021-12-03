@@ -52,6 +52,6 @@ jobs:
     - name: run-test
       id: test
       run: |
-        curl 10.5.0.8:6061/last
+        curl localhost:6061/last
         cd integration-test/integration-test/
         mvn clean install
