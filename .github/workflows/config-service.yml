@@ -19,7 +19,7 @@ jobs:
     - name: Run tests
       run: |
         cd src/endpoint-configuration-service/
-        mvn clean test coveralls:jacoco -Dcoveralls.token=${{ secrets.COVERALLS_TOKEN }}
+        mvn clean verify coveralls:jacoco -Dcoveralls.token=${{ secrets.COVERALLS_TOKEN }}
 
   endpoint-service-deploy:
 
