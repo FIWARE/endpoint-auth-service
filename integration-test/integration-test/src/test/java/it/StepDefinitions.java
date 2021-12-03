@@ -65,7 +65,7 @@ public class StepDefinitions {
 
 		Awaitility
 				.await()
-				.atMost(Duration.of(10, ChronoUnit.SECONDS))
+				.atMost(Duration.of(60, ChronoUnit.SECONDS))
 				.until(() -> assertSystemIsRunning());
 	}
 
