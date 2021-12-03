@@ -36,7 +36,7 @@ jobs:
       id: ip-tables
       run: |
         cd docker-compose/
-        ./iptables.sh
+        sudo ./iptables.sh
 
 
     - name: run-compose
