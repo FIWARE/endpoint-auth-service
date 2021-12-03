@@ -52,7 +52,6 @@ public class StepDefinitions {
 	}
 
 	private static CredentialsManagementApi credentialsManagementApi;
-
 	{
 		org.fiware.sidecar.credentials.ApiClient apiClient = new org.fiware.sidecar.credentials.ApiClient();
 		apiClient.setBasePath(String.format("http://%s:7070", AUTH_HOST));
@@ -95,6 +94,8 @@ public class StepDefinitions {
 
 	@Before
 	public void beforeScenario() throws Exception {
+		// required to wait not fail before the initial wait.
+		setup_sidecar_in_docker();
 		cleanupConfiguration();
 	}
 
