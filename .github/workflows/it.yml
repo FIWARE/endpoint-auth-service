@@ -47,7 +47,7 @@ jobs:
         AUTH_PROVIDER_IMAGE: ishare-auth-provider
       run: |
         cd docker-compose/
-        docker-compose up
+        docker-compose up -d
 
     - name: run-test
       id: test
