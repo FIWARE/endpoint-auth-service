@@ -12,8 +12,6 @@ import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 
 @ConfigurationProperties("proxy")
 @Data
-@AllArgsConstructor
-@NoArgsConstructor
 public class ProxyProperties {
 
 	/**
@@ -44,8 +42,6 @@ public class ProxyProperties {
 
 	@Setter
 	@Getter
-	@AllArgsConstructor
-	@NoArgsConstructor
 	public static class AddressConfig {
 
 		private String address;

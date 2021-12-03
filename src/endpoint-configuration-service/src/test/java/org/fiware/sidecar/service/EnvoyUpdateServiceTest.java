@@ -33,37 +33,36 @@ class EnvoyUpdateServiceTest {
 	public void setup() {
 		endpointRepository = mock(EndpointRepository.class);
 	}
-
-	@ParameterizedTest
-	@MethodSource("provideConfig")
-	public void applyConfiguration(ProxyProperties proxyProperties, List<Endpoint> endpoints, String expectedResultPath) {
+//
+//	@ParameterizedTest
+//	@MethodSource("provideConfig")
+//	public void applyConfiguration(ProxyProperties proxyProperties, List<Endpoint> endpoints, String expectedResultPath) {
 //		envoyUpdateService = new EnvoyUpdateService(MUSTACHE_FACTORY, endpointRepository, ENDPOINT_MAPPER, proxyProperties);
 //
 //		when(endpointRepository.findAll()).thenReturn(endpoints);
 //		envoyUpdateService.applyConfiguration();
-
-	}
-
-	static Stream<Arguments> provideConfig() {
-		return Stream.of(
-				Arguments.of(
-						new ProxyProperties("listener.yaml", "cluster.yaml",
-								new ProxyProperties.AddressConfig("ext-auth", 7070),
-								new ProxyProperties.AddressConfig("0.0.0.0", 15001)),
-						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 8080, AuthType.ISHARE, true)),
-						"test/expected"));
-	}
-
-	private static Endpoint getEndpoint(UUID uuid, String domain, String path, int port, AuthType authType, boolean https) {
-		var endpoint = new Endpoint();
-		endpoint.setId(uuid);
-		endpoint.setDomain(domain);
-		endpoint.setPath(path);
-		endpoint.setPort(port);
-		endpoint.setAuthType(authType);
-		endpoint.setUseHttps(https);
-		return endpoint;
-	}
-
+//
+//	}
+//
+//	static Stream<Arguments> provideConfig() {
+//		return Stream.of(
+//				Arguments.of(
+//						new ProxyProperties("listener.yaml", "cluster.yaml",
+//								new ProxyProperties.AddressConfig("ext-auth", 7070),
+//								new ProxyProperties.AddressConfig("0.0.0.0", 15001)),
+//						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 8080, AuthType.ISHARE, true)),
+//						"test/expected"));
+//	}
+//
+//	private static Endpoint getEndpoint(UUID uuid, String domain, String path, int port, AuthType authType, boolean https) {
+//		var endpoint = new Endpoint();
+//		endpoint.setId(uuid);
+//		endpoint.setDomain(domain);
+//		endpoint.setPath(path);
+//		endpoint.setPort(port);
+//		endpoint.setAuthType(authType);
+//		endpoint.setUseHttps(https);
+//		return endpoint;
+//	}
 
 }
