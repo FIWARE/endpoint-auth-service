@@ -7,6 +7,7 @@ import io.cucumber.java.an.E;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -60,16 +61,28 @@ public class StepDefinitions {
 
 	@Given("The Data-provider is running with the endpoint-authentication-service as a sidecar-proxy.")
 	public void setup_sidecar_in_docker() throws Exception {
+
+
+		Awaitility
+				.await()
+				.atMost(Duration.of(10, ChronoUnit.SECONDS))
+				.until(() -> assertSystemIsRunning());
+	}
+
+	private boolean assertSystemIsRunning() {
 		// since the setup is relatively complex and does require root-permission, we only check that it is running here.
 		Request request = new Request.Builder()
 				.url(String.format("http://%s:9090/health", CONFIG_HOST))
 				.build();
 		OkHttpClient okHttpClient = new OkHttpClient();
 
-		Awaitility
-				.await()
-				.atMost(Duration.of(10, ChronoUnit.SECONDS))
-				.untilAsserted(() -> Assertions.assertEquals(200, okHttpClient.newCall(request).execute().code(), "We expect the setup to run before starting."));
+		try {
+			Assertions.assertEquals(200, okHttpClient.newCall(request).execute().code(), "We expect the setup to run before starting.");
+			return true;
+		} catch (Exception e) {
+			// in case of an exception we assume the system is not reachable yet.
+			return false;
+		}
 	}
 
 	@Given("Data-Consumer's root path is configured as an iShare endpoint.")
