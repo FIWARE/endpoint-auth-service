@@ -30,7 +30,7 @@ jobs:
       id: config-service
       run: |
         cd src/endpoint-configuration-service/
-        mvn clean install deploy -DskipTests -Dimage.tag=local
+        mvn clean install jib:dockerBuild -DskipTests -Dimage.tag=local
 
     - name: ip-tables
       id: ip-tables
