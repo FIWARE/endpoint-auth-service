@@ -54,6 +54,7 @@ jobs:
       run: |
         sleep 20s
         docker ps
+        docker logs docker-compose_config-service_1
         curl -v http://10.5.0.5:9090/health
         cd integration-test/integration-test/
         # mvn clean install
