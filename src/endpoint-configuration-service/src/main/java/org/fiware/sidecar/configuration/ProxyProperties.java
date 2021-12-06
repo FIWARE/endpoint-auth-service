@@ -25,6 +25,11 @@ public class ProxyProperties {
 	private String clusterYamlPath;
 
 	/**
+	 * Delay to be used when updating envoy. Should prevent to frequent config changes.
+	 */
+	private long updateDelayInS;
+
+	/**
 	 * Address of the authentication provider
 	 */
 	@ConfigurationBuilder(configurationPrefix = "externalAuth")

@@ -25,4 +25,8 @@ public class Application {
 		return new DefaultMustacheFactory();
 	}
 
+	@Bean
+	public ScheduledExecutorService executorService() {
+		return Executors.newSingleThreadScheduledExecutor();
+	}
 }

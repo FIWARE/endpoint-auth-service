@@ -28,6 +28,7 @@ in order to prevent a new auth-flow for every request.
 - [Use envoy as proxy](./doc/adr/choose-proxy.md)
 - [Use mustache templating for envoy config](./doc/adr/mustache-templating.md)
 - [Implement auth-providers as separate components](./doc/adr/authprovider-as-separate-component.md)
+- [Auth-provider config on path level](./doc/adr/auth-provider-on-path-level.md)
 
 ## APIs
 

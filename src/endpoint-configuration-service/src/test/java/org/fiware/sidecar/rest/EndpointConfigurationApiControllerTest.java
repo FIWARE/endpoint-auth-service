@@ -11,6 +11,7 @@ import org.fiware.sidecar.model.EndpointInfoVO;
 import org.fiware.sidecar.model.EndpointRegistrationVO;
 import org.fiware.sidecar.persistence.Endpoint;
 import org.fiware.sidecar.persistence.EndpointRepository;
+import org.fiware.sidecar.service.EnvoyUpdateService;
 import org.fiware.sidecar.service.IShareEndpointWriteService;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
@@ -24,6 +25,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,7 +43,7 @@ class EndpointConfigurationApiControllerTest {
 	@BeforeEach
 	public void setup() {
 		endpointRepository = mock(EndpointRepository.class);
-		endpointConfigurationApiController = new EndpointConfigurationApiController(List.of(new IShareEndpointWriteService()), endpointRepository, ENDPOINT_MAPPER);
+		endpointConfigurationApiController = new EndpointConfigurationApiController(List.of(new IShareEndpointWriteService()), endpointRepository, ENDPOINT_MAPPER, mock(EnvoyUpdateService.class));
 	}
 
 	@ParameterizedTest

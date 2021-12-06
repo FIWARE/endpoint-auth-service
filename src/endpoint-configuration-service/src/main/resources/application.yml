@@ -48,4 +48,4 @@ proxy:
     port: 15001
   listenerYamlPath: ./listener.yaml
   clusterYamlPath: ./cluster.yaml
-  updateInterval: 2s
+  updateDelayInS: 2

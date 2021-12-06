@@ -34,6 +34,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 	private final List<EndpointWriteService> subscriberWriteServices;
 	private final EndpointRepository endpointRepository;
 	private final EndpointMapper endpointMapper;
+	private final EnvoyUpdateService envoyUpdateService;
 
 	@Transactional
 	@Override
@@ -53,28 +54,32 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()))
 				.createEndpoint(endpoint.getId(), endpointRegistrationVO);
 
+		envoyUpdateService.scheduleConfigUpdate();
+
 		return HttpResponse.created(URI.create(endpoint.getId().toString()));
 	}
 
 	@Transactional
 	@Override
 	public HttpResponse<Object> deleteEndpoint(UUID id) {
-		Optional<Endpoint> optionalSubscriber = endpointRepository.findById(id);
-		if (optionalSubscriber.isPresent()) {
+		Optional<Endpoint> optionalEndpoint = endpointRepository.findById(id);
+		if (optionalEndpoint.isPresent()) {
 			endpointRepository.deleteById(id);
-			getServiceForAuthType(optionalSubscriber.get().getAuthType()).deleteEndpoint(id);
+			getServiceForAuthType(optionalEndpoint.get().getAuthType()).deleteEndpoint(id);
+			envoyUpdateService.scheduleConfigUpdate();
 
 			return HttpResponse.noContent();
 		}
+
 		return HttpResponse.notFound();
 	}
 
 	@Override
 	public HttpResponse<EndpointInfoVO> getEndpointInfo(UUID id) {
-		Optional<EndpointInfoVO> optionalSubscriberInfoVO = endpointRepository
+		Optional<EndpointInfoVO> optionalEndpointInfoVO = endpointRepository
 				.findById(id)
 				.map(endpointMapper::endpointToEndpointInfoVo);
-		return optionalSubscriberInfoVO.<HttpResponse<EndpointInfoVO>>map(HttpResponse::ok).orElse(null);
+		return optionalEndpointInfoVO.<HttpResponse<EndpointInfoVO>>map(HttpResponse::ok).orElse(null);
 	}
 
 	@Override

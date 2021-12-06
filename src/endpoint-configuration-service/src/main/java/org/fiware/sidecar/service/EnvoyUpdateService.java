@@ -9,6 +9,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiware.sidecar.configuration.ProxyProperties;
 import org.fiware.sidecar.exception.EnvoyUpdateException;
 import org.fiware.sidecar.mapping.EndpointMapper;
+import org.fiware.sidecar.model.MustacheAuthType;
 import org.fiware.sidecar.model.MustacheEndpoint;
 import org.fiware.sidecar.model.MustachePort;
 import org.fiware.sidecar.model.MustacheVirtualHost;
@@ -19,11 +20,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
@@ -32,12 +38,13 @@ import java.util.stream.StreamSupport;
 @Context
 public class EnvoyUpdateService {
 
-	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used", "/", null, "true", 0);
+	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used", "/", null, "true", 0, "");
 
 	private final MustacheFactory mustacheFactory;
 	private final EndpointRepository endpointRepository;
 	private final EndpointMapper endpointMapper;
 	private final ProxyProperties proxyProperties;
+	private final ScheduledExecutorService executorService;
 
 	private Mustache listenerTemplate;
 	private Mustache clusterTemplate;
@@ -48,7 +55,10 @@ public class EnvoyUpdateService {
 		clusterTemplate = mustacheFactory.compile("./templates/cluster.yaml.mustache");
 	}
 
-	@Scheduled(fixedDelay = "${proxy.updateInterval}")
+	public void scheduleConfigUpdate() {
+		executorService.schedule(this::applyConfiguration, proxyProperties.getUpdateDelayInS(), TimeUnit.SECONDS);
+	}
+
 	void applyConfiguration() {
 
 		List<MustacheEndpoint> mustacheEndpoints = StreamSupport
@@ -56,6 +66,13 @@ public class EnvoyUpdateService {
 				.map(endpointMapper::endpointToMustacheEndpoint)
 				.toList();
 
+		List<MustacheAuthType> mustacheAuthTypes = mustacheEndpoints.stream()
+				.map(MustacheEndpoint::authType)
+				.map(Objects::toString)
+				.map(String::toLowerCase)
+				.map(MustacheAuthType::new)
+				.distinct()
+				.toList();
 
 		Map<String, List<MustacheEndpoint>> endpointMap = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
@@ -68,6 +85,7 @@ public class EnvoyUpdateService {
 		List<MustacheVirtualHost> mustacheVirtualHosts = endpointMap
 				.entrySet().stream()
 				.map(entry -> new MustacheVirtualHost(
+						UUID.randomUUID().toString(),
 						entry.getKey(),
 						entry.getValue().stream()
 								.map(MustacheEndpoint::port)
@@ -86,6 +104,7 @@ public class EnvoyUpdateService {
 		mustacheRenderContext.put("socket-port", socketAddress.getPort());
 		mustacheRenderContext.put("auth-service-address", authAddress.getAddress());
 		mustacheRenderContext.put("auth-service-port", authAddress.getPort());
+		mustacheRenderContext.put("authTypes", mustacheAuthTypes);
 		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
 		mustacheRenderContext.put("endpoints", mustacheEndpoints);
 
