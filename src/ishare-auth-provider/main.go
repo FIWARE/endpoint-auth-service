@@ -27,9 +27,9 @@ func main() {
 	router.GET("/ISHARE/auth", getAuth)
 
 	// credentials management api
-	router.GET("/credentials", getCredentialsList)
-	router.DELETE("/credentials/:clientId", deleteCredentials)
-	router.POST("/credentials/:clientId", postCredentials)
+	router.GET("/credentials", getCredentialsListRoute)
+	router.DELETE("/credentials/:clientId", deleteCredentialsRoute)
+	router.POST("/credentials/:clientId", postCredentialsRoute)
 	router.PUT("/credentials/:clientId/certificateChain", putCertificateChain)
 	router.PUT("/credentials/:clientId/signingKey", putSigningKey)
 
