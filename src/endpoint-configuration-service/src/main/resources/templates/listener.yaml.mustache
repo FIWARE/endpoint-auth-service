@@ -52,7 +52,32 @@ resources:
                         typed_per_filter_config:
                           envoy.filters.http.lua:
                             "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            name: {{authType}}.lua
+                            source_code:
+                              inline_string: |
+                                local json = (loadfile "/lua-json/json.lua")()
+                                function envoy_on_request(request_handle)
+                                  local fullDomain = request_handle:headers():get(":authority")
+                                  local path = request_handle:headers():get(":path")
+                                  local domain
+                                  for domainPart in string.gmatch(fullDomain, '([^:]+)') do 
+                                    domain = domainPart
+                                    break
+                                  end
+                                  local headers, body = request_handle:httpCall(
+                                  "ext-authz",
+                                  {
+                                    [":method"] = "GET",
+                                    [":path"] = "/{{authType}}/auth?domain=" .. domain .. "&path=" .. path,
+                                    [":authority"] = "ext-authz"
+                                  },
+                                  null,
+                                  5000)
+                                
+                                  local jsonString = tostring(body)
+                                  local jsonArray = json.decode(jsonString)
+                                
+                                  for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
+                                end
                     {{/passthrough}}
                   {{/endpoints}}
                 {{/virtualHosts}}
@@ -74,35 +99,6 @@ resources:
                   "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
                   inline_code: |
                     function envoy_on_request(request_handle)
-                      request_handle:logInfo("Nothing to do here")
+                     -- required default handler, does nothing
                     end
-                  {{#authTypes}}
-                  source_codes:
-                    {{type}}.lua:
-                      inline_string: |
-                       local json = (loadfile "/lua-json/json.lua")()
-                       function envoy_on_request(request_handle)
-                        local fullDomain = request_handle:headers():get(":authority")
-                        local path = request_handle:headers():get(":path")
-                        local domain
-                        for domainPart in string.gmatch(fullDomain, '([^:]+)') do 
-                          domain = domainPart
-                          break
-                        end
-                        local headers, body = request_handle:httpCall(
-                        "ext-authz",
-                        {
-                          [":method"] = "GET",
-                          [":path"] = "/{{type}}/auth?domain=" .. domain .. "&path=" .. path,
-                          [":authority"] = "ext-authz"
-                        },
-                        null,
-                        5000)
-                      
-                        local jsonString = tostring(body)
-                        local jsonArray = json.decode(jsonString)
-                      
-                        for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
-                       end
-                  {{/authTypes}}
               - name: envoy.filters.http.router
