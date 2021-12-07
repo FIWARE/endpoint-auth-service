@@ -24,7 +24,7 @@ func main() {
 
 	router := gin.Default()
 	// auth api
-	router.GET("/ishare/auth", getAuth)
+	router.GET("/ISHARE/auth", getAuth)
 
 	// credentials management api
 	router.GET("/credentials", getCredentialsList)
