@@ -8,6 +8,7 @@ import org.fiware.sidecar.mapping.EndpointMapperImpl;
 import org.fiware.sidecar.model.AuthType;
 import org.fiware.sidecar.persistence.Endpoint;
 import org.fiware.sidecar.persistence.EndpointRepository;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,8 @@ import org.yaml.snakeyaml.Yaml;
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -35,14 +38,17 @@ class EnvoyUpdateServiceTest {
 	private EndpointRepository endpointRepository;
 	private ProxyProperties proxyProperties;
 	private EnvoyUpdateService envoyUpdateService;
-
+	private String testId;
 
 	@BeforeEach
-	public void setup() {
+	public void setup() throws Exception {
 		endpointRepository = mock(EndpointRepository.class);
 		proxyProperties = new ProxyProperties();
-		proxyProperties.setListenerYamlPath("./myTest/listener.yaml");
-		proxyProperties.setClusterYamlPath("./myTest/cluster.yaml");
+		testId = UUID.randomUUID().toString();
+		Files.createDirectory(Path.of(String.format("./%s", testId)));
+
+		proxyProperties.setListenerYamlPath(String.format("./%s/listener.yaml", testId));
+		proxyProperties.setClusterYamlPath(String.format("./%s/cluster.yaml", testId));
 		ProxyProperties.AddressConfig authService = new ProxyProperties.AddressConfig();
 		authService.setPort(7070);
 		authService.setAddress("auth-service");
@@ -53,18 +59,42 @@ class EnvoyUpdateServiceTest {
 		proxyProperties.setSocketAddress(socketAddress);
 	}
 
-	@Test
-	public void applyConfiguration() throws Exception {
+	// deletes all generated results. Disable this mechanism if you need to debug them.
+	@AfterEach
+	public void cleanUpResults() throws Exception {
+		try (Stream<Path> walk = Files.walk(Path.of(String.format("./%s", testId)))) {
+			walk.sorted(Comparator.reverseOrder())
+					.map(Path::toFile)
+					.forEach(File::delete);
+		}
+	}
+
+	@ParameterizedTest
+	@MethodSource("getTestConfig")
+	public void applyConfiguration(List<Endpoint> endpoints, String expectationsFolder) throws Exception {
 		envoyUpdateService = new EnvoyUpdateService(MUSTACHE_FACTORY, endpointRepository, ENDPOINT_MAPPER, proxyProperties, Executors.newSingleThreadScheduledExecutor());
 		envoyUpdateService.setupTemplates();
 
-		UUID endpointID = UUID.randomUUID();
-		when(endpointRepository.findAll()).thenReturn(List.of(getEndpoint(endpointID, "domain", "/", 6060, AuthType.ISHARE, true)));
-//		envoyUpdateService.applyConfiguration();
-//		Map<String, Object> expectedListener = getYamlAsMap(Path.of("src/test/resources/expectations/single-endpoint/listener.yaml"), Map.of("expected", endpointID.toString()));
-//		Map<String, Object> generatedListener = getYamlAsMap(Path.of("myTest/listener.yaml"), null);
-//
-//		Assertions.assertEquals(expectedListener, generatedListener, "Generated listener should be as expected.");
+		when(endpointRepository.findAll()).thenReturn(endpoints);
+		envoyUpdateService.applyConfiguration();
+
+		Map<String, String> replacementMap = buildIdReplacementMap(endpoints);
+
+		Map<String, Object> expectedListener = getYamlAsMap(Path.of(String.format("%s/listener.yaml", expectationsFolder)), null);
+		Map<String, Object> generatedListener = getYamlAsMap(Path.of(String.format("%s/listener.yaml", testId)), replacementMap);
+		Assertions.assertEquals(expectedListener, generatedListener, "Generated listener should be as expected.");
+
+		Map<String, Object> expectedCluster = getYamlAsMap(Path.of(String.format("%s/cluster.yaml", expectationsFolder)), null);
+		Map<String, Object> generatedCluster = getYamlAsMap(Path.of(String.format("%s/cluster.yaml", testId)), replacementMap);
+		Assertions.assertEquals(expectedCluster, generatedCluster, "Generated cluster should be as expected.");
+	}
+
+	private Map<String, String> buildIdReplacementMap(List<Endpoint> endpoints) {
+		Map<String, String> replacementMap = new HashMap<>();
+		for (int i = 0; i < endpoints.size(); i++) {
+			replacementMap.put(endpoints.get(i).getId().toString(), String.format("expected-%s", i));
+		}
+		return replacementMap;
 	}
 
 	private Map<String, Object> getYamlAsMap(Path path, Map<String, String> replacementMap) throws Exception {
@@ -76,6 +106,37 @@ class EnvoyUpdateServiceTest {
 		}
 		Yaml yaml = new Yaml();
 		return yaml.load(expectedString);
+	}
+
+	private static Stream<Arguments> getTestConfig() {
+		return Stream.of(
+				Arguments.of(
+						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 6060, AuthType.ISHARE, true)),
+						"src/test/resources/expectations/single-endpoint/"),
+				Arguments.of(
+						List.of(),
+						"src/test/resources/expectations/empty/"),
+				Arguments.of(
+						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 6060, AuthType.ISHARE, true),
+								getEndpoint(UUID.randomUUID(), "domain-2", "/", 6070, AuthType.ISHARE, false)),
+						"src/test/resources/expectations/multi-endpoint/"),
+				Arguments.of(
+						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 6060, AuthType.ISHARE, false)),
+						"src/test/resources/expectations/single-endpoint-no-ssl/"),
+				Arguments.of(
+						List.of(getEndpoint(UUID.randomUUID(), "domain", "/nonRoot", 6060, AuthType.ISHARE, true)),
+						"src/test/resources/expectations/single-non-root-path/"),
+				Arguments.of(
+						List.of(getEndpoint(UUID.randomUUID(), "domain", "/path1", 6060, AuthType.ISHARE, true),
+								getEndpoint(UUID.randomUUID(), "domain", "/path2", 6060, AuthType.ISHARE, true)),
+						"src/test/resources/expectations/single-endpoint-multi-path/"),
+				Arguments.of(
+						List.of(getEndpoint(UUID.randomUUID(), "domain", "/path1", 6060, AuthType.ISHARE, true),
+								getEndpoint(UUID.randomUUID(), "domain", "/path2", 6060, AuthType.ISHARE, true),
+								getEndpoint(UUID.randomUUID(), "domain-2", "/", 6060, AuthType.ISHARE, true),
+								getEndpoint(UUID.randomUUID(), "domain-2", "/nonRoot", 6070, AuthType.ISHARE, false)),
+						"src/test/resources/expectations/multi-endpoint-multi-path/")
+		);
 	}
 
 	private static Endpoint getEndpoint(UUID uuid, String domain, String path, int port, AuthType authType, boolean https) {

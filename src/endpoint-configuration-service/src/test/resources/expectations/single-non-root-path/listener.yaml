@@ -35,7 +35,7 @@ resources:
                       - 'domain:6060'
                     routes:
                       - match:
-                          prefix: "/"
+                          prefix: "/nonRoot"
                         route:
                           cluster: expected-0
                         typed_per_filter_config:
@@ -67,6 +67,14 @@ resources:
                                 
                                   for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
                                 end
+                      - match:
+                          prefix: "/"
+                        route:
+                          cluster: passthrough
+                        typed_per_filter_config:
+                          envoy.filters.http.lua:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
+                            disabled: true
                   - name: allow_any
                     domains:
                       - "*"

@@ -43,6 +43,21 @@ resources:
       typed_config:
         "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: expected-1
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: expected-1
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: "domain-2"
+                    port_value: 6070
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: passthrough
     type: ORIGINAL_DST
     lbPolicy: CLUSTER_PROVIDED
