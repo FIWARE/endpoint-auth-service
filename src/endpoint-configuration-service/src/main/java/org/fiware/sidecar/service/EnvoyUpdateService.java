@@ -77,7 +77,6 @@ public class EnvoyUpdateService {
 		List<MustacheVirtualHost> mustacheVirtualHosts = endpointMap
 				.entrySet().stream()
 				.map(entry -> new MustacheVirtualHost(
-						UUID.randomUUID().toString(),
 						entry.getKey(),
 						entry.getValue().stream()
 								.map(MustacheEndpoint::port)

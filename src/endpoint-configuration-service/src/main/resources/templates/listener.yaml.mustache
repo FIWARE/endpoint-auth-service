@@ -30,7 +30,7 @@ resources:
                 name: local_route
                 virtual_hosts:
                 {{#virtualHosts}}
-                  - name: {{id}}
+                  - name: {{domain}}
                     domains:
                       - '{{domain}}'
                   {{#ports}}
