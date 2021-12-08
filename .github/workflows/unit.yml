@@ -21,11 +21,23 @@ jobs:
         cd src/endpoint-configuration-service/
         mvn clean verify
 
+    - name: Setup .NET Core # Required to execute ReportGenerator
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.100
+
+    - name: ReportGenerator
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.0.0
+      with:
+        reports: 'src/endpoint-configuration-service/target/site/jacoco/jacoco.xml'
+        targetdir: 'coveragereport'
+        reporttypes: 'lcov'
+
     - name: Upload coverage-report
       uses: actions/upload-artifact@v2
       with:
-        name: jacoco.exec
-        path: src/endpoint-configuration-service/target/site/jacoco/test.exec
+        name: jacoco
+        path: coveragereport/
 
   ishare-auth-provider-test:
     runs-on: ubuntu-latest
