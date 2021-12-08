@@ -1,4 +1,4 @@
-
+[![License badge](https://img.shields.io/github/license/FIWARE/context.Orion-LD.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![Container Repository on Quay](https://img.shields.io/badge/quay.io-eas-green "Container Repository on Quay")](https://quay.io/repository/wi_stefan/endpoint-configuration-service?tab=tags)
 [![Coverage Status](https://coveralls.io/repos/github/wistefan/endpoint-auth-service/badge.svg?branch=initial-dev)](https://coveralls.io/github/wistefan/endpoint-auth-service?branch=initial-dev)
 [![Unit-Test](https://github.com/wistefan/endpoint-auth-service/actions/workflows/unit.yml/badge.svg)](https://github.com/wistefan/endpoint-auth-service/actions/workflows/unit.yml)
