@@ -74,9 +74,16 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: download
+      - name: download ecs report
         uses: actions/download-artifact@v2
         with:
+          name: ecs.lcov
+          path: coverage
+
+      - name: download auth-provider report
+        uses: actions/download-artifact@v2
+        with:
+          name: auth-provider.lcov
           path: coverage
 
       - name: prepare
@@ -86,6 +93,7 @@ jobs:
       - name: aggregate
         run: |  
           cd coverage
+          ls -l
           cat auth-provider.lcov
           cat ecs.lcov
           lcov -a auth-provider.lcov -a ecs.lcov -o ../lcov.info
