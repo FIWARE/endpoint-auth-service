@@ -43,7 +43,7 @@ To start-up the environment run ```docker-compose up``` inside the [docker-compo
 A request scenario will use the following path(numbers belong to the corresponding one in the diagram):
 
 1. Client sends client credentials to the credentials-management api of the auth-provider: 
-   ```
+   ```console
    curl --request POST '10.5.0.6:7070/credentials/EU.EORI.CLIENTID' \
         --header 'Content-Type: application/json' \
         --data-raw '{
@@ -55,7 +55,7 @@ A request scenario will use the following path(numbers belong to the correspondi
 
 
 2. Client send configuration request to the config-service:
-    ``` 
+    ```console 
     curl --request POST '10.5.0.5:9090/endpoint' \
     --header 'Content-Type: application/json' \
     --data-raw '{

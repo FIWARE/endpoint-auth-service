@@ -14,6 +14,9 @@ import org.mapstruct.Named;
 import java.util.Map;
 import java.util.UUID;
 
+/**
+ * Mapper interface(to be used by mapstruct). Generates {@see https://jcp.org/en/jsr/detail?id=330} compliant mappers.
+ */
 @Mapper(componentModel = "jsr330")
 public interface EndpointMapper {
 

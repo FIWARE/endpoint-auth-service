@@ -67,8 +67,8 @@ For information about the individual components, see their folders.
 
 ## Why not use mTLS?
 
-mTLS is a method for mutual authentication. The parties on each end of the connection can be verified through TLS certificates. In contrast to that,
-this solution targets the authentication-handling of only one side of the connection. The authentication of the connection-target is optionally available 
+[mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS) is a method for mutual authentication. The parties on each end of the connection can be verified through TLS certificates. In contrast to that,
+the endpoint-authentication-service solution targets the authentication-handling of only one side of the connection. The authentication of the connection-target is optionally available 
 through https. 
 In the general context of the endpoint-auth-service, participating in mTLS can be seen as an additional auth-method. In order to support that, the [lua-script in the listeners-template](src/endpoint-configuration-service/src/main/resources/templates/listener.yaml.mustache) 
 would need to add the client-certificate to the request. Since the endpoint-auth-service uses [envoy](https://www.envoyproxy.io) and therefor can be integrated with a 

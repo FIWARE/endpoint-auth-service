@@ -10,6 +10,9 @@ import lombok.Setter;
 import org.checkerframework.checker.units.qual.A;
 import org.graalvm.compiler.core.common.type.ArithmeticOpTable;
 
+/**
+ * Configuration of proxy(e.g. envoy) related properties
+ */
 @ConfigurationProperties("proxy")
 @Data
 public class ProxyProperties {
