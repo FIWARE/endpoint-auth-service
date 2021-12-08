@@ -36,7 +36,7 @@ jobs:
     - name: Upload coverage-report
       uses: actions/upload-artifact@v2
       with:
-        name: ecs.lcov
+        name: ecs
         path: coveragereport/lcov.info
 
   ishare-auth-provider-test:
@@ -65,7 +65,7 @@ jobs:
     - name: Upload coverage-report
       uses: actions/upload-artifact@v2
       with:
-        name: auth-provider.lcov
+        name: auth-provider
         path: src/ishare-auth-provider/coverage.lcov
 
   aggregate-report:
@@ -77,14 +77,14 @@ jobs:
       - name: download ecs report
         uses: actions/download-artifact@v2
         with:
-          name: ecs.lcov
-          path: coverage
+          name: ecs
+          path: coverage/ecs
 
       - name: download auth-provider report
         uses: actions/download-artifact@v2
         with:
-          name: auth-provider.lcov
-          path: coverage
+          name: auth-provider
+          path: coverage/auth-provider
 
       - name: prepare
         run: |
@@ -93,10 +93,7 @@ jobs:
       - name: aggregate
         run: |  
           cd coverage
-          ls -l
-          cat auth-provider.lcov
-          cat ecs.lcov
-          lcov -a auth-provider.lcov -a ecs.lcov -o ../lcov.info
+          lcov -a auth-provider/coverage.lcov -a ecs/lcov.info -o ../lcov.info
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
