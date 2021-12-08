@@ -36,8 +36,8 @@ jobs:
     - name: Upload coverage-report
       uses: actions/upload-artifact@v2
       with:
-        name: jacoco
-        path: coveragereport/
+        name: ecs.lcov
+        path: coveragereport/lcov.info
 
   ishare-auth-provider-test:
     runs-on: ubuntu-latest
@@ -67,3 +67,35 @@ jobs:
       with:
         name: auth-provider.lcov
         path: src/ishare-auth-provider/coverage.lcov
+
+  aggregate-report:
+    needs: [endpoint-service-test, ishare-auth-provider-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: download
+        uses: actions/download-artifact@v2
+        with:
+          path: coverage
+
+      - name: prepare
+        run: |
+          sudo apt-get install -y lcov
+
+      - name: aggregate
+        run: |  
+          cd coverage
+          covFilesList=""
+          for FILENAME in *.lcov; do
+            covFilesList+="-a "+ FILENAME;
+          done
+          lcov ${covFilesList} -o ../lcov.info
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ${{ github.workspace }}/lcov.info
+      
+      
