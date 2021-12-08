@@ -8,6 +8,9 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import java.util.UUID;
 
+/**
+ * DB entity for an endpoint
+ */
 @Entity
 @Data
 public class Endpoint {
@@ -15,6 +18,7 @@ public class Endpoint {
 	@Id
 	@GeneratedValue
 	private UUID id;
+
 
 	private String domain;
 	private String path;

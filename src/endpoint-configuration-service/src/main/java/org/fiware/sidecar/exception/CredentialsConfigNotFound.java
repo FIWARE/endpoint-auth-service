@@ -4,6 +4,9 @@ import lombok.Getter;
 
 import java.util.List;
 
+/**
+ * Exception to be thrown if a credential is requested that was not found
+ */
 public class CredentialsConfigNotFound extends Exception {
 
 	@Getter

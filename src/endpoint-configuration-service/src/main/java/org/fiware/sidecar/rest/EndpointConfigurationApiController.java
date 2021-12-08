@@ -1,6 +1,5 @@
 package org.fiware.sidecar.rest;
 
-import io.micronaut.core.util.AntPathMatcher;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
@@ -19,13 +18,15 @@ import org.fiware.sidecar.service.EndpointWriteService;
 import org.fiware.sidecar.service.EnvoyUpdateService;
 
 import javax.transaction.Transactional;
-import javax.validation.Valid;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.stream.StreamSupport;
 
+/**
+ * Implementation of the configuration api.
+ */
 @Slf4j
 @Controller
 @RequiredArgsConstructor

@@ -1,6 +1,5 @@
 package org.fiware.sidecar.rest;
 
-import io.micronaut.core.util.AntPathMatcher;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.annotation.Controller;
 import lombok.RequiredArgsConstructor;
@@ -12,6 +11,9 @@ import org.fiware.sidecar.persistence.EndpointRepository;
 
 import java.util.Comparator;
 
+/**
+ * Implementation of the auth-configuration api
+ */
 @Slf4j
 @Controller
 @RequiredArgsConstructor

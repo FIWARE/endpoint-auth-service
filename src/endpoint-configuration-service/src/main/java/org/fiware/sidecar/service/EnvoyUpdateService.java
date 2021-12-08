@@ -33,6 +33,9 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+/**
+ * Service to update the envoy configuration
+ */
 @Slf4j
 @RequiredArgsConstructor
 @Context
@@ -55,10 +58,16 @@ public class EnvoyUpdateService {
 		clusterTemplate = mustacheFactory.compile("./templates/cluster.yaml.mustache");
 	}
 
+	/**
+	 * Schedule a new configuration generation
+	 */
 	public void scheduleConfigUpdate() {
 		executorService.schedule(this::applyConfiguration, proxyProperties.getUpdateDelayInS(), TimeUnit.SECONDS);
 	}
 
+	/**
+	 * Apply the actual configuration, retrieved from the repository
+	 */
 	void applyConfiguration() {
 
 		List<MustacheEndpoint> mustacheEndpoints = StreamSupport
@@ -119,6 +128,9 @@ public class EnvoyUpdateService {
 		updateEnvoyConfig(proxyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
 	}
 
+	/*
+	 * If only sub-paths are configured, add a passthrough route match for the domain
+	 */
 	private List<MustacheEndpoint> addPassThroughIfNoRoot(List<MustacheEndpoint> originalList) {
 		Optional<MustacheEndpoint> optionalRootEndpoint = originalList.stream()
 				.filter(mustacheEndpoint -> mustacheEndpoint.path().equals(PASSTHROUGH_ENDPOINT.path()))

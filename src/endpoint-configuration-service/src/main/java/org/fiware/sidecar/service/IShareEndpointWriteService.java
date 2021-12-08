@@ -7,6 +7,9 @@ import org.fiware.sidecar.model.EndpointRegistrationVO;
 import javax.inject.Singleton;
 import java.util.UUID;
 
+/**
+ * Noop service to fulfill the required interface for iShare
+ */
 @Singleton
 public class IShareEndpointWriteService implements EndpointWriteService{
 	@Override
