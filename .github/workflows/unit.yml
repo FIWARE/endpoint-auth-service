@@ -86,11 +86,7 @@ jobs:
       - name: aggregate
         run: |  
           cd coverage
-          covFilesList=""
-          for FILENAME in *.lcov; do
-            covFilesList+="-a "+ FILENAME;
-          done
-          lcov ${covFilesList} -o ../lcov.info
+          lcov -a auth-provider.lcov -a ecs.lcov -o ../lcov.info
 
       - name: Coveralls
         uses: coverallsapp/github-action@master
