@@ -95,6 +95,11 @@ jobs:
           cd coverage
           lcov -a auth-provider/coverage.lcov -a ecs/lcov.info -o ../lcov.info
 
+      - name: Upload coverage-report
+        uses: actions/upload-artifact@v2
+        with:
+          path: lcov.info
+
       - name: Coveralls
         uses: coverallsapp/github-action@master
         with:
