@@ -5,7 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"encoding/pem"
-	"io/ioutil"
+	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -32,12 +33,11 @@ const certChainFile = "cert.cer"
 * Struct for holding the required auth info.
  */
 type AuthInfo struct {
-	AuthType          string `json:"authType"`
-	IShareIdpAddress  string `json:"iShareIdpAddress"`
-	RequestGrantType  string `json:"requestGrantType"`
-	IShareClientID    string `json:"iShareClientId"`
-	CredentialsFolder string `json:"credentialsFolder"`
-	IShareIdpID       string `json:"iShareIdpId"`
+	AuthType         string `json:"authType"`
+	IShareIdpAddress string `json:"iShareIdpAddress"`
+	RequestGrantType string `json:"requestGrantType"`
+	IShareClientID   string `json:"iShareClientId"`
+	IShareIdpID      string `json:"iShareIdpId"`
 }
 
 type Header struct {
@@ -50,41 +50,55 @@ type Header struct {
  */
 type HeadersList []Header
 
-func getAuthInformation(domain string, path string) (authInfo AuthInfo, err error) {
+var errEmptyDomain error = errors.New("empty_domain")
+var errEmptyPath error = errors.New("empty_path")
+var errNoResponseBody = errors.New("no_response_body")
+var errCertDecode = errors.New("cert_decode_failed")
 
-	req, err := http.NewRequest("GET", configurationServiceUrl+"/auth", nil)
-
-	if err != nil {
-		log.Warn("Was not able to build a request. Invalid configuration server url.", err)
-	}
-
-	q := req.URL.Query()
-	q.Add("domain", domain)
-	q.Add("path", path)
-	req.URL.RawQuery = q.Encode()
-	resp, err := http.Get(req.URL.String())
-	if err != nil {
-		log.Warn("Was not able to get authInfo.", err)
-		return authInfo, err
-	}
-
-	// decode and return
-	err = json.NewDecoder(resp.Body).Decode(&authInfo)
-	if err != nil {
-		log.Warn("Was not able to decode the auth response.", err)
-		return authInfo, err
-	}
-	return authInfo, nil
+// auth getter interface to improve testability
+type AuthGetterInterface interface {
+	getAuthInfo(domain string, path string) (authInfo AuthInfo, err error)
+	getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error)
+	getCertificate(credentialsFolderPath string) (encodedCert string, err error)
 }
 
+type AuthGetter struct{}
+
+func (AuthGetter) getAuthInfo(domain string, path string) (authInfo AuthInfo, err error) {
+	return getAuthInformation(domain, path)
+}
+
+func (AuthGetter) getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error) {
+	return getSigningKey(credentialsFolderPath)
+}
+
+func (AuthGetter) getCertificate(credentialsFolderPath string) (encodedCert string, err error) {
+	return getEncodedCertificate(credentialsFolderPath)
+}
+
+var authGetter AuthGetterInterface = &AuthGetter{}
+
+/**
+* Route implementation for auth retrieval
+ */
 func getAuth(c *gin.Context) {
 
 	domain := c.Query("domain")
+	if domain == "" {
+		log.Warn("Empty domain was requested.")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 	path := c.Query("path")
+	if path == "" {
+		log.Warn("Empty path was requested.")
+		c.AbortWithStatus(http.StatusBadRequest)
+		return
+	}
 
-	authInfo, err := getAuthInformation(domain, path)
+	authInfo, err := authGetter.getAuthInfo(domain, path)
 	if err != nil {
-		log.Warn("Was not able to retrieve auth-info.", err)
+		log.Warn("Was not able to retrieve auth-info. ", err)
 		c.String(http.StatusBadGateway, "Was not able to retrieve auth info from the config-service.")
 		return
 	}
@@ -92,9 +106,7 @@ func getAuth(c *gin.Context) {
 	// the files are stored in folders namend by the clientId
 	credentialsFolderPath := buildCredentialsFolderPath(authInfo.IShareClientID)
 
-	var randomUuid uuid.UUID
-
-	randomUuid, err = uuid.NewRandom()
+	randomUuid, err := uuid.NewRandom()
 
 	if err != nil {
 		log.Warn("Was not able to generate a uuid.", err)
@@ -113,15 +125,21 @@ func getAuth(c *gin.Context) {
 		"exp": now + 30,
 	})
 
-	// parse key file
-	key, err := getSigningKey(credentialsFolderPath)
+	key, err := authGetter.getSigningKey(credentialsFolderPath)
 	if err != nil {
+		log.Warn("Was not able to read the signing key.")
+		c.String(http.StatusInternalServerError, "Error reading the signingKey.")
+		return
+	}
+	if key == nil {
+		log.Warn("Was not able to read a valid signing key.")
 		c.String(http.StatusInternalServerError, "Error reading the signingKey.")
 		return
 	}
 
-	cert, err := getEncodedCertificate(credentialsFolderPath)
+	cert, err := authGetter.getCertificate(credentialsFolderPath)
 	if err != nil {
+		log.Warn("Was not able to read the certificate.")
 		c.String(http.StatusInternalServerError, "Error reading the certificateChain.")
 		return
 	}
@@ -147,15 +165,33 @@ func getAuth(c *gin.Context) {
 	}
 
 	// get the token
-	resp, err := http.PostForm(authInfo.IShareIdpAddress, data)
+	resp, err := globalHttpClient.PostForm(authInfo.IShareIdpAddress, data)
 	if err != nil {
 		log.Warn("Was not able to get the token from the idp.", err)
 		c.String(http.StatusBadGateway, "Was not able to get the token from the idp.")
 		return
 	}
+
+	if resp.Body == nil {
+		log.Warn("Did not receive a valid body from the idp.")
+		c.AbortWithStatus(http.StatusBadGateway)
+		return
+	}
+
 	// decode and return
 	var res map[string]interface{}
-	json.NewDecoder(resp.Body).Decode(&res)
+	err = json.NewDecoder(resp.Body).Decode(&res)
+	if err != nil {
+		log.Warn("Was not able to decode idp response.")
+		c.AbortWithStatus(http.StatusBadGateway)
+		return
+	}
+
+	if res["access_token"] == nil {
+		log.Warn("Did not receive an access token from the idp. Resp: " + fmt.Sprint(res))
+		c.AbortWithStatus(http.StatusBadGateway)
+		return
+	}
 
 	header := Header{"Authorization", res["access_token"].(string)}
 	headersList := HeadersList{header}
@@ -163,11 +199,58 @@ func getAuth(c *gin.Context) {
 	c.JSON(http.StatusOK, headersList)
 }
 
+/**
+* Retrieve auth information from the config service
+ */
+func getAuthInformation(domain string, path string) (authInfo AuthInfo, err error) {
+
+	req, err := http.NewRequest("GET", configurationServiceUrl+"/auth", nil)
+	if err != nil {
+		log.Warn("Was not able to build a request. Invalid configuration server url.", err)
+	}
+
+	if domain == "" {
+		log.Warn("Did not receive a domain.")
+		return authInfo, errEmptyDomain
+	}
+
+	if path == "" {
+		log.Warn("Did not receive a path.")
+		return authInfo, errEmptyPath
+	}
+
+	q := req.URL.Query()
+	q.Add("domain", domain)
+	q.Add("path", path)
+	req.URL.RawQuery = q.Encode()
+	resp, err := globalHttpClient.Get(req.URL.String())
+	if err != nil {
+		log.Warn("Was not able to get authInfo. Err: ", err)
+		return authInfo, err
+	}
+
+	if resp.Body == nil {
+		log.Warn("Did not receive an response body.")
+		return authInfo, errNoResponseBody
+	}
+
+	// decode and return
+	err = json.NewDecoder(resp.Body).Decode(&authInfo)
+	if err != nil {
+		log.Warn("Was not able to decode the auth response.", err)
+		return authInfo, err
+	}
+	return authInfo, err
+}
+
+/**
+* Read siging key from local filesystem
+ */
 func getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error) {
 	// read key file
-	priv, err := ioutil.ReadFile(credentialsFolderPath + keyfile)
+	priv, err := globalFileAccessor.read(credentialsFolderPath + keyfile)
 	if err != nil {
-		log.Warn("Was not able to read the key file.", err)
+		log.Warn("Was not able to read the key file. ", err)
 		return key, err
 	}
 
@@ -181,14 +264,21 @@ func getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error
 	return key, err
 }
 
+/**
+* Read and encode(base64) certificate from file system
+ */
 func getEncodedCertificate(credentialsFolderPath string) (encodedCert string, err error) {
 	// read certificate file and set it in the token header
-	cert, err := ioutil.ReadFile(credentialsFolderPath + certChainFile)
+	cert, err := globalFileAccessor.read(credentialsFolderPath + certChainFile)
 	if err != nil {
 		log.Warn("Was not able to read the certificateChain file.", err)
 		return encodedCert, err
 	}
 	certCer, _ := pem.Decode(cert)
+	if certCer == nil {
+		log.Warn("Was not able to decode certificate.")
+		return encodedCert, errCertDecode
+	}
 	encodedCert = base64.StdEncoding.EncodeToString(certCer.Bytes)
 	return encodedCert, err
 }

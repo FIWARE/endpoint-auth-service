@@ -70,6 +70,9 @@ func mock_path_based_write(path string, content []byte, fileMode fs.FileMode) (e
 	return err
 }
 
+// not used, do nothing. Only required to fullfil the interface.
+func mock_noop_read(filename string) (content []byte, err error) { return content, err }
+
 func emptyMockFolders() (folders []fs.FileInfo) {
 	return folders
 }
@@ -118,19 +121,21 @@ func TestGetCredentialsList(t *testing.T) {
 		{"Get multiple clients with file in folder.", multipleWithFile(), nil, 200, "[\"myClient1\",\"myClient2\"]"},
 	}
 
-	folderMock := &Folder{mock_get_folder}
+	globalFolderAccessor = folderAccessor{mock_get_folder}
 	var ginContext *gin.Context
 	var recorder *httptest.ResponseRecorder
 
 	credentialsBaseFolder = "test/credentials"
 	for _, tc := range tests {
+		log.Info("TestGetCredentialsList +++++++++++++++++++++ Running test: " + tc.testName)
+
 		mockError = tc.mockError
 		mockFolders = tc.mockFolders
 
 		recorder = httptest.NewRecorder()
 
 		ginContext, _ = gin.CreateTestContext(recorder)
-		getCredentialsList(ginContext, folderMock)
+		getCredentialsList(ginContext)
 
 		if recorder.Code != tc.expectedCode {
 			t.Fatalf("Expected to get" + fmt.Sprint(tc.expectedCode) + ", but got " + fmt.Sprint(recorder.Code))
@@ -174,11 +179,10 @@ func TestPostCredentials(t *testing.T) {
 
 	var ginContext *gin.Context
 	var recorder *httptest.ResponseRecorder
-	var fileSystemMock fileSystem
-	fileMock := &File{mock_path_based_write}
+	globalFileAccessor = fileAccessor{mock_path_based_write, mock_noop_read}
 
 	for _, tc := range tests {
-		log.Info("+++++++++++++++++++++Running test: " + tc.testName)
+		log.Info("TestPostCredentials +++++++++++++++++++++ Running test: " + tc.testName)
 
 		pathErrors = tc.mockErrWrite
 		fileWriteRecord = []FileWriteRecord{}
@@ -187,9 +191,9 @@ func TestPostCredentials(t *testing.T) {
 		ginContext, _ = gin.CreateTestContext(recorder)
 		ginContext.Request, _ = http.NewRequest(http.MethodPost, "/", bytes.NewBuffer([]byte(tc.mockRequestContent)))
 		ginContext.Params = []gin.Param{{Key: "clientId", Value: tc.clientId}}
-		fileSystemMock = &mockFS{mockErrRead: tc.mockErrRead, mockErrCreateFolder: tc.mockErrCreateFolder, mockErrDelete: tc.mockErrDelete}
+		diskFs = &mockFS{mockErrRead: tc.mockErrRead, mockErrCreateFolder: tc.mockErrCreateFolder, mockErrDelete: tc.mockErrDelete}
 
-		postCredentials(ginContext, fileMock, fileSystemMock)
+		postCredentials(ginContext)
 
 		if recorder.Code != tc.expectedCode {
 			t.Fatalf("Should have been " + fmt.Sprint(tc.expectedCode) + ", but was " + fmt.Sprint(recorder.Code))
@@ -254,20 +258,20 @@ func TestStoreCredentials(t *testing.T) {
 
 	var ginContext *gin.Context
 	var recorder *httptest.ResponseRecorder
-	var fileSystemMock fileSystem
-	fileMock := &File{mock_path_based_write}
+	globalFileAccessor = fileAccessor{mock_path_based_write, mock_noop_read}
 
 	for _, tc := range tests {
-		log.Info("+++++++++++++++++++++Running test: " + tc.testName)
+		log.Info("TestStoreCredentials +++++++++++++++++++++ Running test: " + tc.testName)
+
 		pathErrors = tc.mockErrWrite
 		fileWriteRecord = []FileWriteRecord{}
 		recorder = httptest.NewRecorder()
 		ginContext, _ = gin.CreateTestContext(recorder)
 		ginContext.Request, _ = http.NewRequest(http.MethodPut, "/", bytes.NewBuffer([]byte(tc.mockRequestContent)))
 		ginContext.Params = []gin.Param{{Key: "clientId", Value: tc.clientId}}
-		fileSystemMock = &mockFS{mockErrRead: tc.mockErrRead}
+		diskFs = &mockFS{mockErrRead: tc.mockErrRead}
 
-		storeCredential(ginContext, tc.credentialsType, fileMock, fileSystemMock)
+		storeCredential(ginContext, tc.credentialsType)
 
 		if recorder.Code != tc.expectedCode {
 			t.Fatalf("Should have been " + fmt.Sprint(tc.expectedCode) + ", but was " + fmt.Sprint(recorder.Code))
@@ -315,19 +319,19 @@ func TestDeleteCredentials(t *testing.T) {
 
 	var ginContext *gin.Context
 	var recorder *httptest.ResponseRecorder
-	var fileSystemMock fileSystem
 
 	for _, tc := range tests {
-		log.Info("+++++++++++++++++++++Running test: " + tc.testName)
+		log.Info("TestDeleteCredentials +++++++++++++++++++++ Running test: " + tc.testName)
+
 		filesDeleted = false
 		fileWriteRecord = []FileWriteRecord{}
 		recorder = httptest.NewRecorder()
 		ginContext, _ = gin.CreateTestContext(recorder)
 		ginContext.Request, _ = http.NewRequest(http.MethodDelete, "/", nil)
 		ginContext.Params = []gin.Param{{Key: "clientId", Value: tc.clientId}}
-		fileSystemMock = &mockFS{mockErrRead: tc.mockErrRead, mockErrDelete: tc.mockErrDelete}
+		diskFs = &mockFS{mockErrRead: tc.mockErrRead, mockErrDelete: tc.mockErrDelete}
 
-		deleteCredentials(ginContext, fileSystemMock)
+		deleteCredentials(ginContext)
 
 		if recorder.Code != tc.expectedCode {
 			t.Fatalf("Should have been " + fmt.Sprint(tc.expectedCode) + ", but was " + fmt.Sprint(recorder.Code))

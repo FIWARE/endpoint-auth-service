@@ -4,8 +4,6 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"io/fs"
-	"io/ioutil"
 	"net/http"
 	"os"
 
@@ -25,63 +23,10 @@ type Credentials struct {
 	SigningKey       string `json:"signingKey"`
 }
 
-/**
-* Interfaces for accessing the file system.
- */
-type FolderContentGetter func(path string) (folders []fs.FileInfo, err error)
-type Folder struct {
-	get FolderContentGetter
-}
-
-type FileWriter func(path string, content []byte, fileMode fs.FileMode) (err error)
-type File struct {
-	write FileWriter
-}
-
-type fileSystem interface {
-	Open(name string) (file, error)
-	Stat(name string) (os.FileInfo, error)
-	MkdirAll(path string, perm fs.FileMode) error
-	RemoveAll(path string) error
-}
-
-type file interface {
-	io.Closer
-	io.Reader
-	io.ReaderAt
-	io.Seeker
-	Stat() (os.FileInfo, error)
-}
-
-// osFS implements fileSystem using the local disk.
-type osFS struct{}
-
-func (osFS) Open(name string) (file, error)               { return os.Open(name) }
-func (osFS) Stat(name string) (os.FileInfo, error)        { return os.Stat(name) }
-func (osFS) MkdirAll(path string, perm fs.FileMode) error { return os.MkdirAll(path, perm) }
-func (osFS) RemoveAll(path string) error                  { return os.RemoveAll(path) }
-
-func getFolderContent(path string) (folders []fs.FileInfo, err error) {
-	return ioutil.ReadDir(path)
-}
-
-func writeFile(path string, content []byte, fileMode fs.FileMode) (err error) {
-	return ioutil.WriteFile(path, content, fileMode)
-}
-
-// route mappings
-func getCredentialsListRoute(c *gin.Context) {
-	getCredentialsList(c, &Folder{getFolderContent})
-}
-
-func postCredentialsRoute(c *gin.Context) {
-	postCredentials(c, &File{writeFile}, &osFS{})
-}
-
 // route implementations
-func getCredentialsList(c *gin.Context, f *Folder) {
+func getCredentialsList(c *gin.Context) {
 
-	folders, err := f.get(credentialsBaseFolder)
+	folders, err := globalFolderAccessor.get(credentialsBaseFolder)
 
 	if err != nil {
 		log.Warn("Was not able to read credentials folder.", err)
@@ -100,7 +45,7 @@ func getCredentialsList(c *gin.Context, f *Folder) {
 	c.JSON(http.StatusOK, credentialsList)
 }
 
-func postCredentials(c *gin.Context, f *File, fs fileSystem) {
+func postCredentials(c *gin.Context) {
 	c.SetAccepted("application/json")
 	var credentials Credentials
 	err := c.BindJSON(&credentials)
@@ -121,32 +66,32 @@ func postCredentials(c *gin.Context, f *File, fs fileSystem) {
 	credentialsFolderPath := buildCredentialsFolderPath(clientId)
 
 	// on post, we dont allow override
-	if _, err := fs.Stat(credentialsFolderPath); err == nil {
+	if _, err := diskFs.Stat(credentialsFolderPath); err == nil {
 		log.Warn("Credentials for " + clientId + " already exist.")
 		c.AbortWithStatus(http.StatusConflict)
 		return
 	}
 
-	err = fs.MkdirAll(credentialsFolderPath, os.ModePerm)
+	err = diskFs.MkdirAll(credentialsFolderPath, os.ModePerm)
 	if err != nil {
 		log.Warn("Was not able to create folder: "+credentialsFolderPath, err)
 		c.String(http.StatusInternalServerError, "Was not able to store the credentials.")
 		return
 	}
 
-	err = f.write(credentialsFolderPath+keyfile, []byte(credentials.SigningKey), 0666)
+	err = globalFileAccessor.write(credentialsFolderPath+keyfile, []byte(credentials.SigningKey), 0666)
 	if err != nil {
 		log.Warn("Was not able to store signingKey for: "+clientId, err)
 		c.String(http.StatusInternalServerError, "Was not able to store the credentials.")
-		fs.RemoveAll(credentialsFolderPath)
+		diskFs.RemoveAll(credentialsFolderPath)
 		return
 	}
 
-	err = f.write(credentialsFolderPath+certChainFile, []byte(credentials.CertificateChain), 0666)
+	err = globalFileAccessor.write(credentialsFolderPath+certChainFile, []byte(credentials.CertificateChain), 0666)
 	if err != nil {
 		log.Warn("Was not able to store certificate for: "+clientId, err)
 		c.String(http.StatusInternalServerError, "Was not able to store the credentials.")
-		fs.RemoveAll(credentialsFolderPath)
+		diskFs.RemoveAll(credentialsFolderPath)
 		return
 	}
 
@@ -154,23 +99,19 @@ func postCredentials(c *gin.Context, f *File, fs fileSystem) {
 }
 
 func putCertificateChain(c *gin.Context) {
-	storeCredential(c, certificateChain, &File{writeFile}, &osFS{})
+	storeCredential(c, certificateChain)
 }
 
 func putSigningKey(c *gin.Context) {
-	storeCredential(c, signingKey, &File{writeFile}, &osFS{})
+	storeCredential(c, signingKey)
 }
 
-func deleteCredentialsRoute(c *gin.Context) {
-	deleteCredentials(c, &osFS{})
-}
-
-func deleteCredentials(c *gin.Context, fs fileSystem) {
+func deleteCredentials(c *gin.Context) {
 	clientId := c.Param("clientId")
 	// the files are stored in folders namend by the clientId
 	credentialsFolderPath := buildCredentialsFolderPath(clientId)
 
-	_, err := fs.Stat(credentialsFolderPath)
+	_, err := diskFs.Stat(credentialsFolderPath)
 
 	if errors.Is(err, os.ErrNotExist) {
 		log.Warn("No credentials for "+clientId+" exist.", err)
@@ -178,7 +119,7 @@ func deleteCredentials(c *gin.Context, fs fileSystem) {
 		return
 	}
 
-	err = fs.RemoveAll(credentialsFolderPath)
+	err = diskFs.RemoveAll(credentialsFolderPath)
 	if err != nil {
 		log.Warn("Was not able to delete the credentials for: "+clientId, err)
 		c.String(http.StatusInternalServerError, "Was not able to delete credentials.")
@@ -187,7 +128,7 @@ func deleteCredentials(c *gin.Context, fs fileSystem) {
 	c.AbortWithStatus(http.StatusNoContent)
 }
 
-func storeCredential(c *gin.Context, credentialsType CredentialsType, f *File, fs fileSystem) {
+func storeCredential(c *gin.Context, credentialsType CredentialsType) {
 	c.SetAccepted("text/plain")
 	clientId := c.Param("clientId")
 	if clientId == "" {
@@ -206,7 +147,7 @@ func storeCredential(c *gin.Context, credentialsType CredentialsType, f *File, f
 	// the files are stored in folders namend by the clientId
 	credentialsFolderPath := buildCredentialsFolderPath(clientId)
 
-	_, err = fs.Stat(credentialsFolderPath)
+	_, err = diskFs.Stat(credentialsFolderPath)
 
 	if errors.Is(err, os.ErrNotExist) {
 		log.Warn("No credentials for "+clientId+" exist.", err)
@@ -223,7 +164,7 @@ func storeCredential(c *gin.Context, credentialsType CredentialsType, f *File, f
 		filePath = credentialsFolderPath + keyfile
 		errorMsg = "signingKey"
 	}
-	err = f.write(filePath, []byte(credential), 0666)
+	err = globalFileAccessor.write(filePath, []byte(credential), 0666)
 	if err != nil {
 		log.Warn("Was not able to store "+errorMsg+" for: "+clientId, err)
 		c.String(http.StatusInternalServerError, "Was not able to store the "+errorMsg+".")
