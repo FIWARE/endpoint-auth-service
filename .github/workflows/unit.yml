@@ -86,6 +86,8 @@ jobs:
       - name: aggregate
         run: |  
           cd coverage
+          cat auth-provider.lcov
+          cat ecs.lcov
           lcov -a auth-provider.lcov -a ecs.lcov -o ../lcov.info
 
       - name: Coveralls
