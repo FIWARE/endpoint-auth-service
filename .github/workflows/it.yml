@@ -51,6 +51,8 @@ jobs:
 
     - name: run-test
       id: test
+      env:
+        CUCUMBER_PUBLISH_TOKEN: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
       run: |
         cd integration-test/integration-test/
         mvn clean install
