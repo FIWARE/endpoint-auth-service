@@ -13,13 +13,14 @@ servers:
     description: "Local test server address."
 
 paths:
-  '/auth':
+  '/{provider}/auth':
     get:
       tags:
         - AuthProvider
       parameters:
         - $ref: '#/components/parameters/domain'
         - $ref: '#/components/parameters/path'
+        - $ref: '#/components/parameters/provider'
       description: "Get auth information for the given endpoint."
       operationId: getAuth
       responses:
@@ -51,6 +52,14 @@ components:
       schema:
         type: string
       example: "/my/endpoint/path"
+    provider:
+      name: provider
+      description: "Id of the auth-provider to be used."
+      in: path
+      required: true
+      schema:
+        type: string
+      example: "ISHARE"
   schemas:
     HeaderEntry:
       type: object
