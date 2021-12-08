@@ -43,8 +43,15 @@ jobs:
         cd src/ishare-auth-provider/
         go test -v -covermode=count -coverprofile=coverage.out
 
+    - name: Transform report
+      uses: jandelgado/gcov2lcov-action@v1.0.8
+      with:
+        infile: coverage.out
+        outfile: coverage.lcov
+        working-directory: src/ishare-auth-provider/
+
     - name: Upload coverage-report
       uses: actions/upload-artifact@v2
       with:
-        name: auth-provider.info
-        path: src/ishare-auth-provider/coverage.out
+        name: auth-provider.lcov
+        path: src/ishare-auth-provider/coverage.lcov
