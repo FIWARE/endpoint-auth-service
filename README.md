@@ -75,4 +75,4 @@ would need to add the client-certificate to the request. Since the endpoint-auth
 service-mesh like [istio](https://istio.io/), mTLS probably is easier to apply with the mesh.
 
 As a conclusion, the endpoint-auth-service should not be seen as a competition or alternative to mTLS, but rather an option for supporting other and maybe additional
-auth-methods, like the implemented [iShare-solution]().
+auth-methods, like the implemented [iShare-solution](src/ishare-auth-provider/README.md).
