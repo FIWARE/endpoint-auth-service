@@ -3,13 +3,11 @@ package org.fiware.sidecar.service;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import io.micronaut.context.annotation.Context;
-import io.micronaut.scheduling.annotation.Scheduled;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.sidecar.configuration.ProxyProperties;
 import org.fiware.sidecar.exception.EnvoyUpdateException;
 import org.fiware.sidecar.mapping.EndpointMapper;
-import org.fiware.sidecar.model.MustacheAuthType;
 import org.fiware.sidecar.model.MustacheEndpoint;
 import org.fiware.sidecar.model.MustachePort;
 import org.fiware.sidecar.model.MustacheVirtualHost;
@@ -20,14 +18,11 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
-import java.util.UUID;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -93,7 +88,7 @@ public class EnvoyUpdateService {
 								.map(MustachePort::new)
 								.collect(Collectors.toSet()),
 						addPassThroughIfNoRoot(entry.getValue())))
-				.collect(Collectors.toList());
+				.toList();
 
 
 		ProxyProperties.AddressConfig socketAddress = proxyProperties.getSocketAddress();
