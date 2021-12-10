@@ -14,10 +14,14 @@ import (
 )
 
 var proxyConfigFolder string
+var configMap string
+var configMapNamespace string
 
 func main() {
 
 	proxyConfigFolder = os.Getenv("PROXY_CONFIG_FOLDER")
+	configMap = os.Getenv("PROXY_CONFIG_MAP")
+	configMapNamespace = os.Getenv("PROXY_CONFIG_MAP_NAMESPACE")
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
@@ -75,9 +79,9 @@ func updateConfigMap() {
 	if err != nil {
 		panic(err.Error())
 	}
-	maps := clientset.CoreV1().ConfigMaps("proxy-test")
+	maps := clientset.CoreV1().ConfigMaps(configMapNamespace)
 	// get the old map
-	cm, err := maps.Get(context.TODO(), "envoy-config", metav1.GetOptions{})
+	cm, err := maps.Get(context.TODO(), configMap, metav1.GetOptions{})
 	if err != nil {
 		log.Warn("No map", err)
 	}
