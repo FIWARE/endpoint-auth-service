@@ -71,42 +71,46 @@ func main() {
 }
 
 func updateConfigMap() {
-	log.Warn("Update the map")
+	log.Info("Update the map")
 
 	listenerYamlFile, err := ioutil.ReadFile(proxyConfigFolder + "/listener.yaml")
 	if err != nil {
-		log.Printf("listenerYamlFile. Get err   #%v ", err)
+		log.Warn("Listener-File not readable. ", err)
+		return
 	}
 
 	clusterYamlFile, err := ioutil.ReadFile(proxyConfigFolder + "/cluster.yaml")
 	if err != nil {
-		log.Printf("clusterYamlFile. Get err   #%v ", err)
+		log.Warn("Cluster-File not readable. ", err)
+		return
 	}
 
 	// creates the in-cluster config
 	config, err := rest.InClusterConfig()
 	if err != nil {
-		panic(err.Error())
+		log.Warn("Was not able to create an in-cluster config. ", err)
+		return
 	}
 	// creates the clientset
 	clientset, err := kubernetes.NewForConfig(config)
 	if err != nil {
-		panic(err.Error())
+		log.Warn("Was not able to create the kubernetes client. ", err)
+		return
 	}
+
 	maps := clientset.CoreV1().ConfigMaps(configMapNamespace)
 	// get the old map
 	cm, err := maps.Get(context.TODO(), configMap, metav1.GetOptions{})
 	if err != nil {
-		log.Warn("No map", err)
+		log.Warn("No configmap does exist. ", err)
+		return
 	}
 
 	cm.Data["listener.yaml"] = string(listenerYamlFile)
 	cm.Data["cluster.yaml"] = string(clusterYamlFile)
 
-	cm, err = maps.Update(context.TODO(), cm, metav1.UpdateOptions{})
+	_, err = maps.Update(context.TODO(), cm, metav1.UpdateOptions{})
 	if err != nil {
 		log.Warn("Was not able to update map", err)
 	}
-	log.Warn(cm.Data)
-
 }
