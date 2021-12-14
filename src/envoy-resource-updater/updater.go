@@ -23,6 +23,14 @@ func main() {
 		log.Fatal("Not able to read env var RUN_AS_INIT", err)
 	}
 
+	if proxyConfigFolder == "" {
+		log.Fatal("No config folder was provided.")
+	}
+
+	if configMapFolder == "" {
+		log.Fatal("No config map folder was provided.")
+	}
+
 	if runAsInit {
 		updateStaticResources()
 		updateDynamicResources()
@@ -44,7 +52,7 @@ func main() {
 				if !ok {
 					return
 				}
-				log.Println("event:", event)
+				log.Info("event:", event)
 				if event.Op&fsnotify.Create == fsnotify.Create || event.Op&fsnotify.Write == fsnotify.Write {
 					updateDynamicResources()
 				}
@@ -52,7 +60,7 @@ func main() {
 				if !ok {
 					return
 				}
-				log.Println("error:", err)
+				log.Info("error:", err)
 			}
 		}
 	}()
@@ -68,11 +76,11 @@ func updateStaticResources() {
 
 		envoyYamlFile, err := ioutil.ReadFile(configMapFolder + "/envoy.yaml")
 		if err != nil {
-			log.Printf("envoyYamlFile. Get err   #%v ", err)
+			log.Warn("Was not able to read envoy.yaml ", err)
 		}
 		err = os.WriteFile(proxyConfigFolder+"/envoy.yaml", envoyYamlFile, 0644)
 		if err != nil {
-			log.Warn("Was not able to copy envoy.yaml.", err)
+			log.Warn("Was not able to write envoy.yaml ", err)
 		}
 	}
 }
@@ -83,32 +91,38 @@ func updateDynamicResources() {
 
 	listenerYamlFile, err := ioutil.ReadFile(configMapFolder + "/listener.yaml")
 	if err != nil {
-		log.Printf("listenerYamlFile. Get err   #%v ", err)
+		log.Warn("Was not able to read listener.yaml ", err)
+		return
 	}
 
 	clusterYamlFile, err := ioutil.ReadFile(configMapFolder + "/cluster.yaml")
 	if err != nil {
-		log.Printf("clusterYamlFile. Get err   #%v ", err)
+		log.Warn("Was not able to read cluster.yaml ", err)
+		return
 	}
 
 	err = os.WriteFile(proxyConfigFolder+"/cluster.yaml.o", clusterYamlFile, 0644)
 	if err != nil {
-		log.Warn("Was not able to copy cluster.yaml.", err)
+		log.Warn("Was not able to write cluster.yaml ", err)
+		return
 	}
 
 	err = os.WriteFile(proxyConfigFolder+"/listener.yaml.o", listenerYamlFile, 0644)
 	if err != nil {
-		log.Warn("Was not able to copy listener.yaml.", err)
+		log.Warn("Was not able to write listener.yaml ", err)
+		return
 	}
 
 	// first move the cluster yaml to trigger its reload, before the listeners are loaded.
 	err = os.Rename(proxyConfigFolder+"/cluster.yaml.o", proxyConfigFolder+"/cluster.yaml")
 	if err != nil {
 		log.Warn("Was not able to move cluster.yaml.", err)
+		return
 	}
 	err = os.Rename(proxyConfigFolder+"/listener.yaml.o", proxyConfigFolder+"/listener.yaml")
 	if err != nil {
 		log.Warn("Was not able to move listener.yaml.", err)
+		return
 	}
 
 }
