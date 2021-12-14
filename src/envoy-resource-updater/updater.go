@@ -31,7 +31,11 @@ func main() {
 		log.Fatal("No config map folder was provided.")
 	}
 
+	log.Info("Start updating: " + configMapFolder + " to " + proxyConfigFolder)
+
 	if runAsInit {
+
+		log.Info("Run as init-container.")
 		updateStaticResources()
 		updateDynamicResources()
 		return
