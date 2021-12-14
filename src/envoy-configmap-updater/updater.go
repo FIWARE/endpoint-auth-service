@@ -23,6 +23,20 @@ func main() {
 	configMap = os.Getenv("PROXY_CONFIG_MAP")
 	configMapNamespace = os.Getenv("PROXY_CONFIG_MAP_NAMESPACE")
 
+	if proxyConfigFolder == "" {
+		log.Fatal("No config folder was provided.")
+	}
+
+	if configMap == "" {
+		log.Fatal("No config map was provided.")
+	}
+
+	if configMapNamespace == "" {
+		log.Fatal("No config map namespace was provided.")
+	}
+
+	log.Info("Start watching " + proxyConfigFolder + " and push to " + configMapNamespace + "/" + configMap)
+
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
 		log.Fatal(err)
