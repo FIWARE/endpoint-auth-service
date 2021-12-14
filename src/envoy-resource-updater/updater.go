@@ -75,17 +75,15 @@ func main() {
 }
 
 func updateStaticResources() {
-	// only required if we run as an init container, since dynamic reload is unsupported for the envoy.yaml anyways
-	if runAsInit {
+	log.Info("Copy envoy.yaml")
 
-		envoyYamlFile, err := ioutil.ReadFile(configMapFolder + "/envoy.yaml")
-		if err != nil {
-			log.Warn("Was not able to read envoy.yaml ", err)
-		}
-		err = os.WriteFile(proxyConfigFolder+"/envoy.yaml", envoyYamlFile, 0644)
-		if err != nil {
-			log.Warn("Was not able to write envoy.yaml ", err)
-		}
+	envoyYamlFile, err := ioutil.ReadFile(configMapFolder + "/envoy.yaml")
+	if err != nil {
+		log.Warn("Was not able to read envoy.yaml ", err)
+	}
+	err = os.WriteFile(proxyConfigFolder+"/envoy.yaml", envoyYamlFile, 0644)
+	if err != nil {
+		log.Warn("Was not able to write envoy.yaml ", err)
 	}
 }
 
