@@ -52,6 +52,8 @@ to set up the required ip-tables and prevent other components from beeing influe
 To make the deployment easy, a helm-chart is provided here:
 - https://github.com/FIWARE/helm-charts/tree/main/charts/endpoint-auth-service
 
+See [kubernetes](kubernetes) for a full example.
+
 ## Component specific documentation
 
 * [envoy](doc/ENVOY.md)
