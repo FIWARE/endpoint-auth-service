@@ -81,6 +81,20 @@ resources:
                     {{/passthrough}}
                   {{/endpoints}}
                 {{/virtualHosts}}
+                  {{#caching}}
+                  - name: cache-auth
+                    domains:
+                      - "{{auth-service-address}}"
+                      - "{{auth-service-address}}:{{auth-service-port}}"
+                    routes:
+                      - match:
+                          prefix: "/"
+                      route:
+                        cluster: ext-authz
+                      typed_per_filter_config:
+                        envoy.cache.simple_http_cache:
+                          "@type": extensions.cache.simple_http_cache.v3.SimpleHttpCacheConfig
+                  {{/caching}}
                   - name: allow_any
                     domains:
                       - "*"

@@ -101,6 +101,7 @@ public class EnvoyUpdateService {
 		mustacheRenderContext.put("auth-service-port", authAddress.getPort());
 		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
 		mustacheRenderContext.put("endpoints", mustacheEndpoints);
+		mustacheRenderContext.put("caching", proxyProperties.isCacheEnabled());
 
 		if (!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
 			try {
