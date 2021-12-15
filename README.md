@@ -40,8 +40,17 @@ Integration-Testing is described in the [integration-test suite](integration-tes
 
 ## Development
 
-For general development information, check the [contribution-guidelines](doc/CONTRIBUTING.md).
+For general development information, check the [contribution-guidelines](CONTRIBUTING.md).
 For information about the individual components, see their folders.
+
+## Deployment 
+
+While its possible to use this service basically inside any environment(see for example [docker-compose](./docker-compose)), its highly 
+recommended for [kubernetes-environments](https://kubernetes.io/). Since networking can be manipulated on a per-pod base, its much easier 
+to set up the required ip-tables and prevent other components from beeing influenced by that.
+
+To make the deployment easy, a helm-chart is provided here:
+- https://github.com/FIWARE/helm-charts/tree/main/charts/endpoint-auth-service
 
 ## Component specific documentation
 
@@ -74,16 +83,18 @@ come in as an http-request.
 
 Example configuration:
 
-POST endpoint-configuration-service/endpoint
-```json
-  {
+POST 
+```shell
+curl -X POST 'endpoint-configuration-service/endpoint' \
+  -H 'Content-Type: application/json' \
+  -d '{
       "domain": "myNotificationEndpoint.org",
       "port": 80,
       "path": "/receive",
       "useHttps": true,
       "authType": "iShare",
       "authCredentials": {"..."}
-  }
+  }'
 ```
 
 If the handled service now sends the following request:
