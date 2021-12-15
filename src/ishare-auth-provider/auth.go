@@ -96,6 +96,8 @@ func getAuth(c *gin.Context) {
 		return
 	}
 
+	log.Info("Get auth for " + domain + "/" + path)
+
 	authInfo, err := authGetter.getAuthInfo(domain, path)
 	if err != nil {
 		log.Warn("Was not able to retrieve auth-info. ", err)

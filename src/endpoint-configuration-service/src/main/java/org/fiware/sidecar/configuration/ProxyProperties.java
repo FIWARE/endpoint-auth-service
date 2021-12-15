@@ -29,11 +29,6 @@ public class ProxyProperties {
 	private long updateDelayInS;
 
 	/**
-	 * Should the auth requests be cached?
-	 */
-	private boolean cacheEnabled = true;
-
-	/**
 	 * Address of the authentication provider
 	 */
 	@ConfigurationBuilder(configurationPrefix = "externalAuth")

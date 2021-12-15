@@ -49,4 +49,3 @@ proxy:
   listenerYamlPath: ./listener.yaml
   clusterYamlPath: ./cluster.yaml
   updateDelayInS: 2
-  cacheEnabled: true
