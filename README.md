@@ -65,6 +65,45 @@ For information about the individual components, see their folders.
 - [Auth-Provider-API](./api/auth-provider-api.yaml)
 - [iShare-Credentials-Management-API](./api/ishare-credentials-management-api.yaml)
 
+## HTTPS endpoints
+
+Since the proxy intercepts traffic transparently, it can only handle http-traffic. Adding auth-information requires the manipulation of request-headers which is not possible for
+encrypted traffic. Therefor the handled component, should use http to send its requests(f.e. [orion-ld notifications](https://github.com/FIWARE/context.Orion-LD) should use a http-target address).
+In order to not deteriorate the security of the system, an endpoint can be configured to apply tls to the connection. In this case the sidecar-proxy will forward the request via https, even if it did
+come in as an http-request.
+
+Example configuration:
+
+POST endpoint-configuration-service/endpoint
+```json
+  {
+      "domain": "myNotificationEndpoint.org",
+      "port": 80,
+      "path": "/receive",
+      "useHttps": true,
+      "authType": "iShare",
+      "authCredentials": {"..."}
+  }
+```
+
+If the handled service now sends the following request:
+
+```shell
+    curl -X POST 'http://myNotificationEndpoint.org/receive' \
+      -H 'Content-Type: application/json' \
+      -d '{"notification":"hello"}'
+```
+
+the proxy will rewrite the request to be like:
+
+```shell
+    curl -X POST 'https://myNotificationEndpoint.org/receive' \
+      -H 'Content-Type: application/json' \
+      -H 'authorization: myToken' \
+      -d '{"notification":"hello"}'
+```
+
+
 ## Why not use mTLS?
 
 [mTLS](https://en.wikipedia.org/wiki/Mutual_authentication#mTLS) is a method for mutual authentication. The parties on each end of the connection can be verified through TLS certificates. In contrast to that,
