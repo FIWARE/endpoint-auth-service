@@ -114,6 +114,7 @@ jobs:
       - name: Evaluate clair report
         run: |
           ls -l
+          cat clair-report.json
           ./.github/clair-scan.sh medium
 
       - uses: actions/upload-artifact@v2
