@@ -103,13 +103,18 @@ jobs:
           tls-verify: false
 
       - name: Clair Scan
-        run: |
-          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+        uses: santander-group/clair-scan-action@main
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          local: yes
+          report_format: json
+          report_path: clair-report.json
+          updater: null
 
       - uses: actions/upload-artifact@v2
         with:
           name: ip-tables-report.json
-          path: clair.report
+          path: clair-report.json
 
       - name: Push To quay.io
         id: push-to-quay
