@@ -111,6 +111,10 @@ jobs:
           report_path: clair-report.json
           updater: null
 
+      - name: Clair Scan
+        run: |
+          ./.github/clair-scan.sh medium
+
       - uses: actions/upload-artifact@v2
         with:
           name: ip-tables-report.json
@@ -157,10 +161,6 @@ jobs:
           tags: ${{ steps.build-image.outputs.tags }}
           registry: localhost:5000
           tls-verify: false
-
-      - name: Clair Scan
-        run: |
-          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - uses: actions/upload-artifact@v2
         with:
