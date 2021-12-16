@@ -105,7 +105,12 @@ jobs:
       - name: Clair Scan
         run: |
           ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ip-tables-report.json
+          path: clair.report
+
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
@@ -151,6 +156,11 @@ jobs:
       - name: Clair Scan
         run: |
           ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: configmap-updater-report.json
+          path: clair.report
 
       - name: Push To quay.io
         id: push-to-quay
@@ -198,6 +208,11 @@ jobs:
         run: |
           ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
+      - uses: actions/upload-artifact@v2
+        with:
+          name: resource-updater-report.json
+          path: clair.report
+
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
@@ -243,6 +258,11 @@ jobs:
       - name: Clair Scan
         run: |
           ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: envoy-report.json
+          path: clair.report
 
       - name: Push To quay.io
         id: push-to-quay
@@ -290,6 +310,11 @@ jobs:
       - name: Clair Scan
         run: |
           ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: ishare-auth-report.json
+          path: clair.report
 
       - name: Push To quay.io
         id: push-to-quay
