@@ -120,6 +120,12 @@ jobs:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
 
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
     steps:
       - uses: actions/checkout@v2
 
@@ -133,14 +139,18 @@ jobs:
             ./src/envoy-configmap-updater/Dockerfile
           context: ./src/envoy-configmap-updater
 
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
+      - name: Push to local
+        id: push-local
+        uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          local: no
-          report_format: json
-          report_path: clair-report.json
-          updater: null
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: localhost:5000
+          tls-verify: false
+
+      - name: Clair Scan
+        run: |
+          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-to-quay
@@ -156,6 +166,12 @@ jobs:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
 
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
     steps:
       - uses: actions/checkout@v2
 
@@ -169,14 +185,18 @@ jobs:
             ./src/envoy-resource-updater/Dockerfile
           context: ./src/envoy-resource-updater
 
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
+      - name: Push to local
+        id: push-local
+        uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          local: no
-          report_format: json
-          report_path: clair-report.json
-          updater: null
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: localhost:5000
+          tls-verify: false
+
+      - name: Clair Scan
+        run: |
+          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-to-quay
@@ -192,6 +212,12 @@ jobs:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
 
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
     steps:
       - uses: actions/checkout@v2
 
@@ -205,14 +231,18 @@ jobs:
             ./envoy/Dockerfile
           context: ./envoy
 
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
+      - name: Push to local
+        id: push-local
+        uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          local: no
-          report_format: json
-          report_path: clair-report.json
-          updater: null
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: localhost:5000
+          tls-verify: false
+
+      - name: Clair Scan
+        run: |
+          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-to-quay
@@ -229,6 +259,12 @@ jobs:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
 
+    services:
+      registry:
+        image: registry:2
+        ports:
+          - 5000:5000
+
     steps:
       - uses: actions/checkout@v2
 
@@ -242,14 +278,18 @@ jobs:
             ./src/ishare-auth-provider/Dockerfile
           context: ./src/ishare-auth-provider
 
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
+      - name: Push to local
+        id: push-local
+        uses: redhat-actions/push-to-registry@v2
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          local: no
-          report_format: json
-          report_path: clair-report.json
-          updater: null
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: localhost:5000
+          tls-verify: false
+
+      - name: Clair Scan
+        run: |
+          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-to-quay
