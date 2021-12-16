@@ -70,141 +70,141 @@ jobs:
           mvn versions:set -DnewVersion=latest
           mvn clean install deploy -DskipTests -Dimage.tag=latest -Dimage.registry="${{ env.REGISTRY }}/" -Dimage.repository="${{ env.REPOSITORY }}"
 
-    iptables-init:
-      needs: [ "generate-version" ]
-      runs-on: ubuntu-latest
+  iptables-init:
+    needs: [ "generate-version" ]
+    runs-on: ubuntu-latest
 
-      steps:
-        - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v2
 
-        - name: Build Image
-          id: build-image
-          uses: redhat-actions/buildah-build@v2
-          with:
-            image: init-iptables
-            tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
-            dockerfiles: |
-              ./src/iptables-init/Dockerfile
-            context: ./src/iptables-init
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: init-iptables
+          tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
+          dockerfiles: |
+            ./src/iptables-init/Dockerfile
+          context: ./src/iptables-init
 
-        - name: Scan image
-          uses: anchore/scan-action@v3
-          with:
-            image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-            fail-build: true
-            severity-cutoff: "medium"
+      - name: Scan image
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          fail-build: true
+          severity-cutoff: "medium"
 
-        - name: Push To quay.io
-          id: push-to-quay
-          uses: redhat-actions/push-to-registry@v2
-          with:
-            image: ${{ steps.build-image.outputs.image }}
-            tags: ${{ steps.build-image.outputs.tags }}
-            registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-            username: ${{ secrets.QUAY_USERNAME }}
-            password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Push To quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
 
-    envoy-configmap-updater:
-      needs: [ "generate-version" ]
-      runs-on: ubuntu-latest
+  envoy-configmap-updater:
+    needs: [ "generate-version" ]
+    runs-on: ubuntu-latest
 
-      steps:
-        - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v2
 
-        - name: Build Image
-          id: build-image
-          uses: redhat-actions/buildah-build@v2
-          with:
-            image: envoy-configmap-updater
-            tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
-            dockerfiles: |
-              ./src/envoy-configmap-updater/Dockerfile
-            context: ./src/envoy-configmap-updater
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: envoy-configmap-updater
+          tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
+          dockerfiles: |
+            ./src/envoy-configmap-updater/Dockerfile
+          context: ./src/envoy-configmap-updater
 
-        - name: Scan image
-          uses: anchore/scan-action@v3
-          with:
-            image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-            fail-build: true
-            severity-cutoff: "medium"
+      - name: Scan image
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          fail-build: true
+          severity-cutoff: "medium"
 
-        - name: Push To quay.io
-          id: push-to-quay
-          uses: redhat-actions/push-to-registry@v2
-          with:
-            image: ${{ steps.build-image.outputs.image }}
-            tags: ${{ steps.build-image.outputs.tags }}
-            registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-            username: ${{ secrets.QUAY_USERNAME }}
-            password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Push To quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
 
-    envoy-resource-updater:
-      needs: [ "generate-version" ]
-      runs-on: ubuntu-latest
+  envoy-resource-updater:
+    needs: [ "generate-version" ]
+    runs-on: ubuntu-latest
 
-      steps:
-        - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v2
 
-        - name: Build Image
-          id: build-image
-          uses: redhat-actions/buildah-build@v2
-          with:
-            image: envoy-resource-updater
-            tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
-            dockerfiles: |
-              ./src/envoy-resource-updater/Dockerfile
-            context: ./src/envoy-resource-updater
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: envoy-resource-updater
+          tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
+          dockerfiles: |
+            ./src/envoy-resource-updater/Dockerfile
+          context: ./src/envoy-resource-updater
 
-        - name: Scan image
-          uses: anchore/scan-action@v3
-          with:
-            image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-            fail-build: true
-            severity-cutoff: "medium"
+      - name: Scan image
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          fail-build: true
+          severity-cutoff: "medium"
 
-        - name: Push To quay.io
-          id: push-to-quay
-          uses: redhat-actions/push-to-registry@v2
-          with:
-            image: ${{ steps.build-image.outputs.image }}
-            tags: ${{ steps.build-image.outputs.tags }}
-            registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-            username: ${{ secrets.QUAY_USERNAME }}
-            password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Push To quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
 
-    envoy:
-      needs: [ "generate-version" ]
-      runs-on: ubuntu-latest
+  envoy:
+    needs: [ "generate-version" ]
+    runs-on: ubuntu-latest
 
-      steps:
-        - uses: actions/checkout@v2
+    steps:
+      - uses: actions/checkout@v2
 
-        - name: Build Image
-          id: build-image
-          uses: redhat-actions/buildah-build@v2
-          with:
-            image: envoy
-            tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
-            dockerfiles: |
-              ./envoy/Dockerfile
-            context: ./envoy
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: envoy
+          tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
+          dockerfiles: |
+            ./envoy/Dockerfile
+          context: ./envoy
 
-        - name: Scan image
-          uses: anchore/scan-action@v3
-          with:
-            image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-            fail-build: true
-            severity-cutoff: "medium"
+      - name: Scan image
+        uses: anchore/scan-action@v3
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          fail-build: true
+          severity-cutoff: "medium"
 
-        - name: Push To quay.io
-          id: push-to-quay
-          uses: redhat-actions/push-to-registry@v2
-          with:
-            image: ${{ steps.build-image.outputs.image }}
-            tags: ${{ steps.build-image.outputs.tags }}
-            registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
-            username: ${{ secrets.QUAY_USERNAME }}
-            password: ${{ secrets.QUAY_PASSWORD }}
+      - name: Push To quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
 
   ishare-auth-provider:
 
