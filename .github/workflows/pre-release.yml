@@ -87,6 +87,10 @@ jobs:
             ./src/iptables-init/Dockerfile
           context: ./src/iptables-init
 
+      - name: Test
+        run:
+          docker images
+
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
         with:
@@ -95,7 +99,7 @@ jobs:
           report_format: json
           report_path: clair-report.json
           updater: null
-          
+
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
