@@ -87,13 +87,15 @@ jobs:
             ./src/iptables-init/Dockerfile
           context: ./src/iptables-init
 
-      - name: Run Snyk to check Docker image for vulnerabilities
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
         with:
           image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-
+          local: no
+          report_format: json
+          report_path: clair-report.json
+          updater: null
+          
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
@@ -124,7 +126,7 @@ jobs:
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
         with:
-          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
           local: no
           report_format: json
           report_path: clair-report.json
@@ -160,7 +162,7 @@ jobs:
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
         with:
-          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
           local: no
           report_format: json
           report_path: clair-report.json
@@ -196,7 +198,7 @@ jobs:
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
         with:
-          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
           local: no
           report_format: json
           report_path: clair-report.json
@@ -233,7 +235,7 @@ jobs:
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
         with:
-          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
           local: no
           report_format: json
           report_path: clair-report.json
