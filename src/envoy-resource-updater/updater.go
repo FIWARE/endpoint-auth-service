@@ -11,12 +11,14 @@ import (
 
 var proxyConfigFolder string
 var configMapFolder string
-var runAsInit bool
 
 func main() {
 
+	// Folder to write the envoy config to
 	proxyConfigFolder = os.Getenv("PROXY_CONFIG_FOLDER")
+	// Folder where the configmap, containing listener.yaml, cluster.yaml and envoy.yaml, is mounted
 	configMapFolder = os.Getenv("CONFIG_MAP_FOLDER")
+	// Should the container run as an init-container, e.g. also copy the envoy.yaml?
 	runAsInit, err := strconv.ParseBool(os.Getenv("RUN_AS_INIT"))
 
 	if err != nil {
@@ -74,6 +76,9 @@ func main() {
 	<-done
 }
 
+/**
+* Update the static envoy.yaml from the config-map
+ */
 func updateStaticResources() {
 	log.Info("Copy envoy.yaml")
 
@@ -115,7 +120,9 @@ func updateDynamicResources() {
 		return
 	}
 
-	// first move the cluster yaml to trigger its reload, before the listeners are loaded.
+	// First move the cluster yaml to trigger its reload, before the listeners are loaded.
+	// If the order is the other way around, envoy can fail because the listener tries to use a cluster, that is
+	// not available, yet.
 	err = os.Rename(proxyConfigFolder+"/cluster.yaml.o", proxyConfigFolder+"/cluster.yaml")
 	if err != nil {
 		log.Warn("Was not able to move cluster.yaml.", err)
