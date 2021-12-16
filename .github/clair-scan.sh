@@ -10,7 +10,7 @@ chmod +x clairctl-linux-amd64
 ./clairctl-linux-amd64 report --out json $image > clair.report
 
 vulnerabilities=$(cat clair.report | jq  ' .vulnerabilities[]' | wc -l)
-if [$vulnerabilities == 0]; then
+if [$vulnerabilities = 0]; then
   exit 0
 fi
 
