@@ -103,12 +103,17 @@ jobs:
           tls-verify: false
 
       - name: Clair Scan
-        run: |
-          docker run -d --name clair-db arminc/clair-db:latest
-          docker run -p 6060:6060 --link clair-db:postgres -d --name clair arminc/clair-local-scan:v2.0.8_fe9b059d930314b54c78f75afe265955faf4fdc1
-          wget -O clairctl https://github.com/quay/clair/releases/download/v4.3.5/clairctl-linux-amd64
-          chmod +x clairctl
-          ./clairctl -D report localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+        uses: santander-group/clair-scan-action@main
+        with:
+          image: localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          local: yes
+          report_format: json
+          report_path: clair-report.json
+          updater: null
+
+      - name: Echo
+        run: | 
+          cat clair-report.json
 
       - name: Push To quay.io
         id: push-to-quay
