@@ -10,7 +10,8 @@ chmod +x clairctl-linux-amd64
 ./clairctl-linux-amd64 report --out json $image > clair.report
 
 vulnerabilities=$(cat clair.report | jq  ' .vulnerabilities[]' | wc -l)
-if [$vulnerabilities = 0]; then
+if ["$vulnerabilities" -eq "0"]; then
+  echo "No CVEs to report."
   exit 0
 fi
 
@@ -26,19 +27,19 @@ echo "Medium : $medium"
 echo "Low : $low"
 
 if ["$failLevel" = "low"]; then
-  if [$low > 0]; then
+  if ["$low" -gt "0"]; then
     exit 1
   fi
 else if ["$failLevel" = "medium"]; then
-  if [$medium > 0]; then
+  if ["$medium" -gt "0"]; then
     exit 1
   fi
 else if ["$failLevel" = "high"]; then
-  if [$high > 0]; then
+  if ["$high" -gt "0"]; then
     exit 1
   fi
 else if ["$failLevel" = "critical"]; then
-  if [$critical > 0]; then
+  if ["$critical" -gt "0"]; then
     exit 1
   fi
 fi
