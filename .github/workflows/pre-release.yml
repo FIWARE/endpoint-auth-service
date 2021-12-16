@@ -169,7 +169,7 @@ jobs:
           local: yes
           report_format: json
           report_path: clair-report.json
-          updater: null
+          updater: alpine
 
       - name: Evaluate clair report
         run: |
@@ -223,13 +223,22 @@ jobs:
           tls-verify: false
 
       - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          local: yes
+          report_format: json
+          report_path: clair-report.json
+          updater: alpine
+
+      - name: Evaluate clair report
         run: |
-          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          ./.github/clair-scan.sh medium
 
       - uses: actions/upload-artifact@v2
         with:
           name: resource-updater-report.json
-          path: clair.report
+          path: clair-report.json
 
       - name: Push To quay.io
         id: push-to-quay
@@ -274,13 +283,22 @@ jobs:
           tls-verify: false
 
       - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          local: yes
+          report_format: json
+          report_path: clair-report.json
+          updater: alpine
+
+      - name: Evaluate clair report
         run: |
-          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          ./.github/clair-scan.sh medium
 
       - uses: actions/upload-artifact@v2
         with:
           name: envoy-report.json
-          path: clair.report
+          path: clair-report.json
 
       - name: Push To quay.io
         id: push-to-quay
@@ -326,13 +344,22 @@ jobs:
           tls-verify: false
 
       - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          local: yes
+          report_format: json
+          report_path: clair-report.json
+          updater: alpine
+
+      - name: Evaluate clair report
         run: |
-          ./.github/clair-scan.sh medium localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          ./.github/clair-scan.sh medium
 
       - uses: actions/upload-artifact@v2
         with:
           name: ishare-auth-report.json
-          path: clair.report
+          path: clair-report.json
 
       - name: Push To quay.io
         id: push-to-quay
