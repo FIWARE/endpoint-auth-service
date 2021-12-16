@@ -1,0 +1,36 @@
+#!/bin/bash
+
+failLevel=$1
+image=$2
+
+docker run -d --network host -p 5432:5432  --env POSTGRES_HOST_AUTH_METHOD=trust --env POSTGRES_DB=clair --env POSTGRES_USER=clair --env POSTGRES_PASSWORD=clair  docker.io/library/postgres:12
+docker run --network host -v $(pwd)/.github/config.yaml:/config/config.yaml quay.io/projectquay/clair:4.3.5
+wget https://github.com/quay/clair/releases/download/v4.3.5/clairctl-linux-amd64
+chmod +x clairctl-linux-amd64
+./clairctl-linux-amd64 report --out json $image > clair.report
+
+low=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("Low"))' | wc -l)
+medium=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("Medium"))' | wc -l)
+high=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("High"))' | wc -l)
+critical=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("Critical"))' | wc -l)
+echo "CVE report: "
+echo "|Low | Medium | High | Critical |"
+echo "|$low | $medium | $high | $critical |"
+
+if ["$failLevel" = "low"]; then
+  if [$low > 0]; then
+    exit 1
+  fi
+else if ["$failLevel" = "medium"]; then
+  if [$medium > 0]; then
+    exit 1
+  fi
+else if ["$failLevel" = "high"]; then
+  if [$high > 0]; then
+    exit 1
+  fi
+else if ["$failLevel" = "critical"]; then
+  if [$critical > 0]; then
+    exit 1
+  fi
+fi

@@ -103,18 +103,9 @@ jobs:
           tls-verify: false
 
       - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
-        with:
-          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          local: yes
-          report_format: txt
-          report_path: clair-report.txt
-          updater: alpine
-
-      - name: Echo
-        run: | 
-          cat clair-report.txt
-
+        run: |
+          ./.github/clair-scan.sh medium ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
