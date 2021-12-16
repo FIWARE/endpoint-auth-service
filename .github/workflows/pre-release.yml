@@ -112,9 +112,9 @@ jobs:
 
       - name: Clair Scan
         run: |
-          wget -O clairctl https://github.com/jgsqware/clairctl/releases/download/v1.2.8/clairctl-linux-amd64 
+          wget -O clairctl https://github.com/jgsqware/clairctl/releases/download/v4.3.5/clairctl-linux-amd64 
           chmod +x clairctl
-          ./clairctl --host clair-scan:6060 report localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          ./clairctl -l --host clair-scan:6060 report localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-to-quay
