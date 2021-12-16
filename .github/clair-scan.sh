@@ -11,7 +11,7 @@ chmod +x clairctl-linux-amd64
 
 vulnerabilities=$(cat clair.report | jq  ' .vulnerabilities[]' | wc -l)
 
-echo $vulnerabilities
+echo "Vulnerabilities found " $vulnerabilities
 
 if [ "$vulnerabilities" -eq "0" ]; then
   echo "No CVEs to report."
