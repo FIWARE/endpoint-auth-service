@@ -107,14 +107,13 @@ jobs:
         with:
           image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
           local: yes
-          report_format: json
-          report_path: clair-report.json
+          report_format: xml
+          report_path: clair-report.xml
           updater: alpine
 
       - name: Echo
         run: | 
-          ls
-          cat clair-report.json
+          cat clair-report.xml
 
       - name: Push To quay.io
         id: push-to-quay
