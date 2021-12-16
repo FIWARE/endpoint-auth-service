@@ -109,10 +109,11 @@ jobs:
           local: yes
           report_format: json
           report_path: clair-report.json
-          updater: null
+          updater: alpine
 
       - name: Echo
         run: | 
+          ls
           cat clair-report.json
 
       - name: Push To quay.io
