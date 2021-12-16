@@ -75,6 +75,14 @@ jobs:
     runs-on: ubuntu-latest
 
     services:
+      clair-db:
+        image: arminc/clair-db:latest
+        ports:
+          - 5432:5432
+      clair-scan:
+        image: arminc/clair-local-scan:v2.1.7_5d294c43862e1bf1339f22d83de0bcf92874f138
+        ports:
+          - 6060:6060
       registry:
         image: registry:2
         ports:
@@ -88,7 +96,7 @@ jobs:
         uses: redhat-actions/buildah-build@v2
         with:
           image: init-iptables
-          tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
+          tags: latest ${{ github.sha }} ${{ needs.generate-version.outputs.version }}
           dockerfiles: |
             ./src/iptables-init/Dockerfile
           context: ./src/iptables-init
@@ -103,13 +111,10 @@ jobs:
           tls-verify: false
 
       - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
-        with:
-          image: init-iptables:${{needs.generate-version.outputs.version}}
-          local: yes
-          report_format: json
-          report_path: clair-report.json
-          updater: null
+        run: |
+          wget -O clairctl https://github.com/jgsqware/clairctl/releases/download/v1.2.8/clairctl-linux-amd64 
+          chmod +x clairctl
+          ./clairctl --host clair-scan:6060 report localhost:5000/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-to-quay
