@@ -106,7 +106,7 @@ jobs:
         uses: santander-group/clair-scan-action@main
         with:
           image: localhost:5000/init-iptables:${{needs.generate-version.outputs.version}}
-          local: no
+          local: yes
           report_format: json
           report_path: clair-report.json
           updater: null
