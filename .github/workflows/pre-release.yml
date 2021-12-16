@@ -121,12 +121,14 @@ jobs:
             ./src/envoy-configmap-updater/Dockerfile
           context: ./src/envoy-configmap-updater
 
-      - name: Run Snyk to check Docker image for vulnerabilities
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          local: no
+          report_format: json
+          report_path: clair-report.json
+          updater: null
 
       - name: Push To quay.io
         id: push-to-quay
@@ -155,12 +157,14 @@ jobs:
             ./src/envoy-resource-updater/Dockerfile
           context: ./src/envoy-resource-updater
 
-      - name: Run Snyk to check Docker image for vulnerabilities
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          local: no
+          report_format: json
+          report_path: clair-report.json
+          updater: null
 
       - name: Push To quay.io
         id: push-to-quay
@@ -189,12 +193,14 @@ jobs:
             ./envoy/Dockerfile
           context: ./envoy
 
-      - name: Run Snyk to check Docker image for vulnerabilities
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          local: no
+          report_format: json
+          report_path: clair-report.json
+          updater: null
 
       - name: Push To quay.io
         id: push-to-quay
@@ -227,18 +233,11 @@ jobs:
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
           local: no
           report_format: json
           report_path: clair-report.json
           updater: null
-
-      - name: Run Snyk to check Docker image for vulnerabilities
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
 
       - name: Push To quay.io
         id: push-to-quay
