@@ -87,12 +87,12 @@ jobs:
             ./src/iptables-init/Dockerfile
           context: ./src/iptables-init
 
-      - name: Scan image
-        uses: anchore/scan-action@v3
+      - name: Run Snyk to check Docker image for vulnerabilities
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          fail-build: true
-          severity-cutoff: "medium"
 
       - name: Push To quay.io
         id: push-to-quay
@@ -121,12 +121,12 @@ jobs:
             ./src/envoy-configmap-updater/Dockerfile
           context: ./src/envoy-configmap-updater
 
-      - name: Scan image
-        uses: anchore/scan-action@v3
+      - name: Run Snyk to check Docker image for vulnerabilities
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          fail-build: true
-          severity-cutoff: "medium"
 
       - name: Push To quay.io
         id: push-to-quay
@@ -155,12 +155,12 @@ jobs:
             ./src/envoy-resource-updater/Dockerfile
           context: ./src/envoy-resource-updater
 
-      - name: Scan image
-        uses: anchore/scan-action@v3
+      - name: Run Snyk to check Docker image for vulnerabilities
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          fail-build: true
-          severity-cutoff: "medium"
 
       - name: Push To quay.io
         id: push-to-quay
@@ -189,12 +189,12 @@ jobs:
             ./envoy/Dockerfile
           context: ./envoy
 
-      - name: Scan image
-        uses: anchore/scan-action@v3
+      - name: Run Snyk to check Docker image for vulnerabilities
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          fail-build: true
-          severity-cutoff: "medium"
 
       - name: Push To quay.io
         id: push-to-quay
@@ -224,12 +224,12 @@ jobs:
             ./src/ishare-auth-provider/Dockerfile
           context: ./src/ishare-auth-provider
 
-      - name: Scan image
-        uses: anchore/scan-action@v3
+      - name: Run Snyk to check Docker image for vulnerabilities
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
           image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
-          fail-build: true
-          severity-cutoff: "medium"
 
       - name: Push To quay.io
         id: push-to-quay
