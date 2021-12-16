@@ -33,15 +33,15 @@ if [ "$failLevel" = "low" ]; then
   if [ "$low" -gt "0" ]; then
     exit 1
   fi
-else if [ "$failLevel" = "medium" ]; then
+elif [ "$failLevel" = "medium" ]; then
   if [ "$medium" -gt "0" ]; then
     exit 1
   fi
-else if [ "$failLevel" = "high" ]; then
+elif [ "$failLevel" = "high" ]; then
   if [ "$high" -gt "0" ]; then
     exit 1
   fi
-else if [ "$failLevel" = "critical" ]; then
+elif [ "$failLevel" = "critical" ]; then
   if [ "$critical" -gt "0" ]; then
     exit 1
   fi
