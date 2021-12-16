@@ -105,7 +105,7 @@ jobs:
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: localhost:5000/init-iptables:${{needs.generate-version.outputs.version}}
           local: no
           report_format: json
           report_path: clair-report.json
