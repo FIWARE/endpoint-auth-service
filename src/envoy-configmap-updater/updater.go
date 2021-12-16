@@ -17,10 +17,16 @@ var proxyConfigFolder string
 var configMap string
 var configMapNamespace string
 
+/**
+* Update the listener.yaml and the cluster.yaml in the configmap to be mounted by the proxy with the contents of a mounted folder.
+ */
 func main() {
 
+	// Folder to read cluster and listener.yaml from
 	proxyConfigFolder = os.Getenv("PROXY_CONFIG_FOLDER")
+	// Configmap to be updated
 	configMap = os.Getenv("PROXY_CONFIG_MAP")
+	// namespace the configmap is located at
 	configMapNamespace = os.Getenv("PROXY_CONFIG_MAP_NAMESPACE")
 
 	if proxyConfigFolder == "" {
@@ -70,6 +76,9 @@ func main() {
 	<-done
 }
 
+/**
+* Apply the update to the map
+ */
 func updateConfigMap() {
 	log.Info("Update the map")
 
