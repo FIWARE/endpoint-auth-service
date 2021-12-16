@@ -10,7 +10,7 @@ timetorun=30
 stoptime=$((timetorun + $(date +%s)))
 
 function checkClairStatus() {
-    DONE=$(docker logs -n 1000 clair 2>&1 | jq 'select(.message=="starting background updates")' -)
+    DONE=$(docker logs -n 1000 clair 2>&1 | jq 'select(.message=="starting fetch")' -)
 
     if [ -z "$DONE" ]; then
 	return 0;
