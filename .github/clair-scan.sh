@@ -9,15 +9,6 @@ wget https://github.com/quay/clair/releases/download/v4.3.5/clairctl-linux-amd64
 chmod +x clairctl-linux-amd64
 ./clairctl-linux-amd64 report --out json $image > clair.report
 
-vulnerabilities=$(cat clair.report | jq  ' .vulnerabilities[]' | wc -l)
-
-echo "Vulnerabilities found " $vulnerabilities
-
-if [ "$vulnerabilities" -eq "0" ]; then
-  echo "No CVEs to report."
-  exit 0
-fi
-
 low=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("Low"))' | wc -l)
 medium=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("Medium"))' | wc -l)
 high=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("High"))' | wc -l)
