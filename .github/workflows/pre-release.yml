@@ -238,7 +238,7 @@ jobs:
         env:
           SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          image: localhost/${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
 
       - name: Push To quay.io
         id: push-to-quay
