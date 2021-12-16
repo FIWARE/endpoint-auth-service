@@ -102,25 +102,13 @@ jobs:
           registry: localhost:5000
           tls-verify: false
 
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
-        with:
-          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          local: yes
-          report_format: json
-          report_path: clair-report.json
-          updater: alpine
 
-      - name: Evaluate clair report
-        run: |
-          ls -l
-          cat clair-report.json
-          ./.github/clair-scan.sh medium
-
-      - uses: actions/upload-artifact@v2
+      - name: Run Snyk to check Docker image for vulnerabilities
+        uses: snyk/actions/docker@master
+        env:
+          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
         with:
-          name: ip-tables-report.json
-          path: clair-report.json
+          image: ${{ steps.build-image.outputs.image }}/${{ needs.generate-version.outputs.version }}
 
       - name: Push To quay.io
         id: push-to-quay
