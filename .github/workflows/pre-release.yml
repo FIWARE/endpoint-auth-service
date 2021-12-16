@@ -224,6 +224,15 @@ jobs:
             ./src/ishare-auth-provider/Dockerfile
           context: ./src/ishare-auth-provider
 
+      - name: Clair Scan
+        uses: santander-group/clair-scan-action@main
+        with:
+          image: ${{ steps.build-image.outputs.image }}:${{needs.generate-version.outputs.version}}
+          local: no
+          report_format: json
+          report_path: clair-report.json
+          updater: null
+
       - name: Run Snyk to check Docker image for vulnerabilities
         uses: snyk/actions/docker@master
         env:
