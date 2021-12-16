@@ -89,7 +89,7 @@ jobs:
 
       - name: Test
         run:
-          docker images
+          buildah images
 
       - name: Clair Scan
         uses: santander-group/clair-scan-action@main
