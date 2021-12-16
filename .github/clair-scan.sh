@@ -18,9 +18,12 @@ low=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(c
 medium=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("Medium"))' | wc -l)
 high=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("High"))' | wc -l)
 critical=$(cat clair.report | jq  ' .vulnerabilities[].normalized_severity | select(contains("Critical"))' | wc -l)
+
 echo "CVE report: "
-echo "|Low | Medium | High | Critical |"
-echo "|$low | $medium | $high | $critical |"
+echo "Critical : $critical"
+echo "High : $high"
+echo "Medium : $medium"
+echo "Low : $low"
 
 if ["$failLevel" = "low"]; then
   if [$low > 0]; then
@@ -39,3 +42,5 @@ else if ["$failLevel" = "critical"]; then
     exit 1
   fi
 fi
+
+exit 0
