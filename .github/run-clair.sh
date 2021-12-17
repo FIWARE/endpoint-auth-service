@@ -66,6 +66,7 @@ function scan() {
   docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${reports:?}:/reports" \
+    -v $(pwd)/.github/cve-whitelist.yaml:/whitelist/cve-whitelist.yaml
     --rm \
     --network=endpoint-auth-service_clair-local \
     clair-scanner \
@@ -73,7 +74,7 @@ function scan() {
      while ! curl -q http://clair:6060 > /dev/null 2>&1; do
        sleep 1
      done
-      ./clair-scanner --ip \${HOSTNAME:?} -r /reports/${report_file:?} --clair http://clair:6060 \"${image:?}\"
+      ./clair-scanner --ip \${HOSTNAME:?} -r /reports/${report_file:?} -w /whitelist/cve-whitelist.yaml --clair http://clair:6060 \"${image:?}\"
     """
 }
 
