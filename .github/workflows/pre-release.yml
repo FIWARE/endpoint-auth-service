@@ -67,8 +67,8 @@ jobs:
       - name: Build&Push image
         run: |
           cd integration-test/echo-server/
-          mvn versions:set -DnewVersion=latest
-          mvn clean install deploy -DskipTests -Dimage.tag=latest -Dimage.registry="${{ env.REGISTRY }}/" -Dimage.repository="${{ env.REPOSITORY }}"
+          mvn versions:set -DnewVersion=${{ needs.generate-version.outputs.version }}
+          mvn clean install deploy -DskipTests -Dimage.tag=${{ needs.generate-version.outputs.version }} -Dimage.registry="${{ env.REGISTRY }}/" -Dimage.repository="${{ env.REPOSITORY }}"
 
   iptables-init:
     needs: [ "generate-version" ]
@@ -97,23 +97,14 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-
-      - name: Run Snyk to check Docker image for vulnerabilities
-        uses: snyk/actions/docker@master
-        env:
-          SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+      - name: Run clair
+        run: |
+          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+          
 
   envoy-configmap-updater:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
-
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
 
     steps:
       - uses: actions/checkout@v2
@@ -128,34 +119,6 @@ jobs:
             ./src/envoy-configmap-updater/Dockerfile
           context: ./src/envoy-configmap-updater
 
-      - name: Push to local
-        id: push-local
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: localhost:5000
-          tls-verify: false
-
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
-        with:
-          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          local: yes
-          report_format: json
-          report_path: clair-report.json
-          updater: alpine
-
-      - name: Evaluate clair report
-        run: |
-          ls
-          ./.github/clair-scan.sh medium
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: configmap-updater-report.json
-          path: clair-report.json
-
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
@@ -166,15 +129,13 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      - name: Run clair
+        run: |
+          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+
   envoy-resource-updater:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
-
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
 
     steps:
       - uses: actions/checkout@v2
@@ -189,33 +150,6 @@ jobs:
             ./src/envoy-resource-updater/Dockerfile
           context: ./src/envoy-resource-updater
 
-      - name: Push to local
-        id: push-local
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: localhost:5000
-          tls-verify: false
-
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
-        with:
-          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          local: yes
-          report_format: json
-          report_path: clair-report.json
-          updater: alpine
-
-      - name: Evaluate clair report
-        run: |
-          ./.github/clair-scan.sh medium
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: resource-updater-report.json
-          path: clair-report.json
-
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
@@ -226,15 +160,13 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+      - name: Run clair
+        run: |
+          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+
   envoy:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
-
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
 
     steps:
       - uses: actions/checkout@v2
@@ -248,33 +180,6 @@ jobs:
           dockerfiles: |
             ./envoy/Dockerfile
           context: ./envoy
-
-      - name: Push to local
-        id: push-local
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: localhost:5000
-          tls-verify: false
-
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
-        with:
-          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          local: yes
-          report_format: json
-          report_path: clair-report.json
-          updater: alpine
-
-      - name: Evaluate clair report
-        run: |
-          ./.github/clair-scan.sh medium
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: envoy-report.json
-          path: clair-report.json
 
       - name: Push To quay.io
         id: push-to-quay
@@ -291,12 +196,6 @@ jobs:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
 
-    services:
-      registry:
-        image: registry:2
-        ports:
-          - 5000:5000
-
     steps:
       - uses: actions/checkout@v2
 
@@ -310,33 +209,6 @@ jobs:
             ./src/ishare-auth-provider/Dockerfile
           context: ./src/ishare-auth-provider
 
-      - name: Push to local
-        id: push-local
-        uses: redhat-actions/push-to-registry@v2
-        with:
-          image: ${{ steps.build-image.outputs.image }}
-          tags: ${{ steps.build-image.outputs.tags }}
-          registry: localhost:5000
-          tls-verify: false
-
-      - name: Clair Scan
-        uses: santander-group/clair-scan-action@main
-        with:
-          image: ${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          local: yes
-          report_format: json
-          report_path: clair-report.json
-          updater: alpine
-
-      - name: Evaluate clair report
-        run: |
-          ./.github/clair-scan.sh medium
-
-      - uses: actions/upload-artifact@v2
-        with:
-          name: ishare-auth-report.json
-          path: clair-report.json
-
       - name: Push To quay.io
         id: push-to-quay
         uses: redhat-actions/push-to-registry@v2
@@ -346,6 +218,10 @@ jobs:
           registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
+
+      - name: Run clair
+        run: |
+          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
   endpoint-service-deploy:
 
@@ -366,5 +242,9 @@ jobs:
       - name: Build&Push image
         run: |
           cd src/endpoint-configuration-service/
-          mvn versions:set -DnewVersion=latest
-          mvn clean install deploy -DskipTests -Dimage.tag=latest -Dimage.registry="${{ env.REGISTRY }}/" -Dimage.repository="${{ env.REPOSITORY }}"
+          mvn versions:set -DnewVersion=${{ needs.generate-version.outputs.version }}
+          mvn clean install deploy -DskipTests -Dimage.tag=${{ needs.generate-version.outputs.version }} -Dimage.registry="${{ env.REGISTRY }}/" -Dimage.repository="${{ env.REPOSITORY }}"
+
+      - name: Run clair
+        run: |
+          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}
