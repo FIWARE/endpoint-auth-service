@@ -66,7 +66,7 @@ function scan() {
   docker run \
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${reports:?}:/reports" \
-    -v $(pwd)/.github/cve-whitelist.yaml:/whitelist/cve-whitelist.yaml
+    -v $(pwd)/.github/cve-whitelist.yaml:/whitelist/cve-whitelist.yaml \
     --rm \
     --network=endpoint-auth-service_clair-local \
     clair-scanner \
