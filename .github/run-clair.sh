@@ -67,7 +67,7 @@ function scan() {
     -v /var/run/docker.sock:/var/run/docker.sock \
     -v "${reports:?}:/reports" \
     --rm \
-    --network=fiware-security_clair-local \
+    --network=endpoint-auth-service_clair-local \
     clair-scanner \
     bash -c """
      while ! curl -q http://clair:6060 > /dev/null 2>&1; do
