@@ -100,7 +100,19 @@ jobs:
       - name: Run clair
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-          
+
+      - name: Scan image
+        id: scan
+        uses: anchore/scan-action@v3
+        with:
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}"
+          fail-build: false
+
+      - name: upload Anchore scan SARIF report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
 
   envoy-configmap-updater:
     needs: [ "generate-version" ]
@@ -133,6 +145,18 @@ jobs:
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
+      - name: Scan image
+        id: scan
+        uses: anchore/scan-action@v3
+        with:
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}"
+          fail-build: false
+
+      - name: upload Anchore scan SARIF report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
+
   envoy-resource-updater:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
@@ -163,6 +187,18 @@ jobs:
       - name: Run clair
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
+
+      - name: Scan image
+        id: scan
+        uses: anchore/scan-action@v3
+        with:
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}"
+          fail-build: false
+
+      - name: upload Anchore scan SARIF report
+        uses: github/codeql-action/upload-sarif@v1
+        with:
+          sarif_file: ${{ steps.scan.outputs.sarif }}
 
   envoy:
     needs: [ "generate-version" ]
@@ -195,11 +231,11 @@ jobs:
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
-
       - name: Scan image
+        id: scan
         uses: anchore/scan-action@v3
         with:
-          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}"
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}"
           fail-build: false
 
       - name: upload Anchore scan SARIF report
@@ -240,9 +276,10 @@ jobs:
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
       - name: Scan image
+        id: scan
         uses: anchore/scan-action@v3
         with:
-          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}"
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}"
           fail-build: false
 
       - name: upload Anchore scan SARIF report
@@ -278,6 +315,7 @@ jobs:
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}
 
       - name: Scan image
+        id: scan
         uses: anchore/scan-action@v3
         with:
           image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}"
