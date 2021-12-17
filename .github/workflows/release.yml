@@ -225,6 +225,7 @@ jobs:
       - envoy-configmap-updater
       - iptables-init
       - echo-server
+      - generate-version
 
     runs-on: ubuntu-latest
 

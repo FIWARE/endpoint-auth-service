@@ -328,6 +328,7 @@ jobs:
 
   git-release:
     needs:
+      - generate-version
       - endpoint-configuration-service
       - ishare-auth-provider
       - envoy
