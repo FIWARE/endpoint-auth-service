@@ -1,0 +1,110 @@
+name: Unit-Test
+
+on:
+  push
+
+jobs:
+
+  endpoint-service-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - uses: actions/setup-java@v1
+      with:
+        java-version: '17'
+        java-package: jdk
+
+    - name: Run tests
+      run: |
+        cd src/endpoint-configuration-service/
+        mvn clean verify
+
+    - name: Setup .NET Core # Required to execute ReportGenerator
+      uses: actions/setup-dotnet@v1
+      with:
+        dotnet-version: 6.0.100
+
+    - name: ReportGenerator
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.0.0
+      with:
+        reports: 'src/endpoint-configuration-service/target/site/jacoco/jacoco.xml'
+        targetdir: 'coveragereport'
+        reporttypes: 'lcov'
+        sourcedirs: 'src/endpoint-configuration-service/src/main/java'
+
+    - name: Upload coverage-report
+      uses: actions/upload-artifact@v2
+      with:
+        name: ecs
+        path: coveragereport/lcov.info
+
+  ishare-auth-provider-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17.3
+
+    - name: Go test
+      run: |
+        cd src/ishare-auth-provider/
+        go test -v -covermode=count -coverprofile=coverage.out
+
+    - name: Transform report
+      uses: jandelgado/gcov2lcov-action@v1.0.8
+      with:
+        infile: coverage.out
+        outfile: coverage.lcov
+        working-directory: src/ishare-auth-provider/
+
+    - name: Upload coverage-report
+      uses: actions/upload-artifact@v2
+      with:
+        name: auth-provider
+        path: src/ishare-auth-provider/coverage.lcov
+
+  aggregate-report:
+    needs: [endpoint-service-test, ishare-auth-provider-test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: download ecs report
+        uses: actions/download-artifact@v2
+        with:
+          name: ecs
+          path: coverage/ecs
+
+      - name: download auth-provider report
+        uses: actions/download-artifact@v2
+        with:
+          name: auth-provider
+          path: coverage/auth-provider
+
+      - name: prepare
+        run: |
+          sudo apt-get install -y lcov
+
+      - name: aggregate
+        run: |  
+          cd coverage
+          lcov -a auth-provider/coverage.lcov -a ecs/lcov.info -o ../lcov.info
+
+      - name: Upload coverage-report
+        uses: actions/upload-artifact@v2
+        with:
+          path: lcov.info
+
+      - name: Coveralls
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path-to-lcov: ${{ github.workspace }}/lcov.info
+      
+      

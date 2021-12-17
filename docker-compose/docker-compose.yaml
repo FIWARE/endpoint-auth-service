@@ -1,0 +1,117 @@
+version: "3.5"
+services:
+
+  # the setup runs on host-network to allow the iptable manipulation needed for the tests.
+        
+  echo-server:
+    image: quay.io/wi_stefan/echo-server
+    hostname: echo
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.2
+    expose:
+     - "6060"
+     - "6061"
+    environment:
+      - MICRONAUT_SERVER_PORT=6060
+      - INSPECTOR_PORT=6061
+
+  echo-server-2:
+    image: quay.io/wi_stefan/echo-server
+    hostname: echo-2
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.8
+    expose:
+    - "6060"
+    - "6061"
+    ports:
+      - 6061:6061
+    environment:
+      - MICRONAUT_SERVER_PORT=6060
+      - INSPECTOR_PORT=6061
+
+  envoy:
+    image: ${ENVOY_IMAGE:-quay.io/wi_stefan/envoy}
+    hostname: envoy
+    # required for writing the intial config and iptable to match
+    user: root
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.3
+    expose:
+      - "15001"
+    ports:
+      - 15001:15001
+    entrypoint: ./initial-config/init.sh
+    volumes:
+      - envoy-config:/etc/envoy
+      - ./initial-config:/initial-config
+
+  resource-updater:
+    image: ${RESOURCE_UPDATER_IMAGE:-quay.io/wi_stefan/envoy-resource-updater}
+    hostname: update-resources
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.4
+    # required to write at the mounted volumes
+    user: root
+    volumes:
+      - map-folder:/configmap-folder:rw
+      - envoy-config:/proxy-config:rw
+
+
+  config-service:
+    image: ${CONFIG_SERVICE_IMAGE:-quay.io/wi_stefan/endpoint-configuration-service}
+    hostname: config-service
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.5
+    expose:
+     - "9090"
+    # required to write at the mounted volumes
+    user: root
+    environment:
+      - PROXY_LISTENER_YAML_PATH=/envoy-config/listener.yaml
+      - PROXY_CLUSTER_YAML_PATH=/envoy-config/cluster.yaml
+      - PROXY_EXTERNAL_AUTH_ADDRESS=auth-provider
+      - PROXY_EXTERNAL_AUTH_PORT=7070
+      - MICRONAUT_SERVER_PORT=9090
+    volumes:
+      - map-folder:/envoy-config:rw
+      
+  auth-provider:
+    image: ${AUTH_PROVIDER_IMAGE:-quay.io/wi_stefan/ishare-auth-provider}
+    hostname: auth-provider
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.6
+    expose:
+     - "7070"
+    environment:
+      - SERVER_PORT=7070
+      - CONFIGURATION_SERVICE_URL=http://config-service:9090
+      
+  ishare-idp-mock:
+    image: mockserver/mockserver:mockserver-5.11.2
+    hostname: idp-mock
+    networks:
+      test-network:
+        ipv4_address: 10.5.0.7
+    expose:
+     - "1080"
+    environment: 
+      - MOCKSERVER_PROPERTY_FILE=/config/mockserver.properties
+    volumes:
+      - ./idp-mock:/config
+
+networks:
+  test-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.5.0.0/16
+
+volumes:
+  map-folder: ~
+  envoy-config: ~

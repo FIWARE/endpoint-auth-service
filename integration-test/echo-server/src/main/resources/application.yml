@@ -1,0 +1,15 @@
+micronaut:
+  application:
+    name: ${project.artifactId}
+
+  server:
+    port: 6061
+
+---
+
+loggers:
+  levels:
+    ROOT: INFO
+---
+inspector:
+  port: 9999

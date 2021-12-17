@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: injection
+  namespace: proxy-test
+spec:  
+  selector:
+    matchLabels:
+      app: injection
+  replicas: 1
+  strategy: {}
+  template:
+    metadata:
+      annotations: 
+        sidecar.k8s.fiware.org/request: "envoy-sidecar"
+      labels:
+        app: injection
+    spec:
+      containers:
+      # the service to be intercepted
+      - image: k8s.gcr.io/echoserver:1.4
+        name: echo
+        securityContext:
+          privileged: true
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: additional
+  namespace: proxy-test
+spec:
+  selector:
+    matchLabels:
+      app: additional
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: additional
+    spec:
+      containers:
+      - image: k8s.gcr.io/echoserver:1.4
+        name: echo-add
+        securityContext:
+          privileged: true
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: additional-service
+  namespace: proxy-test
+  labels:
+    app: additional
+spec:
+  ports:
+  - port: 80
+    targetPort: 8080
+    name: http
+    protocol: TCP
+  selector:
+    app: additional

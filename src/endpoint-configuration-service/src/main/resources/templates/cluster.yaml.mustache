@@ -1,0 +1,72 @@
+resources:
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: passthrough-https
+    type: ORIGINAL_DST
+    connectTimeout: 10s
+    lbPolicy: CLUSTER_PROVIDED
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: ext-authz
+    type: STRICT_DNS
+    connect_timeout: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: ext-authz
+      endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: {{auth-service-address}}
+                  port_value: {{auth-service-port}}
+  {{#endpoints}}
+  {{#httpsPort}}
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: {{id}}
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: {{id}}
+      endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: "{{domain}}"
+                  port_value: {{port}}
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+  {{/httpsPort}}
+  {{^httpsPort}}
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: {{id}}
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: {{id}}
+      endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: "{{domain}}"
+                  port_value: {{port}}
+  {{/httpsPort}}
+  {{/endpoints}}
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: passthrough
+    type: ORIGINAL_DST
+    lbPolicy: CLUSTER_PROVIDED
+    connectTimeout: 10s
+    original_dst_lb_config:
+      use_http_header: true

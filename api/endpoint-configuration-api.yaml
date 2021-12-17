@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  description: 'This spec provides the configuration-api for the endpoint-auth-sidecar.'
+  version: 0.0.1
+  title: Endpoint Configuration API
+  contact:
+    email: stefan.wiedemann@fiware.org
+tags:
+  - name: EndpointConfiguration
+    description: "Endpoints for configuring sidecar-proxy's auth behaviour."
+  - name: AuthConfiguration
+    description: "Endpoint for retrieving information intended to be used by the auth providers."
+servers:
+  - url: http://localhost:8080
+    description: "Local test server address."
+
+paths:
+  '/endpoint':
+    get:
+      tags:
+        - EndpointConfiguration
+      description: "Get all configured endpoints."
+      operationId: getEndpoints
+      responses:
+        '200':
+          description: "List of endpoints."
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/EndpointInfo'
+    post:
+      tags:
+        - EndpointConfiguration
+      description: "Create a new endpoint configuration."
+      operationId: createEndpoint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/EndpointRegistration'
+      responses:
+        '201':
+          description: "Created. Will return the endpoint id in the location header."
+        '400':
+          description: "Received an invalid registration."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+        '409':
+          description: "Registration already exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/endpoint/{id}':
+    get:
+      tags:
+        - EndpointConfiguration
+      parameters:
+        - $ref: '#/components/parameters/id'
+      description: "Return the endpoint information for the given id."
+      operationId: getEndpointInfo
+      responses:
+        '200':
+          description: "The information about the endpoint."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EndpointInfo'
+        '404':
+          description: "No such endpoint exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+    delete:
+      tags:
+        - EndpointConfiguration
+      parameters:
+        - $ref: '#/components/parameters/id'
+      description: "Delete the endpoint for the given id."
+      operationId: deleteEndpoint
+      responses:
+        '204':
+          description: "The endpoint was successfully removed."
+        '404':
+          description: "No such endpoint exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/endpoint/{id}/{credential}':
+    put:
+      tags:
+        - EndpointConfiguration
+      parameters:
+        - $ref: '#/components/parameters/id'
+        - $ref: '#/components/parameters/credential'
+      description: "Update credential related configuration for a given endpoint."
+      operationId: updateCredentialConfiguration
+      requestBody:
+        required: true
+        content:
+          text/plain:
+            schema:
+              type: string
+      responses:
+        '204':
+          description: "The credential was successfully updated."
+        '404':
+          description: "No such endpoint or credential exists."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProblemDetails'
+  '/auth':
+    get:
+      tags:
+        - AuthConfiguration
+      parameters:
+        - $ref: '#/components/parameters/domain'
+        - $ref: '#/components/parameters/path'
+      description: -|
+        "Get the auth information for the given domain/path combination."
+      operationId: getEndpointByDomainAndPath
+      responses:
+        '200':
+          description: "Information about the configured endpoint."
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthInfo'
+components:
+  parameters:
+    id:
+      name: id
+      description: "Id of the registered endpoint."
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    credential:
+      name: credential
+      description: "The credential(part) to be updated. In case of iShare this could be signingKey or certificateChain for example."
+      in: path
+      required: true
+      schema:
+        type: string
+    domain:
+      name: domain
+      description: "Domain to get the information for."
+      in: query
+      required: true
+      schema:
+        type: string
+      example: "myEndpoint.com"
+    path:
+      name: path
+      description: "Path to get the infromation for."
+      in: query
+      required: true
+      schema:
+        type: string
+      example: "/my/endpoint/path"
+  schemas:
+    Id:
+      description: "Id of the registered endpoint. Be aware: this has no connections to ids used by NGSI-LD Api."
+      type: string
+      format: uuid
+      example: "bf1957ad-d69e-4b81-ba84-599091a03150"
+    AuthType:
+      description: "Type of the authentication to be used."
+      type: string
+      enum:
+        - "iShare"
+    AuthInfo:
+      description: -|
+        "Authentication information to be used by the providers. Its a generic object that needs to be defined for each auth-type."
+      type: object
+      properties:
+        authType:
+          $ref: '#/components/schemas/AuthType'
+      additionalProperties: true
+    IShareCredentials:
+      description: "Credentials to be used for iShare authentication."
+      properties:
+        iShareClientId:
+          description: -|
+            "iSHARE identifier of the dataprovider in this dataspace."
+          type: string
+        iShareIdpId:
+          description: -|
+            "iSHARE identifier of the idp to be requested. Will be used for the 'aud' header of the request"
+          type: string
+        iShareIdpAddress:
+          description: -|
+            "Address of the iShare-compatible address to receive tokens from."
+          type: string
+          format: url
+          example: "https://ar.isharetest.net/connect/token"
+        requestGrantType:
+          description: "Grant type to be requested add the idp."
+          type: string
+          default: "client_credentials"
+      required:
+        - iShareClientId
+        - iShareIdpId
+        - iShareIdpAddress
+    AuthCredentials:
+      description: "Type of the credentials to be used. Need to correspond with the authType."
+      oneOf:
+        - $ref: '#/components/schemas/IShareCredentials'
+    EndpointInfo:
+      type: object
+      description: "Information about a registered endpoint."
+      properties:
+        id:
+          $ref: '#/components/schemas/Id'
+        domain:
+          description: "Domain that the Endpoint will receive notifications at."
+          type: string
+          example: "myEndpoint.com"
+        path:
+          description: "Path that the Endpoint will receive notifications at."
+          type: string
+          default: "/"
+          example: "/notification/receive"
+        useHttps:
+          description: "Should the proxy forward the notifications via https."
+          type: boolean
+          default: false
+        authType:
+          $ref: '#/components/schemas/AuthType'
+    EndpointRegistration:
+      type: object
+      description: "Information about a Endpoint to be registered."
+      properties:
+        domain:
+          description: "Domain that the endpoint will receive notifications at."
+          type: string
+          example: "myEndpoint.com"
+        port:
+          description: "Port that the endpoint will receive notifications at."
+          type: integer
+          default: 80
+        path:
+          description: "Path that the endpoint will receive notifications at."
+          type: string
+          default: "/"
+          example: "/notification/receive"
+        useHttps:
+          description: "Should the proxy forward the notification via https."
+          type: boolean
+          default: false
+        authType:
+          $ref: '#/components/schemas/AuthType'
+        authCredentials:
+          $ref: '#/components/schemas/AuthCredentials'
+      required:
+        - domain
+        - authCredentials
+        - authType
+    ProblemDetails:
+      type: object
+      description: "Error response as defined by NGSI-LD"
+      properties:
+        type:
+          description: "Type of the error as defined by https://datatracker.ietf.org/doc/html/rfc7807 "
+          type: string
+          format: uri
+        title:
+          description: "Title of the error as defined by https://datatracker.ietf.org/doc/html/rfc7807 "
+          type: string
+        detail:
+          description: "Detailed information about the problem if available."
+          type: string
+      required:
+        - type
