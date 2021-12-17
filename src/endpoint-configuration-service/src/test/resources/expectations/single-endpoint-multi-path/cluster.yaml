@@ -1,0 +1,70 @@
+resources:
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: passthrough-https
+    type: ORIGINAL_DST
+    connectTimeout: 10s
+    lbPolicy: CLUSTER_PROVIDED
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: ext-authz
+    type: STRICT_DNS
+    connect_timeout: 1s
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: ext-authz
+      endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: auth-service
+                  port_value: 7070
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: expected-0
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: expected-0
+      endpoints:
+        - lb_endpoints:
+          - endpoint:
+              address:
+                socket_address:
+                  protocol: TCP
+                  address: "domain"
+                  port_value: 6060
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: expected-1
+    connect_timeout: 5s
+    type: STRICT_DNS
+    lb_policy: ROUND_ROBIN
+    load_assignment:
+      cluster_name: expected-1
+      endpoints:
+        - lb_endpoints:
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: "domain"
+                    port_value: 6060
+    transport_socket:
+      name: envoy.transport_sockets.tls
+      typed_config:
+        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+    name: passthrough
+    type: ORIGINAL_DST
+    lbPolicy: CLUSTER_PROVIDED
+    connectTimeout: 10s
+    original_dst_lb_config:
+      use_http_header: true

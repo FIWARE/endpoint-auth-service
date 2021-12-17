@@ -1,0 +1,476 @@
+## Default values for endpoint-auth-service.
+## This is a YAML-formatted file.
+## Declare variables to be passed into your templates.
+
+# -- option to override the name config in the _helpers.tpl
+nameOverride: ""
+# -- option to override the fullname config in the _helpers.tpl
+fullnameOverride: ""
+
+## configuration to be used fo the endpoint-configuration-service
+configService:
+
+  # -- option to override the name config in the _helpers.tpl
+  nameOverride: ""
+  # -- option to override the fullname config in the _helpers.tpl
+  fullnameOverride: ""
+
+  ## configuration for the k8s service to access configService
+  service:
+    # -- service type
+    type: ClusterIP
+    # -- port to be used by the service
+    port: 8080
+    # -- addtional annotations, if required
+    annotations: {}
+
+  # -- if a configService configService service account should be used, it can be configured here
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  serviceAccount:
+    # -- specifies if the account should be created
+    create: false
+
+  # -- initial number of target replications, can be different if autoscaling is enabled
+  replicaCount: 1
+  # -- number of old replicas to be retained
+  revisionHistoryLimit: 3
+  ## configuration of the configService update strategy
+  updateStrategy:
+    # -- type of the update
+    type: RollingUpdate
+    # -- new pods will be added gradually
+    rollingUpdate:
+      # -- number of pods that can be created above the desired amount while updating
+      maxSurge: 1
+      # -- number of pods that can be unavailable while updating
+      maxUnavailable: 0
+      
+  ## configuration of the image to be used
+  image:
+    # -- endpoint-configuration-service image name
+    # ref: https://quay.io/repository/wi_stefan/endpoint-configuration-service
+    repository: quay.io/wi_stefan/endpoint-configuration-service
+    # -- tag of the image to be used
+    tag: latest
+    # -- specification of the image pull policy
+    pullPolicy: Always
+
+  # -- additional labels for the deployment, if required
+  additionalLabels: { }
+  # -- additional annotations for the deployment, if required
+  additionalAnnotations: { }
+  ## resource requests and limits, we leave the default empty to make that a concious choice by the user.
+  ## for the autoscaling to make sense, you should configure this.
+  resources: {}
+
+  # -- selector template
+  # ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: { }
+  # -- tolerations template
+  # ref: ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: [ ]
+  # -- affinity template
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  affinity: { }
+  # -- port to request health information at
+  healthPort: 9090
+  ## liveness and readiness probes of the endpoint-configuration-service, they will be evaluated against the health endpoint
+  # ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 31
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 30
+
+  ## pod autoscaling configuration, use for automatic scaling
+  autoscaling:
+    #  -- should autoscaling be enabled for configService
+    enabled: false
+    # -- minimum number of running pods
+    minReplicas: 1
+    # -- maximum number of running pods
+    maxReplicas: 10
+    # -- metrics to react on
+    metrics: []
+
+  ## openshift specific route definition. Will not work on plain k8s
+  route:
+    ## -- should the deployment create openshift routes
+    enabled: false
+    # -- annotations to be added to the route
+    annotations: { }
+    # -- host to be used
+    # host: localhost
+    # -- tls configuration for the route
+    tls: { }
+    # termination: edge
+
+  ## ingress configuration
+  ingress:
+    # -- should there be an ingress to connect configService with the public internet
+    enabled: false
+    annotations: {}
+    hosts: []
+    tls: []
+
+  # -- port that the endpoint-configuration-service container uses
+  port: 8080
+  # -- host where endpoint-configuration-service is available at
+  host: http://localhost
+  ## database configuration for endpoint-configuration-service
+  db:
+    # -- host of the database to be used - be aware, defaults to an in-memory db
+    url: jdbc:h2:mem:devDb;LOCK_TIMEOUT=10000;DB_CLOSE_ON_EXIT=FALSE
+    # -- user for connecting the database
+    user: ecs
+    # -- password for connecting the database
+    password: pass
+
+  ## configuration for prometheus montioring
+  prometheus:
+    # -- should prometheus scrape be enabled
+    enabled: true
+    # -- path for prometheus scrape
+    path: /prometheus
+    # -- port prometheus scrape is available at
+    port: 9090
+
+
+  # -- a list of additional env vars to be set, check the endpoint-configuration-service documentation for all available options
+  additonalEnvVars: [ ]
+
+  # automatic updater for the configmap that represents the listener and cluster.yaml, generated by the config-service
+  configmapUpdater:
+    # -- should the updater be deployed?
+    enabled: true
+    ## configuration of the image to be used
+    image:
+      # -- configmap updater image name
+      # ref: https://quay.io/repository/wi_stefan/envoy-configmap-updater
+      repository: quay.io/wi_stefan/envoy-configmap-updater
+      # -- tag of the image to be used
+      tag: latest
+      # -- specification of the image pull policy
+      pullPolicy: Always
+
+## configuration for the sidecar, will be applied by the injector if not configured otherwise
+sidecar:
+
+  ## -- loglevel to be used by the sidecar, supported: [trace,debug,info,warn,error,critical,off]
+  logLevel: trace
+
+  ## -- user id to be used by the sidecar. Required to set the correct iptable rules
+  userId: 1337
+
+  ## -- port to attach envoy listener to
+  port: 15001
+
+  ## configuration of the image to be used
+  image:
+    # -- envoy image name
+    # ref: https://quay.io/repository/wi_stefan/envoy
+    repository: quay.io/wi_stefan/envoy
+    # -- tag of the image to be used
+    tag: latest
+    # -- specification of the image pull policy
+    pullPolicy: IfNotPresent
+
+  ## image to be used for iptable init.
+  initIptables:
+    # -- image name
+    # ref: https://quay.io/repository/wi_stefan/init-iptables
+    repository: quay.io/wi_stefan/init-iptables
+    # -- tag of the image to be used
+    tag: latest
+    # -- specification of the image pull policy
+    pullPolicy: IfNotPresent
+
+  ## image to be used for applying initial config
+  initConfig:
+    # -- image name
+    # ref: https://quay.io/repository/wi_stefan/envoy-resource-updater
+    repository: quay.io/wi_stefan/envoy-resource-updater
+    # -- tag of the image to be used
+    tag: latest
+    # -- specification of the image pull policy
+    pullPolicy: Always
+
+  ## image to be used for applying config updates
+  updateConfig:
+    # -- image name
+    # ref: https://quay.io/repository/wi_stefan/envoy-resource-updater
+    repository: quay.io/wi_stefan/envoy-resource-updater
+    # -- tag of the image to be used
+    tag: latest
+    # -- specification of the image pull policy
+    pullPolicy: Always
+
+
+## configuration for the automatic sidecar injection
+sidecarInjector:
+  ## -- should the envoy sidecar be injected into annotated pods
+  enabled: true
+
+  # -- option to override the name config in the _helpers.tpl
+  nameOverride: ""
+  # -- option to override the fullname config in the _helpers.tpl
+  fullnameOverride: ""
+
+  # -- if a sidecarInjector specific service account should be used, it can be configured here
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  serviceAccount:
+    # -- specifies if the account should be created
+    create: false
+
+  # -- initial number of target replications, can be different if autoscaling is enabled
+  replicaCount: 1
+  # -- number of old replicas to be retained
+  revisionHistoryLimit: 3
+
+
+  ## configuration of the image to be used
+  image:
+    # -- sidecar-injector image name
+    # ref: https://hub.docker.com/r/mayankkr/sidecarinjector
+    repository: tumblr/k8s-sidecar-injector
+    # -- tag of the image to be used
+    tag: release-v0.5.0
+    # -- specification of the image pull policy
+    pullPolicy: IfNotPresent
+
+  # -- additional labels for the deployment, if required
+  additionalLabels: {}
+  # -- additional annotations for the deployment, if required
+  additionalAnnotations: {}
+
+  # -- selector template
+  # ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: {}
+  # -- tolerations template
+  # ref: ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: []
+  # -- affinity template
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  affinity: {}
+
+  # -- namespace of the annotation to be applied to the pod that should get injected.
+  annotationNamespace: sidecar.k8s.fiware.org
+
+  # -- namespace of the label to find the configmap to inject.
+  labelNamespace: sidecar.k8s.fiware.org
+
+  ## restriction the namespaces to apply injection
+  restrictNamespace:
+    # -- should the injector be restricted to labeld namespaces?
+    enabled: false
+
+  # -- override the generated config for the sidecar, if not sufficient
+  overrideSidecarconfig: {}
+
+  # -- port that the injector listens to
+  port: 8443
+
+  # -- port that the health check is available at
+  healthPort: 9000
+
+  # -- log level of the injector
+  logLevel: 2
+
+  ## configuration for the k8s service to access configService
+  service:
+    # -- service type
+    type: ClusterIP
+    # -- port to be used by the service
+    port: 443
+    # -- addtional annotations, if required
+    annotations: {}
+
+
+  # -- certificate to be used by the injector service
+  cert: |
+    -----BEGIN CERTIFICATE-----
+    MIIDZzCCAk+gAwIBAgIUIsu6ghTDjtbGD1yK3PPZEOj3/NYwDQYJKoZIhvcNAQEL
+    BQAwQzFBMD8GA1UEAww4dGVzdC1wcm94eS1pbmplY3Rvci1lbmRwb2ludC1hdXRo
+    LXNlcnZpY2UucHJveHktdGVzdC5zdmMwHhcNMjExMjE0MDYzNzUxWhcNMzExMjEy
+    MDYzNzUxWjBDMUEwPwYDVQQDDDh0ZXN0LXByb3h5LWluamVjdG9yLWVuZHBvaW50
+    LWF1dGgtc2VydmljZS5wcm94eS10ZXN0LnN2YzCCASIwDQYJKoZIhvcNAQEBBQAD
+    ggEPADCCAQoCggEBANnHmVWYy4QeZkxBj/bIMKb8SSRZ2QaiQYLCwEUPxfem/gJy
+    JKP4+cXT3zuLHuCsRPR8Vxde1BdJYiyTs1LuSmoRzZjv7cbyZD1YqtUJ0kPogoPZ
+    L01IJe9WTxi1utldjbv4D+obURkHuciKUv55QG+6yHM4FNwTpxUw/jVRS1tphLmT
+    7Yorz05HxTLFDsSoiqCGkZ3JUIh609yRYn5xw+Vhuh0I7T0Jjd/HyTf3HxyrBRkr
+    ntBWElvT6lXMD6IZ7IGqjNs8A55qSfUXXR4Kbsge9PsppE0WuG3QU+Rp+GxsXLRa
+    EKFC7ISSDz8jboUxIou5wNnGY3JhjhtPzf9fiH8CAwEAAaNTMFEwHQYDVR0OBBYE
+    FMwXZGuDBUneR1o3GdNa7ivV1/dhMB8GA1UdIwQYMBaAFMwXZGuDBUneR1o3GdNa
+    7ivV1/dhMA8GA1UdEwEB/wQFMAMBAf8wDQYJKoZIhvcNAQELBQADggEBAGbYPvGQ
+    6tqo0D6WOHLWImYhFhTi4V/oyyILNW7liPB/aWMWafp9gF65H//kJKJe1cZvSxWX
+    h83qj32B94gqALmKqCyjIkBAWV6EZwQMuGHZQ/Muw6z0OBtsxmiQK1nfZRWX80WE
+    7/gu/4z3ezBPg+dyXVXhmlrVOyoSghoqpSWcaLNxJAj35BUXD4W/PKkQmagkl5qH
+    O/CA8iV4vt1lsMxouZVnfvVVRAl3NmVvl48gcVC2hQn9uU6+UV8SgUJJ23AeU0uz
+    KJNWyDg0qkPtTh+xZJTKCUIXH4KthCABbVn5/jRBSSiOK5QGoTVebUY/+IS8I8CE
+    P6kWUULGV57sK+o=
+    -----END CERTIFICATE-----
+
+  # -- key to be used by the injector service
+  key: |
+    -----BEGIN RSA PRIVATE KEY-----
+    MIIEowIBAAKCAQEA2ceZVZjLhB5mTEGP9sgwpvxJJFnZBqJBgsLARQ/F96b+AnIk
+    o/j5xdPfO4se4KxE9HxXF17UF0liLJOzUu5KahHNmO/txvJkPViq1QnSQ+iCg9kv
+    TUgl71ZPGLW62V2Nu/gP6htRGQe5yIpS/nlAb7rIczgU3BOnFTD+NVFLW2mEuZPt
+    iivPTkfFMsUOxKiKoIaRnclQiHrT3JFifnHD5WG6HQjtPQmN38fJN/cfHKsFGSue
+    0FYSW9PqVcwPohnsgaqM2zwDnmpJ9RddHgpuyB70+ymkTRa4bdBT5Gn4bGxctFoQ
+    oULshJIPPyNuhTEii7nA2cZjcmGOG0/N/1+IfwIDAQABAoIBAFn69Em/lecCwHWl
+    aRwn3qI//uB8FwV8qOCkItjmCX+nia/tBWKSjnDEd6mcc6eUxfDWJw3K6oqskVml
+    tSQAvNJShMY5696VbAFEz2CybCQOv05GwBqIQtQ+rvOgspD47ITLm5e4ratP290V
+    +fCWnJ8NZ6DjfQrpO9GvqnjRG/eqP7fXpjQcQdix/9DxI7Yd4rzn2mZnG1NuZIMA
+    r6pTPljHeFGeRK8b+iHtUrP3aklMsxe9waYbkrH82Wxr/otMYlwXuwD4+w5wXC75
+    nHWoCDj1OciIAUIzidgTTTz1oIcYglqkmOVd3hsTvJnzLqHdQN7ys8uwVuz7AyAi
+    28+98RECgYEA/oScwikxcT0ERttvpYSawoE41bT+1ithXCVpBtl8Ed+gc8jn6i+7
+    0lXM534lX3lIYkDLqY1XiGBwjQv9bMNKDsuz7lcexhA6zR4J2DiFwrN+gRvoJuIr
+    wNq1eHg3TXNfrGkmic/qWeTsxtiFJ8sqo1Z69DQKP5asbqs2weWk3esCgYEA2ww5
+    WSOnZefHu82iUvbdC/7od6+FsSeqzDQhZLX3+hnRhofzfyc9WKFf8Nv3d+Sqnc+5
+    x0ckf9UVixKBeyaPctYbT1cX9vnfvsxyeeFCXJ5NuL0SUMrBtWsCJoFUSq9MF/A5
+    aVcKJVy/2iFgww7ZaZgGyS74af7lghwRv8fglr0CgYEA9XseXr6wa1G4kEcRlgkh
+    4zwTfzvFFvhcPS3v8KVPX0XbUhGSbXOAqkwLB7PJhB5MTEfGp1Al/ulVZRUNZxus
+    kDy03Mq2ab45mKDCSgOqL7JD727lKKu4G5hWs0zvugnvWzFH9F/O3slH/jnTpB/2
+    jffZOzP+Nnqy8UK926IMs+UCgYAkd+mIVK5HAgq30qmGxIDSwXK0km1grCj8bGVu
+    3fjWE7xVeIbqkX7eJafSctzFgjWBppbYfZivC6vVhpQ2C5pwVQMg93AO91Tv8BvS
+    /NTOlLB95ESLXOZZLOKjxH5jHMI/bggw6IPQ6psqVspET1GVCfF/RymmhABz4/Z0
+    hnN2xQKBgCCKKb+r84ANRr42KePt3daqPKRZOvrTkqQoXCpVcNxNN6fbt3aU8+ij
+    3jWKZ1Y1Rb4RXTy8i/Jq6DBNHVbwhVKqz/mRDPtu8obEeQ+go5TaqG5c3vNcL1ry
+    9UkByqXHGhdviHOLy4fMwme9O9gG/dSnhNV5+jPWqEYgaoBKqHyD
+    -----END RSA PRIVATE KEY-----
+
+  ## liveness and readiness probes of the endpoint-configuration-service, they will be evaluated against the health endpoint
+  # ref: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#container-probes
+  livenessProbe:
+    initialDelaySeconds: 30
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 30
+  readinessProbe:
+    initialDelaySeconds: 31
+    periodSeconds: 10
+    successThreshold: 1
+    timeoutSeconds: 30
+
+## configuration to be used fo the ishare-auth-provider
+ishare:
+
+  # -- should the ishare-auth-provider be enabled?
+  enabled: true
+
+  # -- option to override the name config in the _helpers.tpl
+  nameOverride: ""
+  # -- option to override the fullname config in the _helpers.tpl
+  fullnameOverride: "ishare-auth"
+
+  # -- if a ishare specific service account should be used, it can be configured here
+  # ref: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/
+  serviceAccount:
+    # -- specifies if the account should be created
+    create: false
+
+  # -- initial number of target replications, can be different if autoscaling is enabled
+  replicaCount: 1
+  # -- number of old replicas to be retained
+  revisionHistoryLimit: 3
+  ## configuration of the ishare update strategy
+  updateStrategy:
+    # -- type of the update
+    type: RollingUpdate
+    # -- new pods will be added gradually
+    rollingUpdate:
+      # -- number of pods that can be created above the desired amount while updating
+      maxSurge: 1
+      # -- number of pods that can be unavailable while updating
+      maxUnavailable: 0
+  ## configuration of the image to be used
+  image:
+    # -- endpoint-configuration-service image name
+    # ref: https://quay.io/repository/wi_stefan/ishare-auth-provider
+    repository: quay.io/wi_stefan/ishare-auth-provider
+    # -- tag of the image to be used
+    tag: latest
+    # -- specification of the image pull policy
+    pullPolicy: IfNotPresent
+
+  # -- additional labels for the deployment, if required
+  additionalLabels: { }
+  # -- additional annotations for the deployment, if required
+  additionalAnnotations: { }
+  ## resource requests and limits, we leave the default empty to make that a concious choice by the user.
+  ## for the autoscaling to make sense, you should configure this.
+  resources: {}
+  # -- selector template
+  # ref: https://kubernetes.io/docs/user-guide/node-selection/
+  nodeSelector: { }
+  # -- tolerations template
+  # ref: ref: https://kubernetes.io/docs/concepts/configuration/taint-and-toleration/
+  tolerations: [ ]
+  # -- affinity template
+  # ref: https://kubernetes.io/docs/concepts/configuration/assign-pod-node/#affinity-and-anti-affinity
+  affinity: { }
+
+
+  ## pod autoscaling configuration, use for automatic scaling
+  autoscaling:
+    #  -- should autoscaling be enabled for ishare
+    enabled: false
+    # -- minimum number of running pods
+    minReplicas: 1
+    # -- maximum number of running pods
+    maxReplicas: 10
+    # -- metrics to react on
+    metrics: []
+
+  ## openshift specific route definition. Will not work on plain k8s
+  route:
+    ## -- should the deployment create openshift routes
+    enabled: false
+    # -- annotations to be added to the route
+    annotations: { }
+    # -- host to be used
+    # host: localhost
+    # -- tls configuration for the route
+    tls: { }
+    # termination: edge
+
+  ## ingress configuration
+  ingress:
+    # -- should there be an ingress to connect ishare with the public internet
+    enabled: false
+    # -- annotations to be added to the ingress
+    annotations: {}
+    # -- all hosts to be provided
+    hosts: []
+    # -- configure the ingress' tls
+    tls: []
+
+  # -- port that the ishare authprovider container uses
+  port: 8080
+
+  ## configuration for the k8s service to access configService
+  service:
+    # -- service type
+    type: ClusterIP
+    # -- port to be used by the service
+    port: 8080
+    # -- addtional annotations, if required
+    annotations: {}
+
+  storage:
+    # -- should the config be persisted inside a pvc
+    enabled: true
+    # -- how big should the pvc be
+    size: 8G
+
+## address of the auth-provider. For now, this will be ishare. If multiple are used, this should point to a path-based router to distribute the requests.
+authProvider:
+  address: ishare-auth
+  port: 8080
+
