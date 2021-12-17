@@ -4,7 +4,11 @@ on:
   push:
     branches:
       - main
-      -
+      
+env:
+  REGISTRY: quay.io
+  REPOSITORY: wi_stefan
+
 jobs:
   generate-version:
     runs-on: ubuntu-latest
