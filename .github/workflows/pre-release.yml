@@ -195,6 +195,12 @@ jobs:
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
+
+      - name: Scan image
+        uses: anchore/scan-action@v3
+        with:
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}"
+          
   ishare-auth-provider:
 
     needs: [ "generate-version" ]
@@ -227,6 +233,11 @@ jobs:
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
+      - name: Scan image
+        uses: anchore/scan-action@v3
+        with:
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}"
+
   endpoint-configuration-service:
 
     needs: [ "generate-version" ]
@@ -252,6 +263,11 @@ jobs:
       - name: Run clair
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}
+
+      - name: Scan image
+        uses: anchore/scan-action@v3
+        with:
+          image: "${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}"
 
   git-release:
     needs:
