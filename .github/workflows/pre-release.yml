@@ -227,7 +227,7 @@ jobs:
         run: |
           .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
-  endpoint-service-deploy:
+  endpoint-configuration-service:
 
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest

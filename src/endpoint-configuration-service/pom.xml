@@ -460,8 +460,10 @@
                         <image>openjdk:${jdk.version}-alpine</image>
                     </from>
                     <to>
-                        <image>${image.registry}${image.repository}/${artifactId}:${image.tag}</image>
-                        <image>${image.registry}${image.repository}/${artifactId}:latest</image>
+                        <image>${image.registry}${image.repository}/${artifactId}</image>
+                        <tags>
+                            <tag>${image.tag}</tag>
+                        </tags>
                     </to>
                     <container>
                         <labels>
