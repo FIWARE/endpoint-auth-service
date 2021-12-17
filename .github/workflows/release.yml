@@ -232,8 +232,8 @@ jobs:
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          automatic_release_tag: ${{ steps.out.outputs.version }}
+          automatic_release_tag: ${{ needs.generate-version.outputs.version }}
           prerelease: false
-          title: ${{ steps.out.outputs.version }}
+          title: ${{ needs.generate-version.outputs.version }}
           files: |
             LICENSE.txt
