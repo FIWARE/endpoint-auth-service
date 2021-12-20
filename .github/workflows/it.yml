@@ -66,3 +66,15 @@ jobs:
       run: |
         cd integration-test/integration-test/
         mvn clean install -Dcucumber.publish-token=${{ secrets.CUCUMBER_PUBLISH_TOKEN_DEV }}
+
+    - name: Collect logs
+      if: ${{ failure() }}
+      run: |
+        echo +++++++++++ ENVOY
+        docker logs envoy
+        echo +++++++++++ CONFIG SERVICE
+        docker logs config-service
+        echo +++++++++++ AUTH PROVIDER
+        docker logs auth-provider
+        echo +++++++++++ RESOURCE UPDATER
+        docker logs resource-updater
