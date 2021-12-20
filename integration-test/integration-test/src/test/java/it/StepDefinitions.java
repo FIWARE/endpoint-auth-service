@@ -61,7 +61,7 @@ public class StepDefinitions {
 
 	@Given("The Data-provider is running with the endpoint-authentication-service as a sidecar-proxy.")
 	public void setup_sidecar_in_docker() throws Exception {
-
+		String pt = System.getenv("CUCUMBER_PUBLISH_TOKEN");
 		Awaitility
 				.await()
 				.atMost(Duration.of(60, ChronoUnit.SECONDS))

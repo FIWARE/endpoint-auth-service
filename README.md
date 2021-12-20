@@ -2,7 +2,8 @@
 [![Container Repository on Quay](https://img.shields.io/badge/quay.io-FIWARE-green "Container Repository on Quay")](https://quay.io/repository/wi_stefan/endpoint-configuration-service?tab=tags)
 [![Coverage Status](https://coveralls.io/repos/github/wistefan/endpoint-auth-service/badge.svg?branch=initial-dev)](https://coveralls.io/github/wistefan/endpoint-auth-service?branch=initial-dev)
 [![Unit-Test](https://github.com/wistefan/endpoint-auth-service/actions/workflows/unit.yml/badge.svg)](https://github.com/wistefan/endpoint-auth-service/actions/workflows/unit.yml)
-[![Integration-test](https://github.com/wistefan/endpoint-auth-service/actions/workflows/it.yml/badge.svg)](https://github.com/wistefan/endpoint-auth-service/actions/workflows/it.yml)
+[![Integration-test](https://messages.cucumber.io/api/report-collections/28ab3c23-79eb-4497-89f0-429a11c0eeff/badge)](https://reports.cucumber.io/report-collections/28ab3c23-79eb-4497-89f0-429a11c0eeff)
+
 -------
 
 # Endpoint-Auth-Service

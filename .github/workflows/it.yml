@@ -6,6 +6,7 @@ on:
 jobs:
   it:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v2
 
@@ -14,31 +15,31 @@ jobs:
         java-version: '17'
         java-package: jdk
 
-    - name: build-auth-provider
+    - name: Build auth provider
       id: auth-provider
       run: docker build -f ./src/ishare-auth-provider/Dockerfile ./src/ishare-auth-provider -t ishare-auth-provider
 
-    - name: build-resource-updater
+    - name: Build resource updater
       id: resource-updater
       run: docker build -f ./src/envoy-resource-updater/Dockerfile ./src/envoy-resource-updater -t envoy-resource-updater
 
-    - name: build-envoy
+    - name: Build envoy
       id: envoy
       run: docker build -f ./envoy/Dockerfile ./envoy -t envoy
 
-    - name: build-config-service
+    - name: Build config service
       id: config-service
       run: |
         cd src/endpoint-configuration-service/
         mvn clean install jib:dockerBuild -DskipTests
 
-    - name: ip-tables
+    - name: Build ip-tables container
       id: ip-tables
       run: |
         cd docker-compose/
         sudo ./iptables.sh
 
-    - name: run-compose
+    - name: Run compose
       id: compose
       env:
         ENVOY_IMAGE: envoy
@@ -49,10 +50,25 @@ jobs:
         cd docker-compose/
         docker-compose up -d
 
-    - name: run-test
+    - name: Extract Branch Name
+      run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
+
+    - name: Run tests
       id: test
-      env:
-        CUCUMBER_PUBLISH_TOKEN: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
+      if: env.BRANCH == 'main'
       run: |
         cd integration-test/integration-test/
-        mvn clean install
+        mvn clean install -Dcucumber.publish-token=${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
+
+    - name: Run tests
+      id: test-dev
+      if: env.BRANCH != 'main'
+      run: |
+        cd integration-test/integration-test/
+        mvn clean install -Dcucumber.publish-token=${{ secrets.CUCUMBER_PUBLISH_TOKEN_DEV }}
+
+    - name: Collect logs
+      if: ${{ failure() }}
+      run: |
+        cd docker-compose/
+        docker-compose logs
