@@ -56,6 +56,6 @@ jobs:
     - name: run-test
       id: test
       run: |
-        echo ${GITHUB_ENV}
+        echo ${{ env.BRANCH }}
         cd integration-test/integration-test/
         mvn clean install -Dcucumber.publish-token=${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
