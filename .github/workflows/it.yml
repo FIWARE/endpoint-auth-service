@@ -70,11 +70,5 @@ jobs:
     - name: Collect logs
       if: ${{ failure() }}
       run: |
-        echo +++++++++++ ENVOY
-        docker logs compose_envoy_1
-        echo +++++++++++ CONFIG SERVICE
-        docker logs compose_config-service_1
-        echo +++++++++++ AUTH PROVIDER
-        docker logs compose_auth-provider_1
-        echo +++++++++++ RESOURCE UPDATER
-        docker logs compose_resource-updater_1
+        cd docker-compose/
+        docker-compose logs
