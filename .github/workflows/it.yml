@@ -6,6 +6,7 @@ on:
 jobs:
   it:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v2
 
@@ -49,10 +50,12 @@ jobs:
         cd docker-compose/
         docker-compose up -d
 
+    - name: Extract Branch Name
+      run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
+
     - name: run-test
       id: test
-      env:
-        CUCUMBER_PUBLISH_TOKEN: ${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
       run: |
+        echo $GITHUB_ENV
         cd integration-test/integration-test/
-        mvn clean install
+        mvn clean install -Dcucumber.publish-token=${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
