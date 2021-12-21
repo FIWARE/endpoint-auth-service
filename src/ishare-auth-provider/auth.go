@@ -108,6 +108,8 @@ func getAuth(c *gin.Context) {
 	// the files are stored in folders namend by the clientId
 	credentialsFolderPath := buildCredentialsFolderPath(authInfo.IShareClientID)
 
+	log.Info("CredentialsFolderPath: " + credentialsFolderPath)
+
 	randomUuid, err := uuid.NewRandom()
 
 	if err != nil {
@@ -189,7 +191,7 @@ func getAuth(c *gin.Context) {
 		return
 	}
 
-	if res["access_token"] == nil {
+	if res == nil || res["access_token"] == nil {
 		log.Warn("Did not receive an access token from the idp. Resp: " + fmt.Sprint(res))
 		c.AbortWithStatus(http.StatusBadGateway)
 		return
