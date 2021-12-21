@@ -42,43 +42,6 @@ resources:
                           prefix: "{{path}}"
                         route:
                           cluster: {{id}}
-                    {{#passthrough}}
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
-                    {{/passthrough}}
-                    {{^passthrough}}
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            source_code:
-                              inline_string: |
-                                local json = (loadfile "/lua-json/json.lua")()
-                                function envoy_on_request(request_handle)
-                                  local fullDomain = request_handle:headers():get(":authority")
-                                  local path = request_handle:headers():get(":path")
-                                  local domain
-                                  for domainPart in string.gmatch(fullDomain, '([^:]+)') do 
-                                    domain = domainPart
-                                    break
-                                  end
-                                  local headers, body = request_handle:httpCall(
-                                  "ext-authz",
-                                  {
-                                    [":method"] = "GET",
-                                    [":path"] = "/{{authType}}/auth?domain=" .. domain .. "&path=" .. path,
-                                    [":authority"] = "ext-authz"
-                                  },
-                                  null,
-                                  5000)
-                                
-                                  local jsonString = tostring(body)
-                                  local jsonArray = json.decode(jsonString)
-                                
-                                  for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
-                                end
-                    {{/passthrough}}
                   {{/endpoints}}
                 {{/virtualHosts}}
                   - name: allow_any
@@ -94,11 +57,15 @@ resources:
                             "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
                             disabled: true
               http_filters:
-              - name: envoy.filters.http.lua
+              - name: envoy.filters.http.wasm
                 typed_config:
-                  "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-                  inline_code: |
-                    function envoy_on_request(request_handle)
-                     -- required default handler, does nothing
-                    end
+                  "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+                  type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                  value:
+                    config:
+                      vm_config:
+                        runtime: "envoy.wasm.runtime.v8"
+                        code:
+                          local:
+                            filename: "/initial-config/cache-filter.wasm"
               - name: envoy.filters.http.router
