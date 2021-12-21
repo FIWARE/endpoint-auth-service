@@ -42,23 +42,15 @@ resources:
                     "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
                     disabled: true
           http_filters:
-          - name: envoy.filters.http.lua
+          - name: envoy.filters.http.wasm
             typed_config:
-              "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-              inline_code: |
-                function envoy_on_request(request_handle)
-                  local domain = request_handle:headers():get(":authority")                      
-                  local path = request_handle:headers():get(":path")
-
-                  local headers, body = request_handle:httpCall(
-                  "ext-authz",
-                  {
-                    [":method"] = "GET",
-                    [":path"] = "/auth?domain=" .. domain .. "&path=" .. path,
-                    [":authority"] = "ext-authz"
-                  },
-                  null,
-                  5000)
-                  request_handle:headers():add("Authorization", body)
-                end
+              "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+              type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+              value:
+                config:
+                  vm_config:
+                    runtime: "envoy.wasm.runtime.v8"
+                    code:
+                      local:
+                        filename: "/initial-config/cache-filter.wasm"
           - name: envoy.filters.http.router

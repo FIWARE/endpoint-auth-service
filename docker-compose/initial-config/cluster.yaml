@@ -28,5 +28,5 @@ resources:
             address:
               socket_address:
                 protocol: TCP
-                address: localhost
+                address: auth-provider
                 port_value: 7070
