@@ -156,7 +156,7 @@ func requestAuthProvider() types.Action {
 			pathIndex = i
 		}
 	}
-	hs[methodIndex] = [2]string{":method", "Get"}
+	hs[methodIndex] = [2]string{":method", "GET"}
 	hs[pathIndex] = [2]string{":path", "/" + authType + "/auth?domain=" + domain + "&path=" + path}
 
 	if _, err := proxywasm.DispatchHttpCall(clusterName, hs, nil, nil, authRequestTimeout, authCallback); err != nil {
