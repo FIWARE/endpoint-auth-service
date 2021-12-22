@@ -16,7 +16,7 @@ import (
 /**
 * Global logger
  */
-var logger *logrus.Logger
+var logger = logrus.New()
 
 /**
 * Global var to held the basefolder to the credentials for all domain/path combinations.
@@ -52,7 +52,6 @@ var globalHttpClient httpClient = &http.Client{}
 * Startup method to run the gin-server.
  */
 func main() {
-	logger = logrus.New()
 
 	router := gin.Default()
 	// auth api
@@ -71,7 +70,7 @@ func main() {
 	enableJsonLogging, err := strconv.ParseBool(os.Getenv("JSON_LOGGING_ENABLED"))
 
 	if err != nil {
-		logger.Warn("Json log env-var not readable. Use default logging. %v", err)
+		logger.Warnf("Json log env-var not readable. Use default logging. %v", err)
 		enableJsonLogging = false
 	}
 
