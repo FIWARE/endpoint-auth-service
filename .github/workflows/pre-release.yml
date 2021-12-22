@@ -207,10 +207,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Build cache filter
-        run: |
-          docker run --workdir /cache-filter -v $(pwd)/src/cache-filter:/cache-filter tinygo/tinygo tinygo build -o cache-filter.wasm -scheduler=none -target=wasi ./main.go
-
       - name: Build Image
         id: build-image
         uses: redhat-actions/buildah-build@v2
@@ -219,7 +215,7 @@ jobs:
           tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
           dockerfiles: |
             ./envoy/Dockerfile
-          context: ./envoy
+          context: .
 
       - name: Push To quay.io
         id: push-to-quay
