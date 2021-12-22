@@ -48,5 +48,5 @@ resources:
                     runtime: "envoy.wasm.runtime.v8"
                     code:
                       local:
-                        filename: "/initial-config/cache-filter.wasm"
+                        filename: "/cache-filter/cache-filter.wasm"
           - name: envoy.filters.http.router

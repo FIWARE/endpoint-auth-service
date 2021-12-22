@@ -15,14 +15,14 @@
 package main
 
 import (
-	"encoding/json"
+	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
-
-	cacheobject "github.com/pquerna/cachecontrol/cacheobject"
+	"github.com/valyala/fastjson"
 )
 
 const (
@@ -120,12 +120,21 @@ func setHeader() types.Action {
 	}
 
 	if data != nil {
-		var cachedAuthInfo CachedAuthInformation
-		json.Unmarshal(data, &cachedAuthInfo)
-		if cachedAuthInfo.expirationTime >= time.Now().Unix() {
+		proxywasm.LogDebugf("Cache hit: ", string(data))
+		cachedAuthInfo, err := parsCachedAuthInformation(string(data))
+		if err != nil {
+			proxywasm.LogCriticalf("Failed to parse cached info, request new instead. %v", err)
+			cas = currentCas
+			return requestAuthProvider()
+		}
+
+		proxywasm.LogDebugf("Expiry: %v, Current: %v", cachedAuthInfo.expirationTime, time.Now().Unix())
+		if cachedAuthInfo.expirationTime <= time.Now().Unix() {
+			proxywasm.LogDebugf("Cache expired. Request new auth.")
 			cas = currentCas
 			return requestAuthProvider()
 		} else {
+			proxywasm.LogDebugf("Cache still valid.")
 			addCachedHeadersToRequest(cachedAuthInfo.cachedHeaders)
 			return types.ActionContinue
 		}
@@ -137,18 +146,18 @@ func setHeader() types.Action {
 
 func addCachedHeadersToRequest(cachedHeaders HeadersList) {
 	for _, header := range cachedHeaders {
+		proxywasm.LogDebugf("Add header ", fmt.Sprint(header))
 		proxywasm.AddHttpRequestHeader(header.Name, header.Value)
 	}
 }
 
 func requestAuthProvider() types.Action {
-	proxywasm.LogInfof("Call to " + clusterName)
+	proxywasm.LogDebugf("Call to ", clusterName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
 	var methodIndex int
 	var pathIndex int
 	for i, h := range hs {
-		proxywasm.LogInfof("++++++++++++++++ original header " + h[0] + " - " + h[1])
 		if h[0] == ":method" {
 			methodIndex = i
 		}
@@ -176,36 +185,124 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 	}
 	headers, _ := proxywasm.GetHttpCallResponseHeaders()
 
-	var headersList HeadersList
-	json.Unmarshal(body, &headersList)
-
+	headersList, err := parseHeaderList(string(body))
+	if err != nil {
+		proxywasm.LogCriticalf("Was not able to decode header list.")
+		proxywasm.ResumeHttpRequest()
+		return
+	}
 	addCachedHeadersToRequest(headersList)
 	// continue the request before handling the caching
 	proxywasm.ResumeHttpRequest()
 
+	proxywasm.LogDebugf("Handle caching.")
+
 	// handle cachecontrol
 	for _, h := range headers {
-		proxywasm.LogInfof("Current header: " + h[0] + " - " + h[1])
-		if h[0] == "Cache-Control" {
-			resDirective, _ := cacheobject.ParseResponseCacheControl(h[1])
-			if resDirective.NoCachePresent || resDirective.NoStore || resDirective.MustRevalidate {
+		proxywasm.LogDebugf("Parse headers: ", fmt.Sprint(h))
+		if h[0] == "cache-control" {
+			proxywasm.LogDebugf("Found cache-control header.")
+
+			expiry, err := getCacheExpiry(h[1])
+			if err != nil {
+				proxywasm.LogCriticalf("Was not able to read cache control header. ", err)
 				return
 			}
-			maxAge := resDirective.MaxAge
-			if maxAge >= 0 {
-				expiry := time.Now().Unix() + int64(maxAge)
-				cacheAuthInfo := CachedAuthInformation{expirationTime: expiry, cachedHeaders: headersList}
-				cacheObject, err := json.Marshal(cacheAuthInfo)
+
+			if expiry > 0 {
+				proxywasm.LogDebugf("Expiry was set to: ", expiry)
+				var parser fastjson.Parser
+				parsedInfo, err := parser.Parse(cachedAuthInfoToJson(expiry, headersList))
 				if err != nil {
-					proxywasm.LogCriticalf("Was not able to cache the auth information.")
+					proxywasm.LogCriticalf("Was not able to parse auth info.", err)
 					return
 				}
-				proxywasm.SetSharedData(domain+path, cacheObject, cas)
+				buffer := parsedInfo.Get().MarshalTo(nil)
+				proxywasm.LogDebugf("Buffer is %v", string(buffer))
+				proxywasm.SetSharedData(domain+path, buffer, cas)
 			}
-			proxywasm.LogInfof("Cached auth info for %v / %v", domain, path)
+			proxywasm.LogDebugf("Cached auth info for %v / %v", domain, path)
 			return
 		}
 
 	}
+
+}
+
+func cachedAuthInfoToJson(expirationTime int64, cachedHeaders HeadersList) (jsonString string) {
+
+	headerArray := `[`
+	for i, header := range cachedHeaders {
+		if i != 0 {
+			headerArray = headerArray + `,`
+		}
+		headerArray = headerArray + `{"name":"` + header.Name + `","value":"` + header.Value + `"}`
+	}
+	headerArray = headerArray + `]`
+
+	// TODO: use parser.MarshalTo
+	jsonString = fmt.Sprintf(`{"expiration":%d, "cachedHeaders":%s}`, expirationTime, headerArray)
+
+	proxywasm.LogDebugf("Json string to store ", jsonString)
+	return jsonString
+}
+
+func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
+	directiveArray := strings.Split(cacheControlHeader, ",")
+	for _, directive := range directiveArray {
+		directiveArray := strings.Split(directive, "=")
+		switch directiveArray[0] {
+		case "no-cache":
+			fallthrough
+		case "no-store":
+			fallthrough
+		case "must-revalidate":
+			return -1, err
+		case "max-age":
+			maxAge, err := strconv.Atoi(directiveArray[1])
+			if err != nil {
+				return -1, err
+			}
+			return time.Now().Unix() + int64(maxAge), err
+		}
+	}
+	proxywasm.LogDebugf("Did not find any cache directive to be handled. ", cacheControlHeader)
+	return -1, err
+}
+
+func parsCachedAuthInformation(jsonString string) (cachedAuthInfo CachedAuthInformation, err error) {
+
+	var parser fastjson.Parser
+	parsedJson, err := parser.Parse(jsonString)
+
+	expirationTime := parsedJson.GetInt64("expiration")
+	cachedHeaders := parsedJson.GetArray("cachedHeaders")
+	headersList, err := parseHeaderArray(cachedHeaders)
+	if err != nil {
+		return cachedAuthInfo, err
+	}
+	return CachedAuthInformation{expirationTime: expirationTime, cachedHeaders: headersList}, err
+
+}
+
+func parseHeaderArray(valuesArray []*fastjson.Value) (headerList HeadersList, err error) {
+	if err != nil {
+		return headerList, err
+	}
+	for _, entry := range valuesArray {
+		var name string = string(entry.GetStringBytes("name"))
+		var value string = string(entry.GetStringBytes("value"))
+		proxywasm.LogDebugf("Header entry is %s : %s", name, value)
+		headerList = append(headerList, Header{name, value})
+	}
+	return headerList, err
+}
+
+func parseHeaderList(jsonString string) (headerList HeadersList, err error) {
+
+	var parser fastjson.Parser
+	parsedJson, err := parser.Parse(jsonString)
+	jsonArray, err := parsedJson.Array()
+	return parseHeaderArray(jsonArray)
 
 }
