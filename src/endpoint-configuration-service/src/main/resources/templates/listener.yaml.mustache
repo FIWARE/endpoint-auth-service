@@ -42,6 +42,10 @@ resources:
                           prefix: "{{path}}"
                         route:
                           cluster: {{id}}
+                          request_headers_to_add:
+                            - header:
+                                key: "x-request-authtype"
+                                value: "{{authType}}"
                   {{/endpoints}}
                 {{/virtualHosts}}
                   - name: allow_any
@@ -52,20 +56,38 @@ resources:
                           prefix: "/"
                         route:
                           cluster: passthrough
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
               http_filters:
-              - name: envoy.filters.http.wasm
-                typed_config:
-                  "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-                  type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-                  value:
-                    config:
-                      vm_config:
-                        runtime: "envoy.wasm.runtime.v8"
-                        code:
-                          local:
-                            filename: "/initial-config/cache-filter.wasm"
-              - name: envoy.filters.http.router
+                - name: composite
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
+                    extension_config:
+                      name: composite
+                      typed_config:
+                        "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
+                    xds_matcher:
+                      matcher_tree:
+                        input:
+                          name: request-path
+                          typed_config:
+                            "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                            header_name: x-request-add-auth
+                        exact_match_map:
+                          map:
+                            {{#authTypes}}
+                            "{{type}}":
+                              action:
+                                name: composite-action
+                                typed_config:
+                                  "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
+                                  typed_config:
+                                    name: http-fault
+                                    typed_config:
+                                      "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                                      config:
+                                        vm_config:
+                                          runtime: "envoy.wasm.runtime.v8"
+                                          code:
+                                            local:
+                                              filename: "/cache-filter/cache-filter.wasm"
+                            {{/authTypes}}
+                - name: envoy.filters.http.router

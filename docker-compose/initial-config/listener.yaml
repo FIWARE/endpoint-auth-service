@@ -37,16 +37,36 @@ resources:
                   prefix: "/"
                 route: 
                   cluster: passthrough
-          http_filters:
-          - name: envoy.filters.http.wasm
+        http_filters:
+          - name: composite
             typed_config:
-              "@type": type.googleapis.com/udpa.type.v1.TypedStruct
-              type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-              value:
-                config:
-                  vm_config:
-                    runtime: "envoy.wasm.runtime.v8"
-                    code:
-                      local:
-                        filename: "/cache-filter/cache-filter.wasm"
+              "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
+              extension_config:
+                name: composite
+                typed_config:
+                  "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
+              matcher:
+                matcher_tree:
+                  input:
+                    name: request-path
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.type.matcher.v3.PathMatcher
+                      path:
+                        prefix: "/p"
+                  exact_match_map:
+                      "add auth": # inject 1s latency into all requests
+                        action:
+                          name: composite-action
+                          typed_config:
+                            "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
+                            typed_config:
+                              name: http-fault
+                              typed_config:
+                                "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                                config:
+                                  vm_config:
+                                    runtime: "envoy.wasm.runtime.v8"
+                                    code:
+                                      local:
+                                        filename: "/cache-filter/cache-filter.wasm"                
           - name: envoy.filters.http.router

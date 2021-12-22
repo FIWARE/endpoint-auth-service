@@ -38,43 +38,18 @@ resources:
                           prefix: "/nonRoot"
                         route:
                           cluster: expected-0
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            source_code:
-                              inline_string: |
-                                local json = (loadfile "/lua-json/json.lua")()
-                                function envoy_on_request(request_handle)
-                                  local fullDomain = request_handle:headers():get(":authority")
-                                  local path = request_handle:headers():get(":path")
-                                  local domain
-                                  for domainPart in string.gmatch(fullDomain, '([^:]+)') do 
-                                    domain = domainPart
-                                    break
-                                  end
-                                  local headers, body = request_handle:httpCall(
-                                  "ext-authz",
-                                  {
-                                    [":method"] = "GET",
-                                    [":path"] = "/ISHARE/auth?domain=" .. domain .. "&path=" .. path,
-                                    [":authority"] = "ext-authz"
-                                  },
-                                  null,
-                                  5000)
-                                
-                                  local jsonString = tostring(body)
-                                  local jsonArray = json.decode(jsonString)
-                                
-                                  for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
-                                end
+                          request_headers_to_add:
+                            - header:
+                                key: "x-request-authtype"
+                                value: "ISHARE"
                       - match:
                           prefix: "/"
                         route:
                           cluster: passthrough
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
+                          request_headers_to_add:
+                            - header:
+                                key: "x-request-authtype"
+                                value: ""
                   - name: allow_any
                     domains:
                       - "*"
@@ -83,16 +58,36 @@ resources:
                           prefix: "/"
                         route:
                           cluster: passthrough
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
               http_filters:
-                - name: envoy.filters.http.lua
+                - name: composite
                   typed_config:
-                    "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-                    inline_code: |
-                      function envoy_on_request(request_handle)
-                       -- required default handler, does nothing
-                      end
+                    "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
+                    extension_config:
+                      name: composite
+                      typed_config:
+                        "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
+                    xds_matcher:
+                      matcher_tree:
+                        input:
+                          name: request-path
+                          typed_config:
+                            "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                            header_name: x-request-add-auth
+                        exact_match_map:
+                          map:
+                            "ISHARE":
+                              action:
+                                name: composite-action
+                                typed_config:
+                                  "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
+                                  typed_config:
+                                    name: http-fault
+                                    typed_config:
+                                      "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                                      config:
+                                        vm_config:
+                                          runtime: "envoy.wasm.runtime.v8"
+                                          code:
+                                            local:
+                                              filename: "/cache-filter/cache-filter.wasm"
                 - name: envoy.filters.http.router
