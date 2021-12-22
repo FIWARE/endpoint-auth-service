@@ -1,6 +1,6 @@
 FROM tinygo/tinygo as build
 COPY /src/cached-auth-filter /cache-filter
-WORKDIR /cached-auth-filter
+WORKDIR /cache-filter
 RUN tinygo build -o cache-filter.wasm -target=wasi ./main.go
 
 FROM envoyproxy/envoy:v1.20.0
