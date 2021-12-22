@@ -107,6 +107,7 @@ public class EnvoyUpdateService {
 		mustacheRenderContext.put("socket-port", socketAddress.getPort());
 		mustacheRenderContext.put("auth-service-address", authAddress.getAddress());
 		mustacheRenderContext.put("auth-service-port", authAddress.getPort());
+		mustacheRenderContext.put("wasm-filter-path", proxyProperties.getWasmFilterPath());
 		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
 		mustacheRenderContext.put("endpoints", mustacheEndpoints);
 		mustacheRenderContext.put("authTypes", mustacheAuthTypes);

@@ -88,6 +88,6 @@ resources:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
                                             local:
-                                              filename: "/cache-filter/cache-filter.wasm"
+                                              filename: "{{wasm-filter-path}}"
                             {{/authTypes}}
                 - name: envoy.filters.http.router

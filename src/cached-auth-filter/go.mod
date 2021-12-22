@@ -1,4 +1,4 @@
-module fiware.org/auth-cache-filter
+module fiware.org/cached-auth-filter
 
 go 1.17
 
