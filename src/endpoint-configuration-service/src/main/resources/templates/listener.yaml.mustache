@@ -70,7 +70,7 @@ resources:
                           name: request-path
                           typed_config:
                             "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                            header_name: x-request-add-auth
+                            header_name: x-request-authtype
                         exact_match_map:
                           map:
                             {{#authTypes}}
