@@ -36,31 +36,31 @@ resources:
                   {{#ports}}
                       - '{{domain}}:{{port}}'
                   {{/ports}}
-                  matcher:
-                  {{#endpoints}}
-                    "@type": type.googleapis.com/xds.type.matcher.v3.Matcher
-                    matcher_tree:
-                      input:
-                        name: request-path
-                        typed_config:
-                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                          header_name: :path
-                      prefix_match_map:
-                        map:
-                          "{{path}}":
-                            action:
-                              name: {{id}}
-                              typed_config:
-                                "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-                                config:
-                                  vm_config:
-                                    runtime: "envoy.wasm.runtime.v8"
-                                    code:
-                                      local:
-                                        filename: "{{wasm-filter-path}}"
-                            route:
-                              cluster: {{id}}
-                  {{/endpoints}}
+                    matcher:
+                    {{#endpoints}}
+                      "@type": type.googleapis.com/xds.type.matcher.v3.Matcher
+                      matcher_tree:
+                        input:
+                          name: request-path
+                          typed_config:
+                            "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                            header_name: :path
+                        prefix_match_map:
+                          map:
+                            "{{path}}":
+                              action:
+                                name: {{id}}
+                                typed_config:
+                                  "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                                  config:
+                                    vm_config:
+                                      runtime: "envoy.wasm.runtime.v8"
+                                      code:
+                                        local:
+                                          filename: "{{wasm-filter-path}}"
+                              route:
+                                cluster: {{id}}
+                    {{/endpoints}}
                 {{/virtualHosts}}
                   - name: allow_any
                     domains:
