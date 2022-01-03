@@ -81,21 +81,22 @@ resources:
                                               filename: "{{wasm-filter-path}}"
                             predicate:
                               and_matcher:
-                                - single_predicate:
-                                    input:
-                                      name: request-path
-                                      typed_config:
-                                        "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                        header_name: ":path"
-                                    value_match:
-                                      prefix: /
-                                - single_predicate:
-                                    input:
-                                      name: request-domain
-                                      typed_config:
-                                        "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                        header_name: ":authority"
-                                    value_match:
-                                      exact: 10.5.0.2:6060
+                                predicate:
+                                  - single_predicate:
+                                      input:
+                                        name: request-path
+                                        typed_config:
+                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                          header_name: ":path"
+                                      value_match:
+                                        prefix: /
+                                  - single_predicate:
+                                      input:
+                                        name: request-domain
+                                        typed_config:
+                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                          header_name: ":authority"
+                                      value_match:
+                                        exact: 10.5.0.2:6060
                 {{/enable-wasm-filter}}
                 - name: envoy.filters.http.router
