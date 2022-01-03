@@ -38,20 +38,4 @@ resources:
                         route:
                           cluster: passthrough
               http_filters:
-                - name: composite
-                  typed_config:
-                    "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
-                    extension_config:
-                      name: composite
-                      typed_config:
-                        "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
-                    xds_matcher:
-                      matcher_tree:
-                        input:
-                          name: request-path
-                          typed_config:
-                            "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                            header_name: x-request-add-auth
-                        exact_match_map:
-                          map:
                 - name: envoy.filters.http.router

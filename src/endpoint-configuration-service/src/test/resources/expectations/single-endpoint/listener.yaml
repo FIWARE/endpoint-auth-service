@@ -38,10 +38,6 @@ resources:
                           prefix: "/"
                         route:
                           cluster: expected-0
-                          request_headers_to_add:
-                            - header:
-                                key: "x-request-authtype"
-                                value: "ISHARE"
                   - name: allow_any
                     domains:
                       - "*"
@@ -59,21 +55,15 @@ resources:
                       typed_config:
                         "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
                     xds_matcher:
-                      matcher_tree:
-                        input:
-                          name: request-path
-                          typed_config:
-                            "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                            header_name: x-request-add-auth
-                        exact_match_map:
-                          map:
-                            "ISHARE":
+                      matcher_list:
+                        matchers:
+                          - on_match:
                               action:
                                 name: composite-action
                                 typed_config:
                                   "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
                                   typed_config:
-                                    name: http-fault
+                                    name: wasm
                                     typed_config:
                                       "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                                       config:
@@ -82,4 +72,33 @@ resources:
                                           code:
                                             local:
                                               filename: "/cache-filter/cache-filter.wasm"
+                            predicate:
+                              and_matcher:
+                                predicate:
+                                  - single_predicate:
+                                      input:
+                                        name: request-path
+                                        typed_config:
+                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                          header_name: ":path"
+                                      value_match:
+                                        prefix: /
+                                  - or_matcher:
+                                      predicate:
+                                        - single_predicate:
+                                            input:
+                                              name: request-domain-no-port
+                                              typed_config:
+                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                                header_name: ":authority"
+                                            value_match:
+                                              exact: domain
+                                        - single_predicate:
+                                            input:
+                                              name: request-domain-6060
+                                              typed_config:
+                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                                header_name: ":authority"
+                                            value_match:
+                                              exact: domain:6060
                 - name: envoy.filters.http.router
