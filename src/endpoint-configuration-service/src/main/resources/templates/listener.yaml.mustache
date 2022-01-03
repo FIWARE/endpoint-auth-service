@@ -95,22 +95,22 @@ resources:
                                   - or_matcher:
                                       predicate:
                                         - single_predicate:
-                                          input:
-                                            name: request-domain-no-port
-                                            typed_config:
-                                              "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                              header_name: ":authority"
-                                          value_match:
-                                            exact: {{domain}}
+                                            input:
+                                              name: request-domain-no-port
+                                              typed_config:
+                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                                header_name: ":authority"
+                                            value_match:
+                                              exact: {{domain}}
                                         {{#ports}}
                                         - single_predicate:
-                                          input:
-                                            name: request-domain-{{port}}
-                                            typed_config:
-                                              "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                              header_name: ":authority"
-                                          value_match:
-                                            exact: {{domain}}:{{port}}
+                                            input:
+                                              name: request-domain-{{port}}
+                                              typed_config:
+                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                                header_name: ":authority"
+                                            value_match:
+                                              exact: {{domain}}:{{port}}
                                         {{/ports}}
                           {{/endpoints}}
                           {{/virtualHosts}}
