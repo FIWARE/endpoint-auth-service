@@ -71,11 +71,11 @@ resources:
                           name: request-path
                           typed_config:
                             "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                            header_name: x-request-authtype
+                            header_name: ":path"
                         exact_match_map:
                           map:
                             {{#authTypes}}
-                            "{{type}}":
+                            "/":
                               action:
                                 name: composite-action
                                 typed_config:
