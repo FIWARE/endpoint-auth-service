@@ -3,11 +3,9 @@ package it;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
-import io.cucumber.java.an.E;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -43,7 +41,8 @@ public class StepDefinitions {
 	private static final String ECHO_2_HOST = "10.5.0.8";
 	private static final String IDP_HOST = "10.5.0.7";
 
-	public static final int WAIT_TIMEOUT = 3000;
+	public static final int WAIT_TIMEOUT = 8000;
+
 	private static EndpointConfigurationApi endpointConfigurationApi;
 	{
 		ApiClient apiClient = new ApiClient();
