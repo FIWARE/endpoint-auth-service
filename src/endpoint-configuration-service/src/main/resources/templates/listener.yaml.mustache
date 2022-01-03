@@ -85,13 +85,13 @@ resources:
                               and_matcher:
                                 predicate:
                                   - single_predicate:
-                                    input:
-                                      name: request-path
-                                      typed_config:
-                                        "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                        header_name: ":path"
-                                    value_match:
-                                      prefix: {{path}}
+                                      input:
+                                        name: request-path
+                                        typed_config:
+                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                          header_name: ":path"
+                                      value_match:
+                                        prefix: {{path}}
                                   - or_matcher:
                                       predicate:
                                         - single_predicate:
