@@ -37,16 +37,5 @@ resources:
                           prefix: "/"
                         route:
                           cluster: passthrough
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
               http_filters:
-                - name: envoy.filters.http.lua
-                  typed_config:
-                    "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-                    inline_code: |
-                      function envoy_on_request(request_handle)
-                       -- required default handler, does nothing
-                      end
                 - name: envoy.filters.http.router

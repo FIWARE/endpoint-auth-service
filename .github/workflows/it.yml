@@ -25,7 +25,7 @@ jobs:
 
     - name: Build envoy
       id: envoy
-      run: docker build -f ./envoy/Dockerfile ./envoy -t envoy
+      run: docker build -f ./envoy/Dockerfile . -t envoy
 
     - name: Build config service
       id: config-service

@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiware.sidecar.configuration.ProxyProperties;
 import org.fiware.sidecar.exception.EnvoyUpdateException;
 import org.fiware.sidecar.mapping.EndpointMapper;
+import org.fiware.sidecar.model.MustacheAuthType;
 import org.fiware.sidecar.model.MustacheEndpoint;
 import org.fiware.sidecar.model.MustachePort;
 import org.fiware.sidecar.model.MustacheVirtualHost;
@@ -70,6 +71,13 @@ public class EnvoyUpdateService {
 				.map(endpointMapper::endpointToMustacheEndpoint)
 				.toList();
 
+		List<MustacheAuthType> mustacheAuthTypes = mustacheEndpoints
+				.stream()
+				.map(MustacheEndpoint::authType)
+				.distinct()
+				.map(MustacheAuthType::new)
+				.collect(Collectors.toList());
+
 		Map<String, List<MustacheEndpoint>> endpointMap = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
 				.map(endpointMapper::endpointToMustacheEndpoint)
@@ -99,8 +107,11 @@ public class EnvoyUpdateService {
 		mustacheRenderContext.put("socket-port", socketAddress.getPort());
 		mustacheRenderContext.put("auth-service-address", authAddress.getAddress());
 		mustacheRenderContext.put("auth-service-port", authAddress.getPort());
+		mustacheRenderContext.put("wasm-filter-path", proxyProperties.getWasmFilterPath());
 		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
 		mustacheRenderContext.put("endpoints", mustacheEndpoints);
+		mustacheRenderContext.put("authTypes", mustacheAuthTypes);
+		mustacheRenderContext.put("enable-wasm-filter", mustacheAuthTypes.isEmpty() ? null : "true");
 
 		if (!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
 			try {

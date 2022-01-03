@@ -42,43 +42,6 @@ resources:
                           prefix: "{{path}}"
                         route:
                           cluster: {{id}}
-                    {{#passthrough}}
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
-                    {{/passthrough}}
-                    {{^passthrough}}
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            source_code:
-                              inline_string: |
-                                local json = (loadfile "/lua-json/json.lua")()
-                                function envoy_on_request(request_handle)
-                                  local fullDomain = request_handle:headers():get(":authority")
-                                  local path = request_handle:headers():get(":path")
-                                  local domain
-                                  for domainPart in string.gmatch(fullDomain, '([^:]+)') do 
-                                    domain = domainPart
-                                    break
-                                  end
-                                  local headers, body = request_handle:httpCall(
-                                  "ext-authz",
-                                  {
-                                    [":method"] = "GET",
-                                    [":path"] = "/{{authType}}/auth?domain=" .. domain .. "&path=" .. path,
-                                    [":authority"] = "ext-authz"
-                                  },
-                                  null,
-                                  5000)
-                                
-                                  local jsonString = tostring(body)
-                                  local jsonArray = json.decode(jsonString)
-                                
-                                  for i,v in ipairs(jsonArray) do request_handle:headers():add(v.name, v.value) end
-                                end
-                    {{/passthrough}}
                   {{/endpoints}}
                 {{/virtualHosts}}
                   - name: allow_any
@@ -89,16 +52,67 @@ resources:
                           prefix: "/"
                         route:
                           cluster: passthrough
-                        typed_per_filter_config:
-                          envoy.filters.http.lua:
-                            "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.LuaPerRoute
-                            disabled: true
               http_filters:
-              - name: envoy.filters.http.lua
-                typed_config:
-                  "@type": type.googleapis.com/envoy.extensions.filters.http.lua.v3.Lua
-                  inline_code: |
-                    function envoy_on_request(request_handle)
-                     -- required default handler, does nothing
-                    end
-              - name: envoy.filters.http.router
+                {{#enable-wasm-filter}}
+                - name: composite
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
+                    extension_config:
+                      name: composite
+                      typed_config:
+                        "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
+                    xds_matcher:
+                      matcher_list:
+                        matchers:
+                          {{#virtualHosts}}
+                          {{#endpoints}}
+                          - on_match:
+                              action:
+                                name: composite-action
+                                typed_config:
+                                  "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
+                                  typed_config:
+                                    name: wasm
+                                    typed_config:
+                                      "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                                      config:
+                                        vm_config:
+                                          runtime: "envoy.wasm.runtime.v8"
+                                          code:
+                                            local:
+                                              filename: "{{wasm-filter-path}}"
+                            predicate:
+                              and_matcher:
+                                predicate:
+                                  - single_predicate:
+                                      input:
+                                        name: request-path
+                                        typed_config:
+                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                          header_name: ":path"
+                                      value_match:
+                                        prefix: {{path}}
+                                  - or_matcher:
+                                      predicate:
+                                        - single_predicate:
+                                            input:
+                                              name: request-domain-no-port
+                                              typed_config:
+                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                                header_name: ":authority"
+                                            value_match:
+                                              exact: {{domain}}
+                                        {{#ports}}
+                                        - single_predicate:
+                                            input:
+                                              name: request-domain-{{port}}
+                                              typed_config:
+                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                                header_name: ":authority"
+                                            value_match:
+                                              exact: {{domain}}:{{port}}
+                                        {{/ports}}
+                          {{/endpoints}}
+                          {{/virtualHosts}}
+                {{/enable-wasm-filter}}
+                - name: envoy.filters.http.router

@@ -6,3 +6,10 @@ dynamic_resources:
     path: /etc/envoy/cluster.yaml
   lds_config:
     path: /etc/envoy/listener.yaml
+layered_runtime:
+  layers:
+  - name: static-layer
+    static_layer:
+      envoy:
+        reloadable_features:
+          experimental_matching_api: true

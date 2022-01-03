@@ -29,6 +29,11 @@ public class ProxyProperties {
 	private long updateDelayInS;
 
 	/**
+	 * Absolute path to the wasm cached-auth-filter
+	 */
+	private String wasmFilterPath = "/cache-filter/cache-filter.wasm";
+
+	/**
 	 * Address of the authentication provider
 	 */
 	@ConfigurationBuilder(configurationPrefix = "externalAuth")

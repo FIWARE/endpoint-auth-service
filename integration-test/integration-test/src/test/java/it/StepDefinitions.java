@@ -3,11 +3,9 @@ package it;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import io.cucumber.java.After;
 import io.cucumber.java.Before;
-import io.cucumber.java.an.E;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
-import lombok.extern.slf4j.Slf4j;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
@@ -43,9 +41,9 @@ public class StepDefinitions {
 	private static final String ECHO_2_HOST = "10.5.0.8";
 	private static final String IDP_HOST = "10.5.0.7";
 
-	public static final int WAIT_TIMEOUT = 3000;
-	private static EndpointConfigurationApi endpointConfigurationApi;
+	public static final int WAIT_TIMEOUT = 8000;
 
+	private static EndpointConfigurationApi endpointConfigurationApi;
 	{
 		ApiClient apiClient = new ApiClient();
 		apiClient.setBasePath(String.format("http://%s:9090", CONFIG_HOST));
@@ -61,7 +59,6 @@ public class StepDefinitions {
 
 	@Given("The Data-provider is running with the endpoint-authentication-service as a sidecar-proxy.")
 	public void setup_sidecar_in_docker() throws Exception {
-		String pt = System.getenv("CUCUMBER_PUBLISH_TOKEN");
 		Awaitility
 				.await()
 				.atMost(Duration.of(60, ChronoUnit.SECONDS))
@@ -86,20 +83,17 @@ public class StepDefinitions {
 
 	@Given("Data-Consumer's root path is configured as an iShare endpoint.")
 	public void echo_server_is_configured_as_an_i_share_endpoint() throws Exception {
-
-		configureDataConsumer(ECHO_HOST, 6060, "/");
+ 		configureDataConsumer(ECHO_HOST, 6060, "/");
 	}
 
 	@Given("Data-Consumer subpath is configured as an iShare endpoint.")
 	public void echo_server_sub_path_is_configured_as_an_i_share_endpoint() throws Exception {
-
 		configureDataConsumer(ECHO_HOST, 6060, "/subpath");
 	}
 
 
 	@Given("Data-Consumer anotherpath is configured as an iShare endpoint.")
 	public void echo_server_another_path_is_configured_as_an_i_share_endpoint() throws Exception {
-
 		configureDataConsumer(ECHO_HOST, 6060, "/anotherpath");
 	}
 
@@ -160,7 +154,6 @@ public class StepDefinitions {
 	@Given("No endpoint is configured.")
 	public void no_endpoint_is_configured() throws Exception {
 		Assertions.assertEquals(0, endpointConfigurationApi.getEndpoints().size(), "No endpoint should be configured.");
-
 	}
 
 	@When("Data-Provider sends a request to the data-consumer's root path.")
@@ -177,27 +170,23 @@ public class StepDefinitions {
 
 	@When("Data-Provider sends a request to the data-consumer-2's root path.")
 	public void client_sends_a_request_to_the_echo_server_2() throws Exception {
-
 		// call 6060 since that is the intercepted path to echo-server
 		sendRequestToEchoServer(ECHO_2_HOST, "http://%s:6060/");
 	}
 
 	@When("Data-Provider sends a request to a sub-path of the data-consumer-2.")
 	public void client_sends_a_request_to_a_sub_path_of_the_echo_server_2() throws Exception {
-
 		// call 6060 since that is the intercepted path to echo-server
 		sendRequestToEchoServer(ECHO_2_HOST, "http://%s:6060/subpath");
 	}
 
 	@Then("Data-Consumer should receive a request with an authorization-header.")
 	public void echo_server_should_receive_a_request_with_an_authorization_header() throws Exception {
-
 		assertLastRequestHasToken(ECHO_HOST, "myIShareToken", "The auth-token as it is provided by the mock-idp should have been sent.");
 	}
 
 	@Then("Data-Consumer-2 should receive a request with an authorization-header.")
 	public void echo_server_2_should_receive_a_request_with_an_authorization_header() throws Exception {
-
 		assertLastRequestHasToken(ECHO_2_HOST, "myIShareToken", "The auth-token as it is provided by the mock-idp should have been sent.");
 	}
 
@@ -224,7 +213,6 @@ public class StepDefinitions {
 
 	@Then("Data-Consumer should receive a request without an authorization-header.")
 	public void echo_server_should_receive_a_request_without_an_authorization_header() throws Exception {
-
 		assertLastRequestHasToken(ECHO_HOST, "", "No auth token should have been added.");
 	}
 
