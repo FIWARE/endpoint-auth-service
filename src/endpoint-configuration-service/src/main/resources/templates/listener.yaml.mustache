@@ -68,7 +68,7 @@ resources:
                           typed_config:
                             "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
                             header_name: ":path"
-                        prefix_match_map:
+                        exact_match_map:
                           map:
                             {{#authTypes}}
                             "/":
