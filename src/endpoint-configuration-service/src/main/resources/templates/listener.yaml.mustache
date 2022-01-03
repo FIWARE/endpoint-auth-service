@@ -64,6 +64,8 @@ resources:
                     xds_matcher:
                       matcher_list:
                         matchers:
+                          {{#virtualHosts}}
+                          {{#endpoints}}
                           - on_match:
                               action:
                                 name: composite-action
@@ -83,20 +85,34 @@ resources:
                               and_matcher:
                                 predicate:
                                   - single_predicate:
-                                      input:
-                                        name: request-path
-                                        typed_config:
-                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                          header_name: ":path"
-                                      value_match:
-                                        prefix: /
-                                  - single_predicate:
-                                      input:
-                                        name: request-domain
-                                        typed_config:
-                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                          header_name: ":authority"
-                                      value_match:
-                                        exact: 10.5.0.2:6060
+                                    input:
+                                      name: request-path
+                                      typed_config:
+                                        "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                        header_name: ":path"
+                                    value_match:
+                                      prefix: {{path}}
+                                  - or_matcher:
+                                      predicate:
+                                        - single_predicate:
+                                          input:
+                                            name: request-domain-no-port
+                                            typed_config:
+                                              "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                              header_name: ":authority"
+                                          value_match:
+                                            exact: {{domain}}
+                                        {{#ports}}
+                                        - single_predicate:
+                                          input:
+                                            name: request-domain-{{port}}
+                                            typed_config:
+                                              "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                              header_name: ":authority"
+                                          value_match:
+                                            exact: {{domain}}:{{port}}
+                                        {{/ports}}
+                          {{/endpoints}}
+                          {{/virtualHosts}}
                 {{/enable-wasm-filter}}
                 - name: envoy.filters.http.router
