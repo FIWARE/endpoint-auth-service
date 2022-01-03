@@ -58,17 +58,17 @@ resources:
                                       code:
                                         local:
                                           filename: "{{wasm-filter-path}}"
-                              route:
-                                cluster: {{id}}
+#                              route:
+#                                cluster: {{id}}
                     {{/endpoints}}
                 {{/virtualHosts}}
-                  - name: allow_any
-                    domains:
-                      - "*"
-                    routes:
-                      - match:
-                          prefix: "/"
-                        route:
-                          cluster: passthrough
+#                  - name: allow_any
+#                    domains:
+#                      - "*"
+#                    routes:
+#                      - match:
+#                          prefix: "/"
+#                        route:
+#                          cluster: passthrough
               http_filters:
                 - name: envoy.filters.http.router
