@@ -7,35 +7,35 @@ resources:
         port_value: 15001
     traffic_direction: OUTBOUND
     listener_filters:
-    - name: envoy.filters.listener.tls_inspector
-    - name: envoy.filters.listener.original_dst
+      - name: envoy.filters.listener.tls_inspector
+      - name: envoy.filters.listener.original_dst
     filter_chains:
-    - name: https_chain
-      filter_chain_match: 
-        transport_protocol: tls
-      filters:
-      - name: envoy.filters.network.tcp_proxy
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
-          cluster: passthrough-https
-          stat_prefix: https_passthrough
-    - name: http_chain
-      filters:
-      - name: envoy.filters.network.http_connection_manager
-        typed_config:
-          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
-          stat_prefix: ingress_http
-          codec_type: AUTO
-          route_config:
-            name: local_route
-            virtual_hosts:
-            - name: allow_any
-              domains:
-              - "*"
-              routes:
-              - match: 
-                  prefix: "/"
-                route: 
-                  cluster: passthrough
-        http_filters:
-          - name: envoy.filters.http.router
+      - name: https_chain
+        filter_chain_match:
+          transport_protocol: tls
+        filters:
+          - name: envoy.filters.network.tcp_proxy
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.tcp_proxy.v3.TcpProxy
+              cluster: passthrough-https
+              stat_prefix: https_passthrough
+      - name: http_chain
+        filters:
+          - name: envoy.filters.network.http_connection_manager
+            typed_config:
+              "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
+              stat_prefix: ingress_http
+              codec_type: AUTO
+              route_config:
+                name: local_route
+                virtual_hosts:
+                  - name: allow_any
+                    domains:
+                      - "*"
+                    routes:
+                      - match:
+                          prefix: "/"
+                        route:
+                          cluster: passthrough
+              http_filters:
+                - name: envoy.filters.http.router
