@@ -59,7 +59,6 @@ public class StepDefinitions {
 
 	@Given("The Data-provider is running with the endpoint-authentication-service as a sidecar-proxy.")
 	public void setup_sidecar_in_docker() throws Exception {
-		String pt = System.getenv("CUCUMBER_PUBLISH_TOKEN");
 		Awaitility
 				.await()
 				.atMost(Duration.of(60, ChronoUnit.SECONDS))
@@ -155,7 +154,8 @@ public class StepDefinitions {
 	@Given("No endpoint is configured.")
 	public void no_endpoint_is_configured() throws Exception {
 		Assertions.assertEquals(0, endpointConfigurationApi.getEndpoints().size(), "No endpoint should be configured.");
-
+		// wait for the config to be loaded anyways. Will usually happen in the config step.
+		sleep(WAIT_TIMEOUT);
 	}
 
 	@When("Data-Provider sends a request to the data-consumer's root path.")
