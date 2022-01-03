@@ -4,6 +4,7 @@ import (
 	"io/ioutil"
 	"os"
 	"strconv"
+	"time"
 
 	"github.com/fsnotify/fsnotify"
 	log "github.com/sirupsen/logrus"
@@ -128,6 +129,8 @@ func updateDynamicResources() {
 		log.Warn("Was not able to move cluster.yaml.", err)
 		return
 	}
+	// wait between the updates to give envoy time for reloading the clusters.
+	time.Sleep(2 * time.Second)
 	err = os.Rename(proxyConfigFolder+"/listener.yaml.o", proxyConfigFolder+"/listener.yaml")
 	if err != nil {
 		log.Warn("Was not able to move listener.yaml.", err)

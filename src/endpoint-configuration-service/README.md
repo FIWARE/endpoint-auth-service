@@ -38,9 +38,10 @@ The following table concentrates on the most important configuration parameters:
 | `datasources.default.password` | `DATASOURCES_DEFAULT_PASSWORD` | Password to be used for db connections                  |                                                             | 
 | `proxy.externalAuth.address`   | `PROXY_EXTERNAL_AUTH_ADDRESS`  | Domain of the auth-provider                             | auth-service                                                |
 | `proxy.externalAuth.port`      | `PROXY_EXTERNAL_AUTH_PORT`     | Port of the auth-provider                               | 7070                                                        |
-| `proxy.listenerYamlPath`            | `PROXY_LISTENER_YAML_PATH`     | Path to store the generated listener.yaml               | ./listener.yaml                                             |
-| `proxy.clusterYamlPath`           | `PROXY_CLUSTER_YAML_PATH`      | Path to store the generated cluster.yaml                | ./cluster.yaml                                              |
-| `proxy.updateDelayInS`           | `PROXY_UPDATE_DELAY_IN_S`      | How much delay until the config generation shoudl start | 2                                                           |
+| `proxy.listenerYamlPath`       | `PROXY_LISTENER_YAML_PATH`     | Path to store the generated listener.yaml               | ./listener.yaml                                             |
+| `proxy.clusterYamlPath`        | `PROXY_CLUSTER_YAML_PATH`      | Path to store the generated cluster.yaml                | ./cluster.yaml                                              |
+| `proxy.updateDelayInS`         | `PROXY_UPDATE_DELAY_IN_S`      | How much delay until the config generation shoudl start | 2                                                           |
+| `proxy.wasmFilterPath`         | `PROXY_WASM_FILTER_PATH`       | Path the cached-auth-filter wasm-file.                  | /cache-filter/cache-filter.wasm                                                           |
 
 ### Coverage
 

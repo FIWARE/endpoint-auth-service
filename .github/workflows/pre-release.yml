@@ -215,7 +215,7 @@ jobs:
           tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
           dockerfiles: |
             ./envoy/Dockerfile
-          context: ./envoy
+          context: .
 
       - name: Push To quay.io
         id: push-to-quay

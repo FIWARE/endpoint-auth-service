@@ -7,10 +7,16 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
-	log "github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus"
 )
+
+/**
+* Global logger
+ */
+var logger = logrus.New()
 
 /**
 * Global var to held the basefolder to the credentials for all domain/path combinations.
@@ -61,18 +67,29 @@ func main() {
 	serverPort := os.Getenv("SERVER_PORT")
 	configurationServiceUrl = os.Getenv("CONFIGURATION_SERVICE_URL")
 	credentialsBaseFolder = os.Getenv("CERTIFICATE_FOLDER")
+	enableJsonLogging, err := strconv.ParseBool(os.Getenv("JSON_LOGGING_ENABLED"))
+
+	if err != nil {
+		logger.Warnf("Json log env-var not readable. Use default logging. %v", err)
+		enableJsonLogging = false
+	}
+
+	if enableJsonLogging {
+		logger.SetFormatter(&logrus.JSONFormatter{})
+	}
 
 	if serverPort == "" {
-		log.Fatal("No server port was provided.")
+		logger.Fatal("No server port was provided.")
 	}
 	if configurationServiceUrl == "" {
-		log.Fatal("No URL for the configuration service was provided.")
+		logger.Fatal("No URL for the configuration service was provided.")
 	}
 
 	if credentialsBaseFolder == "" {
-		log.Fatal("No credentials base folder was provided.")
+		logger.Fatal("No credentials base folder was provided.")
 	}
 
+	logger.Info("Start router at " + serverPort)
 	router.Run("0.0.0.0:" + serverPort)
 }
 

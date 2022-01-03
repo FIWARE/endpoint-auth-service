@@ -26,6 +26,11 @@ paths:
       responses:
         '200':
           description: "List of endpoints."
+          headers:
+            Cache-Control:
+              description: "Cache-Control header as described by https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control"
+              schema:
+                type: string
           content:
             application/json:
               schema:

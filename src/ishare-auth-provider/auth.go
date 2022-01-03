@@ -15,8 +15,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/google/uuid"
-
-	log "github.com/sirupsen/logrus"
 )
 
 /**
@@ -85,22 +83,22 @@ func getAuth(c *gin.Context) {
 
 	domain := c.Query("domain")
 	if domain == "" {
-		log.Warn("Empty domain was requested.")
+		logger.Warn("Empty domain was requested.")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 	path := c.Query("path")
 	if path == "" {
-		log.Warn("Empty path was requested.")
+		logger.Warn("Empty path was requested.")
 		c.AbortWithStatus(http.StatusBadRequest)
 		return
 	}
 
-	log.Info("Get auth for " + domain + "/" + path)
+	logger.Info("Get auth for " + domain + " - " + path)
 
 	authInfo, err := authGetter.getAuthInfo(domain, path)
 	if err != nil {
-		log.Warn("Was not able to retrieve auth-info. ", err)
+		logger.Warn("Was not able to retrieve auth-info. ", err)
 		c.String(http.StatusBadGateway, "Was not able to retrieve auth info from the config-service.")
 		return
 	}
@@ -108,10 +106,12 @@ func getAuth(c *gin.Context) {
 	// the files are stored in folders namend by the clientId
 	credentialsFolderPath := buildCredentialsFolderPath(authInfo.IShareClientID)
 
+	logger.Info("CredentialsFolderPath: " + credentialsFolderPath)
+
 	randomUuid, err := uuid.NewRandom()
 
 	if err != nil {
-		log.Warn("Was not able to generate a uuid.", err)
+		logger.Warn("Was not able to generate a uuid.", err)
 		c.String(http.StatusInternalServerError, "Failed to generate a uuid.")
 		return
 	}
@@ -129,19 +129,19 @@ func getAuth(c *gin.Context) {
 
 	key, err := authGetter.getSigningKey(credentialsFolderPath)
 	if err != nil {
-		log.Warn("Was not able to read the signing key.")
+		logger.Warn("Was not able to read the signing key.")
 		c.String(http.StatusInternalServerError, "Error reading the signingKey.")
 		return
 	}
 	if key == nil {
-		log.Warn("Was not able to read a valid signing key.")
+		logger.Warn("Was not able to read a valid signing key.")
 		c.String(http.StatusInternalServerError, "Error reading the signingKey.")
 		return
 	}
 
 	cert, err := authGetter.getCertificate(credentialsFolderPath)
 	if err != nil {
-		log.Warn("Was not able to read the certificate.")
+		logger.Warn("Was not able to read the certificate.")
 		c.String(http.StatusInternalServerError, "Error reading the certificateChain.")
 		return
 	}
@@ -152,7 +152,7 @@ func getAuth(c *gin.Context) {
 	// sign the token
 	signedToken, err := jwtToken.SignedString(key)
 	if err != nil {
-		log.Warn("Was not able to sign the jwt.", err)
+		logger.Warn("Was not able to sign the jwt.", err)
 		c.String(http.StatusInternalServerError, "Error signing the request jwt.")
 		return
 	}
@@ -169,13 +169,13 @@ func getAuth(c *gin.Context) {
 	// get the token
 	resp, err := globalHttpClient.PostForm(authInfo.IShareIdpAddress, data)
 	if err != nil {
-		log.Warn("Was not able to get the token from the idp.", err)
+		logger.Warn("Was not able to get the token from the idp.", err)
 		c.String(http.StatusBadGateway, "Was not able to get the token from the idp.")
 		return
 	}
 
 	if resp.Body == nil {
-		log.Warn("Did not receive a valid body from the idp.")
+		logger.Warn("Did not receive a valid body from the idp.")
 		c.AbortWithStatus(http.StatusBadGateway)
 		return
 	}
@@ -184,13 +184,13 @@ func getAuth(c *gin.Context) {
 	var res map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
-		log.Warn("Was not able to decode idp response.")
+		logger.Warn("Was not able to decode idp response.")
 		c.AbortWithStatus(http.StatusBadGateway)
 		return
 	}
 
-	if res["access_token"] == nil {
-		log.Warn("Did not receive an access token from the idp. Resp: " + fmt.Sprint(res))
+	if res == nil || res["access_token"] == nil {
+		logger.Warn("Did not receive an access token from the idp. Resp: " + fmt.Sprint(res))
 		c.AbortWithStatus(http.StatusBadGateway)
 		return
 	}
@@ -198,6 +198,8 @@ func getAuth(c *gin.Context) {
 	header := Header{"Authorization", res["access_token"].(string)}
 	headersList := HeadersList{header}
 
+	// Ishare tokens are defined to expire after max 30s. Thus, they should be cached for a little less time.
+	c.Header("Cache-Control", "max-age=25")
 	c.JSON(http.StatusOK, headersList)
 }
 
@@ -208,16 +210,16 @@ func getAuthInformation(domain string, path string) (authInfo AuthInfo, err erro
 
 	req, err := http.NewRequest("GET", configurationServiceUrl+"/auth", nil)
 	if err != nil {
-		log.Warn("Was not able to build a request. Invalid configuration server url.", err)
+		logger.Warn("Was not able to build a request. Invalid configuration server url.", err)
 	}
 
 	if domain == "" {
-		log.Warn("Did not receive a domain.")
+		logger.Warn("Did not receive a domain.")
 		return authInfo, errEmptyDomain
 	}
 
 	if path == "" {
-		log.Warn("Did not receive a path.")
+		logger.Warn("Did not receive a path.")
 		return authInfo, errEmptyPath
 	}
 
@@ -227,19 +229,19 @@ func getAuthInformation(domain string, path string) (authInfo AuthInfo, err erro
 	req.URL.RawQuery = q.Encode()
 	resp, err := globalHttpClient.Get(req.URL.String())
 	if err != nil {
-		log.Warn("Was not able to get authInfo. Err: ", err)
+		logger.Warn("Was not able to get authInfo. Err: ", err)
 		return authInfo, err
 	}
 
 	if resp.Body == nil {
-		log.Warn("Did not receive an response body.")
+		logger.Warn("Did not receive an response body.")
 		return authInfo, errNoResponseBody
 	}
 
 	// decode and return
 	err = json.NewDecoder(resp.Body).Decode(&authInfo)
 	if err != nil {
-		log.Warn("Was not able to decode the auth response.", err)
+		logger.Warn("Was not able to decode the auth response.", err)
 		return authInfo, err
 	}
 	return authInfo, err
@@ -252,14 +254,14 @@ func getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error
 	// read key file
 	priv, err := globalFileAccessor.read(credentialsFolderPath + keyfile)
 	if err != nil {
-		log.Warn("Was not able to read the key file. ", err)
+		logger.Warn("Was not able to read the key file. ", err)
 		return key, err
 	}
 
 	// parse key file
 	key, err = jwt.ParseRSAPrivateKeyFromPEM(priv)
 	if err != nil {
-		log.Warn("Was not able to parse the key.", err)
+		logger.Warn("Was not able to parse the key.", err)
 		return key, err
 	}
 
@@ -273,12 +275,12 @@ func getEncodedCertificate(credentialsFolderPath string) (encodedCert string, er
 	// read certificate file and set it in the token header
 	cert, err := globalFileAccessor.read(credentialsFolderPath + certChainFile)
 	if err != nil {
-		log.Warn("Was not able to read the certificateChain file.", err)
+		logger.Warn("Was not able to read the certificateChain file.", err)
 		return encodedCert, err
 	}
 	certCer, _ := pem.Decode(cert)
 	if certCer == nil {
-		log.Warn("Was not able to decode certificate.")
+		logger.Warn("Was not able to decode certificate.")
 		return encodedCert, errCertDecode
 	}
 	encodedCert = base64.StdEncoding.EncodeToString(certCer.Bytes)
