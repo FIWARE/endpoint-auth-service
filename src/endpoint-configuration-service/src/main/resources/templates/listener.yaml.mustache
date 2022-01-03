@@ -70,12 +70,12 @@ resources:
                         input:
                           name: request-path
                           typed_config:
-                            "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                            header_name: ":path"
+                            "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestTrailerMatchInput
+                            header_name: ":"
                         exact_match_map:
                           map:
                             {{#authTypes}}
-                            "/":
+                            "10.5.0.2:6060,/,GET":
                               action:
                                 name: composite-action
                                 typed_config:
