@@ -42,10 +42,10 @@ resources:
                           prefix: "{{path}}"
                         route:
                           cluster: {{id}}
-                          request_headers_to_add:
-                            - header:
-                                key: "x-request-authtype"
-                                value: "{{authType}}"
+                        request_headers_to_add:
+                          - header:
+                              key: "x-request-authtype"
+                              value: "{{authType}}"
                   {{/endpoints}}
                 {{/virtualHosts}}
                   - name: allow_any
