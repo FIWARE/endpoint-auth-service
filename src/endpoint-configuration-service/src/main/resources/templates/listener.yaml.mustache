@@ -57,6 +57,7 @@ resources:
                         route:
                           cluster: passthrough
               http_filters:
+                {{#enable-wasm-filter}}
                 - name: composite
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
@@ -90,4 +91,5 @@ resources:
                                             local:
                                               filename: "{{wasm-filter-path}}"
                             {{/authTypes}}
+                {{/enable-wasm-filter}}
                 - name: envoy.filters.http.router

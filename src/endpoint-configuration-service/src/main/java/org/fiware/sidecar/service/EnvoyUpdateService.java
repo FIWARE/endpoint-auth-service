@@ -111,6 +111,7 @@ public class EnvoyUpdateService {
 		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
 		mustacheRenderContext.put("endpoints", mustacheEndpoints);
 		mustacheRenderContext.put("authTypes", mustacheAuthTypes);
+		mustacheRenderContext.put("enable-wasm-filter", mustacheAuthTypes.isEmpty() ? null : "true");
 
 		if (!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
 			try {
