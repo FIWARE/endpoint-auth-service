@@ -72,6 +72,7 @@ See [kubernetes](kubernetes) for a full example.
 - [Use mustache templating for envoy config](./doc/adr/mustache-templating.md)
 - [Implement auth-providers as separate components](./doc/adr/authprovider-as-separate-component.md)
 - [Auth-provider config on path level](./doc/adr/auth-provider-on-path-level.md)
+- [Auth-mechanism as wasm-filter](./doc/adr/wasm-filter.md)
 
 ## APIs
 

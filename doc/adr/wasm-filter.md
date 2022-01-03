@@ -3,7 +3,7 @@
 ## Status
 
 - proposed
-- 
+
 ## Context
 
 Auth handling requires caching of auth-information to be performant, instead of running through the whole flow each request.
