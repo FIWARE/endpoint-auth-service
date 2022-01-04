@@ -66,6 +66,7 @@ resources:
                         matchers:
                           {{#virtualHosts}}
                           {{#endpoints}}
+                          {{^passthrough}}
                           - on_match:
                               action:
                                 name: composite-action
@@ -76,6 +77,9 @@ resources:
                                     typed_config:
                                       "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                                       config:
+                                        configuration:
+                                          "@type": "type.googleapis.com/google.protobuf.StringValue"
+                                          value: {{authType}}
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
@@ -112,6 +116,7 @@ resources:
                                             value_match:
                                               exact: {{domain}}:{{port}}
                                         {{/ports}}
+                          {{/passthrough}}
                           {{/endpoints}}
                           {{/virtualHosts}}
                 {{/enable-wasm-filter}}
