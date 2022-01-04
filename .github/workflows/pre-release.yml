@@ -337,6 +337,11 @@ jobs:
        run: |
          docker run -v $(pwd)/src/cached-auth-filter:/cached-auth-filter --workdir /cached-auth-filter tinygo/tinygo tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go     
 
+     - uses: actions/upload-artifact@v2
+       with:
+         name: cached-auth-filter
+         path: src/cached-auth-filter/cached-auth-filter.wasm
+
   git-release:
     needs:
       - generate-version
@@ -352,6 +357,14 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+
+      - uses: actions/checkout@v2
+        -
+      - uses: actions/download-artifact@v2
+        with:
+          name: cached-auth-filter
+          path: ./
+
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
