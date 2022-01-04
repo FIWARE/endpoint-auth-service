@@ -48,8 +48,8 @@ configService:
   ## configuration of the image to be used
   image:
     # -- endpoint-configuration-service image name
-    # ref: https://quay.io/repository/wi_stefan/endpoint-configuration-service
-    repository: quay.io/wi_stefan/endpoint-configuration-service
+    # ref: https://quay.io/repository/fiware/endpoint-configuration-service
+    repository: quay.io/fiware/endpoint-configuration-service
     # -- tag of the image to be used
     tag: latest
     # -- specification of the image pull policy
@@ -151,8 +151,8 @@ configService:
     ## configuration of the image to be used
     image:
       # -- configmap updater image name
-      # ref: https://quay.io/repository/wi_stefan/envoy-configmap-updater
-      repository: quay.io/wi_stefan/envoy-configmap-updater
+      # ref: https://quay.io/repository/fiware/envoy-configmap-updater
+      repository: quay.io/fiware/envoy-configmap-updater
       # -- tag of the image to be used
       tag: latest
       # -- specification of the image pull policy
@@ -173,8 +173,8 @@ sidecar:
   ## configuration of the image to be used
   image:
     # -- envoy image name
-    # ref: https://quay.io/repository/wi_stefan/envoy
-    repository: quay.io/wi_stefan/envoy
+    # ref: https://quay.io/repository/fiware/envoy
+    repository: quay.io/fiware/envoy
     # -- tag of the image to be used
     tag: latest
     # -- specification of the image pull policy
@@ -183,8 +183,8 @@ sidecar:
   ## image to be used for iptable init.
   initIptables:
     # -- image name
-    # ref: https://quay.io/repository/wi_stefan/init-iptables
-    repository: quay.io/wi_stefan/init-iptables
+    # ref: https://quay.io/repository/fiware/init-iptables
+    repository: quay.io/fiware/init-iptables
     # -- tag of the image to be used
     tag: latest
     # -- specification of the image pull policy
@@ -193,8 +193,8 @@ sidecar:
   ## image to be used for applying initial config
   initConfig:
     # -- image name
-    # ref: https://quay.io/repository/wi_stefan/envoy-resource-updater
-    repository: quay.io/wi_stefan/envoy-resource-updater
+    # ref: https://quay.io/repository/fiware/envoy-resource-updater
+    repository: quay.io/fiware/envoy-resource-updater
     # -- tag of the image to be used
     tag: latest
     # -- specification of the image pull policy
@@ -203,8 +203,8 @@ sidecar:
   ## image to be used for applying config updates
   updateConfig:
     # -- image name
-    # ref: https://quay.io/repository/wi_stefan/envoy-resource-updater
-    repository: quay.io/wi_stefan/envoy-resource-updater
+    # ref: https://quay.io/repository/fiware/envoy-resource-updater
+    repository: quay.io/fiware/envoy-resource-updater
     # -- tag of the image to be used
     tag: latest
     # -- specification of the image pull policy
@@ -392,8 +392,8 @@ ishare:
   ## configuration of the image to be used
   image:
     # -- endpoint-configuration-service image name
-    # ref: https://quay.io/repository/wi_stefan/ishare-auth-provider
-    repository: quay.io/wi_stefan/ishare-auth-provider
+    # ref: https://quay.io/repository/fiware/ishare-auth-provider
+    repository: quay.io/fiware/ishare-auth-provider
     # -- tag of the image to be used
     tag: latest
     # -- specification of the image pull policy

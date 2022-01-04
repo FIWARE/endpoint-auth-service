@@ -4,7 +4,7 @@ services:
   # the setup runs on host-network to allow the iptable manipulation needed for the tests.
         
   echo-server:
-    image: quay.io/wi_stefan/echo-server
+    image: quay.io/fiware/echo-server
     hostname: echo
     networks:
       test-network:
@@ -17,7 +17,7 @@ services:
       - INSPECTOR_PORT=6061
 
   echo-server-2:
-    image: quay.io/wi_stefan/echo-server
+    image: quay.io/fiware/echo-server
     hostname: echo-2
     networks:
       test-network:
@@ -32,7 +32,7 @@ services:
       - INSPECTOR_PORT=6061
 
   envoy:
-    image: ${ENVOY_IMAGE:-quay.io/wi_stefan/envoy}
+    image: ${ENVOY_IMAGE:-quay.io/fiware/envoy}
     hostname: envoy
     # required for writing the intial config and iptable to match
     user: root
@@ -49,7 +49,7 @@ services:
       - ./initial-config:/initial-config
 
   resource-updater:
-    image: ${RESOURCE_UPDATER_IMAGE:-quay.io/wi_stefan/envoy-resource-updater}
+    image: ${RESOURCE_UPDATER_IMAGE:-quay.io/fiware/envoy-resource-updater}
     hostname: update-resources
     networks:
       test-network:
@@ -62,7 +62,7 @@ services:
 
 
   config-service:
-    image: ${CONFIG_SERVICE_IMAGE:-quay.io/wi_stefan/endpoint-configuration-service}
+    image: ${CONFIG_SERVICE_IMAGE:-quay.io/fiware/endpoint-configuration-service}
     hostname: config-service
     networks:
       test-network:
@@ -81,7 +81,7 @@ services:
       - map-folder:/envoy-config:rw
       
   auth-provider:
-    image: ${AUTH_PROVIDER_IMAGE:-quay.io/wi_stefan/ishare-auth-provider}
+    image: ${AUTH_PROVIDER_IMAGE:-quay.io/fiware/ishare-auth-provider}
     hostname: auth-provider
     networks:
       test-network:
