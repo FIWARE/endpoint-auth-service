@@ -92,10 +92,15 @@ func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlug
 	return types.OnPluginStartStatusOK
 }
 
-// Update the plugin context and read the config
+// Update the plugin context and read the config and override types.DefaultPluginContext.
 func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
 	readAuthTypeFromPluginConfig()
 	return &pluginContext{}
+}
+
+// Override types.DefaultPluginContext.
+func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
+	return &httpContext{}
 }
 
 /**
