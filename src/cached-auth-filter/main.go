@@ -77,14 +77,19 @@ type (
 // Override types.VMContext.
 func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 
-	proxywasm.LogInfo("Successfully read config and started.")
+	proxywasm.LogInfo("Successfully started.")
+	return types.OnVMStartStatusOK
+}
+
+// Override types.DefaultPluginContext.
+func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
 	data, err := proxywasm.GetPluginConfiguration()
 	if err != nil {
 		proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
 	}
 
 	proxywasm.LogInfof("plugin config: %s", string(data))
-	return types.OnVMStartStatusOK
+	return types.OnPluginStartStatusOK
 }
 
 // Override types.DefaultVMContext.
@@ -158,6 +163,7 @@ func addCachedHeadersToRequest(cachedHeaders HeadersList) {
 }
 
 func requestAuthProvider() types.Action {
+
 	proxywasm.LogDebugf("Call to ", clusterName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
