@@ -89,7 +89,8 @@ func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlug
 	}
 
 	proxywasm.LogInfof("plugin config: %s", string(data))
-	return types.OnPluginStartStatusOK
+	proxywasm.LogInfo("Successfully read config and started.")
+	return types.OnVMStartStatusOK
 }
 
 // Override types.DefaultVMContext.
