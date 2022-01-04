@@ -359,5 +359,5 @@ jobs:
           prerelease: true
           title: ${{ needs.generate-version.outputs.version }}
           files: |
-            LICENSE.txt
+            LICENSE
             cached-auth-filter.wasm
