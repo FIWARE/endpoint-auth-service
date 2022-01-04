@@ -78,14 +78,14 @@ type (
 	}
 )
 
-// Override types.VMContext.
+// Handle the start event of the wasm-vm
 func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 
 	proxywasm.LogInfo("Successfully started VM.")
 	return types.OnVMStartStatusOK
 }
 
-// Override types.DefaultPluginContext.
+// Handle the plugin start and read the vonfig
 func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
 
 	if pluginConfigurationSize > 0 {
@@ -103,26 +103,19 @@ func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPlug
 	return types.OnPluginStartStatusOK
 }
 
-// Override types.DefaultVMContext.
-func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
-	return &pluginContext{}
-}
-
-// Override types.DefaultPluginContext.
-func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
-	return &httpContext{}
-}
-
-// Override types.DefaultHttpContext.
+// Handle the actual request and retrieve the headers used for auth-handling
 func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) types.Action {
 
+	// :authority header is set by envoy and holds the requested domain
 	authorityHeader, err := proxywasm.GetHttpRequestHeader(authorityKey)
 	if err != nil || authorityHeader == "" {
 		proxywasm.LogCriticalf("Failed to get authority header: %v", err)
 		return types.ActionContinue
 	}
+	// we are only interested in the host and want to ignore the port
 	domain = strings.Split(authorityHeader, ":")[0]
 
+	// :path header is set by envoy and holds the requested path
 	pathHeader, err := proxywasm.GetHttpRequestHeader(pathKey)
 	if err != nil || pathHeader == "" {
 		proxywasm.LogCriticalf("Failed to get path header: %v", err)
@@ -133,6 +126,9 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	return setHeader()
 }
 
+/**
+* Apply the auth headers from either the cache or the auth provider
+ */
 func setHeader() types.Action {
 	sharedDataKey := domain + path
 	data, currentCas, err := proxywasm.GetSharedData(sharedDataKey)
@@ -166,6 +162,9 @@ func setHeader() types.Action {
 	return types.ActionContinue
 }
 
+/**
+* Apply the headers from the list to the current request
+ */
 func addCachedHeadersToRequest(cachedHeaders HeadersList) {
 	for _, header := range cachedHeaders {
 		proxywasm.LogDebugf("Add header ", fmt.Sprint(header))
@@ -173,9 +172,12 @@ func addCachedHeadersToRequest(cachedHeaders HeadersList) {
 	}
 }
 
+/**
+* Request auth info at the provider. Since the call is executed asynchronous, it needs to pause the actual request handling.
+ */
 func requestAuthProvider() types.Action {
 
-	proxywasm.LogDebugf("Call to ", clusterName)
+	proxywasm.LogDebugf("Call to %s", clusterName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
 	var methodIndex int
@@ -199,6 +201,12 @@ func requestAuthProvider() types.Action {
 	return types.ActionPause
 }
 
+/**
+* Callback method to handle the authprovider response.
+* It will resume the request handling before taking care of updating the cache, to reduce the latency of the request. This can lead to
+* duplicate updates in edge-cases(e.g. many parallel requests), but wont lead to problems since the cache will only store the first of them, while the
+* individual tokens are still valid.
+ */
 func authCallback(numHeaders, bodySize, numTrailers int) {
 	body, err := proxywasm.GetHttpCallResponseBody(0, bodySize)
 	if err != nil {
@@ -252,6 +260,9 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 
 }
 
+/**
+* Create a json string to store in cache from the headers list
+ */
 func cachedAuthInfoToJson(expirationTime int64, cachedHeaders HeadersList) (jsonString string) {
 
 	headerArray := `[`
@@ -263,13 +274,16 @@ func cachedAuthInfoToJson(expirationTime int64, cachedHeaders HeadersList) (json
 	}
 	headerArray = headerArray + `]`
 
-	// TODO: use parser.MarshalTo
 	jsonString = fmt.Sprintf(`{"expiration":%d, "cachedHeaders":%s}`, expirationTime, headerArray)
 
 	proxywasm.LogDebugf("Json string to store ", jsonString)
 	return jsonString
 }
 
+/**
+* Evaluate the cache-control header(e.g. max-age) to decide upon the cache-expiry. The control-header should never be ignored,
+* since only the auth-provider knows about the expiry of the auth-info and therefore ignoring it will lead to invalid headers at the request.
+ */
 func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 	directiveArray := strings.Split(cacheControlHeader, ",")
 	for _, directive := range directiveArray {
@@ -293,6 +307,9 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 	return -1, err
 }
 
+/**
+* Parse the cached json to an auth-info object
+ */
 func parsCachedAuthInformation(jsonString string) (cachedAuthInfo CachedAuthInformation, err error) {
 
 	var parser fastjson.Parser
@@ -308,6 +325,9 @@ func parsCachedAuthInformation(jsonString string) (cachedAuthInfo CachedAuthInfo
 
 }
 
+/**
+* Helper method to parse a json-array to the headers list
+ */
 func parseHeaderArray(valuesArray []*fastjson.Value) (headerList HeadersList, err error) {
 	if err != nil {
 		return headerList, err
@@ -321,6 +341,9 @@ func parseHeaderArray(valuesArray []*fastjson.Value) (headerList HeadersList, er
 	return headerList, err
 }
 
+/**
+* Helper method to parse a json-string to the headers list
+ */
 func parseHeaderList(jsonString string) (headerList HeadersList, err error) {
 
 	var parser fastjson.Parser

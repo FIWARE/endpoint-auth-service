@@ -44,7 +44,7 @@ Please report vulnerabilities as [bugs](#bug) or email the authors.
 
 ## Bugs & Enhancements
 
-If you find bug or searching for a new feature, please check the [issues](https://github.com/wistefan/endpoint-auth-service/issues) and [pull requests](https://github.com/wistefan/endpoint-auth-service/pulls)
+If you find bug or searching for a new feature, please check the [issues](https://github.com/fiware/endpoint-auth-service/issues) and [pull requests](https://github.com/fiware/endpoint-auth-service/pulls)
 first.
 
 ### Bug
