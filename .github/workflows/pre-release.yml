@@ -326,6 +326,17 @@ jobs:
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
 
+  cached-auth-filter:
+
+    runs-on: ubuntu-latest
+
+    steps:
+     - uses: actions/checkout@v2
+
+     - name: Build wasm
+       run: |
+         docker run -v $(pwd)/src/cached-auth-filter:/cached-auth-filter --workdir /cached-auth-filter tinygo/tinygo tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go     
+
   git-release:
     needs:
       - generate-version
@@ -348,3 +359,4 @@ jobs:
           title: ${{ needs.generate-version.outputs.version }}
           files: |
             LICENSE.txt
+            cached-auth-filter.wasm
