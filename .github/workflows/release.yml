@@ -220,6 +220,22 @@ jobs:
           mvn versions:set -DnewVersion=${{ needs.generate-version.outputs.version }}
           mvn clean install deploy -DskipTests -Dimage.tag=${{ needs.generate-version.outputs.version }} -Dimage.registry="${{ env.REGISTRY }}/" -Dimage.repository="${{ env.REPOSITORY }}"
 
+  cached-auth-filter:
+
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build wasm
+        run: |
+          docker run -v $(pwd)/src/cached-auth-filter:/cached-auth-filter --workdir /cached-auth-filter tinygo/tinygo tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go     
+
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cached-auth-filter
+          path: src/cached-auth-filter/cached-auth-filter.wasm
+
   git-release:
     needs:
       - endpoint-configuration-service
@@ -230,10 +246,19 @@ jobs:
       - iptables-init
       - echo-server
       - generate-version
+      - cached-auth-filter
 
     runs-on: ubuntu-latest
 
     steps:
+
+      - uses: actions/checkout@v2
+
+      - uses: actions/download-artifact@v2
+        with:
+          name: cached-auth-filter
+          path: ./
+
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.GITHUB_TOKEN }}"
@@ -242,3 +267,4 @@ jobs:
           title: ${{ needs.generate-version.outputs.version }}
           files: |
             LICENSE.txt
+            cached-auth-filter.wasm
