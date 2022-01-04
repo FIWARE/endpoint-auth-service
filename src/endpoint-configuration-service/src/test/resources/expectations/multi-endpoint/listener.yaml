@@ -76,6 +76,9 @@ resources:
                                     typed_config:
                                       "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                                       config:
+                                        configuration:
+                                          "@type": "type.googleapis.com/google.protobuf.StringValue"
+                                          value: ISHARE
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
@@ -120,6 +123,9 @@ resources:
                                     typed_config:
                                       "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                                       config:
+                                        configuration:
+                                          "@type": "type.googleapis.com/google.protobuf.StringValue"
+                                          value: ISHARE
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:

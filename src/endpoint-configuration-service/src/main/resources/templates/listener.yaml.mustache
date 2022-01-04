@@ -66,6 +66,7 @@ resources:
                         matchers:
                           {{#virtualHosts}}
                           {{#endpoints}}
+                          {{^passthrough}}
                           - on_match:
                               action:
                                 name: composite-action
@@ -115,6 +116,7 @@ resources:
                                             value_match:
                                               exact: {{domain}}:{{port}}
                                         {{/ports}}
+                          {{/passthrough}}
                           {{/endpoints}}
                           {{/virtualHosts}}
                 {{/enable-wasm-filter}}
