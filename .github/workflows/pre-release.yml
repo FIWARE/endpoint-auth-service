@@ -347,6 +347,7 @@ jobs:
       - envoy-configmap-updater
       - iptables-init
       - echo-server
+      - cached-auth-filter
 
     runs-on: ubuntu-latest
 
