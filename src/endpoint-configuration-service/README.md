@@ -16,7 +16,7 @@ It uses a SQL-Database as backend, currently are [MySQL](https://www.mysql.com/)
 
 ### How to run
 
-Start the service through its container: ```docker run quay.io/repository/wi_stefan/endpoint-configuration-service```
+Start the service through its container: ```docker run quay.io/repository/fiware/endpoint-configuration-service```
 
 ### Configuration
 
@@ -46,7 +46,7 @@ The following table concentrates on the most important configuration parameters:
 ### Coverage
 
 Code-coverage reports are automatically created by [Jacoco](https://www.eclemma.org/jacoco/) when the test are executed by maven. Public
-reports are available at [Coveralls.io](https://coveralls.io/github/wistefan/endpoint-auth-service).
+reports are available at [Coveralls.io](https://coveralls.io/github/fiware/endpoint-auth-service).
 
 ### Static analyzes
 

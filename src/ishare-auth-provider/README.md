@@ -31,7 +31,7 @@ Detailed flow-chart for [NGSI-LD](https://www.etsi.org/deliver/etsi_gs/CIM/001_0
 
 ## Development
 
-The auth-provider is implemented in [golang](https://go.dev/) and available as a [container at quay.io](https://quay.io/repository/wi_stefan/ishare-auth-provider)
+The auth-provider is implemented in [golang](https://go.dev/) and available as a [container at quay.io](https://quay.io/repository/fiware/ishare-auth-provider)
 It uses the [gin-framework](https://github.com/gin-gonic/gin) for serving the web-endpoints.
 
 ### Testing
@@ -39,5 +39,5 @@ It uses the [gin-framework](https://github.com/gin-gonic/gin) for serving the we
 > Precondition: for running the unit-test, go-v1.17.3 is required. See the official doc: https://go.dev/doc/install
 
 To run the unit-tests: ```go test -v```
-To run the unit-tests with coverage: ```go test -v -covermode=count -coverprofile=coverage.out``` - current reports can be viewed at [coveralls](https://coveralls.io/github/wistefan/endpoint-auth-service)
+To run the unit-tests with coverage: ```go test -v -covermode=count -coverprofile=coverage.out``` - current reports can be viewed at [coveralls](https://coveralls.io/github/fiware/endpoint-auth-service)
 To run the integration-test, see [integration-test](../../integration-test/README.md)
