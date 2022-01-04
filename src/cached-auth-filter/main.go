@@ -77,13 +77,13 @@ type (
 // Override types.VMContext.
 func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 
-	proxywasm.LogInfo("Successfully read config and started.")
 	data, err := proxywasm.GetPluginConfiguration()
 	if err != nil {
 		proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
 	}
 
 	proxywasm.LogInfof("plugin config: %s", string(data))
+	proxywasm.LogInfo("Successfully read config and started.")
 	return types.OnVMStartStatusOK
 }
 
