@@ -81,26 +81,25 @@ type (
 // Override types.VMContext.
 func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 
-	proxywasm.LogInfo("Successfully started.")
+	proxywasm.LogInfo("Successfully started VM.")
 	return types.OnVMStartStatusOK
 }
 
 // Override types.DefaultPluginContext.
 func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-	proxywasm.LogDebugf("Plugin config size is %v", pluginConfigurationSize)
 
 	if pluginConfigurationSize > 0 {
 		data, err := proxywasm.GetPluginConfiguration()
 		if err != nil {
-			proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
+			proxywasm.LogCriticalf("Error reading plugin configuration: %v", err)
 		}
 
 		// we expect only one config, the auth type.
 		authType = string(data)
-		proxywasm.LogInfof("plugin config: %s", string(data))
+		proxywasm.LogInfof("Plugin configured for auth-type: %s", string(data))
 	}
 
-	proxywasm.LogInfo("Successfully read config and started.")
+	proxywasm.LogInfo("Successfully started plugin.")
 	return types.OnPluginStartStatusOK
 }
 
