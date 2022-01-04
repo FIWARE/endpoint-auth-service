@@ -26,7 +26,6 @@ import (
 )
 
 const (
-	authType           = "ISHARE"
 	clusterName        = "ext-authz"
 	authRequestTimeout = 5000
 	authorityKey       = ":authority"
@@ -39,6 +38,11 @@ const (
 var cas uint32 = 0
 var domain string
 var path string
+
+/**
+* Authtype to be used by the filter. Default is ISHARE
+ */
+var authType = "ISHARE"
 
 type CachedAuthInformation struct {
 	expirationTime int64       `json:"expiration"`
@@ -83,12 +87,19 @@ func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 
 // Override types.DefaultPluginContext.
 func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-	data, err := proxywasm.GetPluginConfiguration()
-	if err != nil {
-		proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
+	proxywasm.LogDebugf("Plugin config size is %v", pluginConfigurationSize)
+
+	if pluginConfigurationSize > 0 {
+		data, err := proxywasm.GetPluginConfiguration()
+		if err != nil {
+			proxywasm.LogCriticalf("error reading plugin configuration: %v", err)
+		}
+
+		// we expect only one config, the auth type.
+		authType = string(data)
+		proxywasm.LogInfof("plugin config: %s", string(data))
 	}
 
-	proxywasm.LogInfof("plugin config: %s", string(data))
 	proxywasm.LogInfo("Successfully read config and started.")
 	return types.OnPluginStartStatusOK
 }
