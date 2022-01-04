@@ -44,7 +44,7 @@ jobs:
       env:
         ENVOY_IMAGE: envoy
         RESOURCE_UPDATER_IMAGE: envoy-resource-updater
-        CONFIG_SERVICE_IMAGE: wi_stefan/endpoint-configuration-service
+        CONFIG_SERVICE_IMAGE: fiware/endpoint-configuration-service
         AUTH_PROVIDER_IMAGE: ishare-auth-provider
       run: |
         cd docker-compose/

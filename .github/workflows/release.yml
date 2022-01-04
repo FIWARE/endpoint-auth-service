@@ -7,7 +7,7 @@ on:
 
 env:
   REGISTRY: quay.io
-  REPOSITORY: wi_stefan
+  REPOSITORY: fiware
 
 jobs:
   generate-version:
@@ -266,5 +266,5 @@ jobs:
           prerelease: false
           title: ${{ needs.generate-version.outputs.version }}
           files: |
-            LICENSE.txt
+            LICENSE
             cached-auth-filter.wasm

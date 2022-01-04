@@ -1,7 +1,7 @@
 # iptables
 
 In order to route all outgoing traffic to the sidecar, [iptables](https://linux.die.net/man/8/iptables) are used. 
-The [init-iptables container](https://quay.io/repository/wi_stefan/init-iptables) sets to rules:
+The [init-iptables container](https://quay.io/repository/fiware/init-iptables) sets to rules:
 
 * ```iptables -t nat -A OUTPUT -m owner --uid-owner $ENVOY_USER_ID -j RETURN``` - return everything coming from envoy's user-id
 * ```iptables -t nat -A OUTPUT -p tcp -j REDIRECT --to-ports $ENVOY_PORT``` - forwared every tcp traffic to envoy, using REDIRECT
