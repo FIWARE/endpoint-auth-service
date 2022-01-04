@@ -85,22 +85,31 @@ func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 	return types.OnVMStartStatusOK
 }
 
-// Handle the plugin start and read the vonfig
+// Handle the plugin start and read the config
 func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-
-	if pluginConfigurationSize > 0 {
-		data, err := proxywasm.GetPluginConfiguration()
-		if err != nil {
-			proxywasm.LogCriticalf("Error reading plugin configuration: %v", err)
-		}
-
-		// we expect only one config, the auth type.
-		authType = string(data)
-		proxywasm.LogInfof("Plugin configured for auth-type: %s", string(data))
-	}
-
+	readAuthTypeFromPluginConfig()
 	proxywasm.LogInfo("Successfully started plugin.")
 	return types.OnPluginStartStatusOK
+}
+
+// Update the plugin context and read the config
+func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
+	readAuthTypeFromPluginConfig()
+	return &pluginContext{}
+}
+
+/**
+* Reads the auth-type from the plugin config
+ */
+func readAuthTypeFromPluginConfig() {
+	data, err := proxywasm.GetPluginConfiguration()
+	if err != nil {
+		proxywasm.LogCriticalf("Error reading plugin configuration: %v", err)
+	}
+
+	// we expect only one config, the auth type.
+	authType = string(data)
+	proxywasm.LogInfof("Plugin configured for auth-type: %s", string(data))
 }
 
 // Handle the actual request and retrieve the headers used for auth-handling
