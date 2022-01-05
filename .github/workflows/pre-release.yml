@@ -326,21 +326,53 @@ jobs:
         with:
           sarif_file: ${{ steps.scan.outputs.sarif }}
 
+  service-mesh-extension:
+
+    needs: [ "generate-version" ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set extension version
+        run: |
+          sed -i 's/${cache-filter-wasm.version}/${{ needs.generate-version.outputs.version }}/g' ./service-mesh/openshift/manifest.yaml
+
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: cached-auth-filter-extension
+          tags: ${{ github.sha }} ${{ needs.generate-version.outputs.version }}
+          dockerfiles: |
+            ./service-mesh/openshift/Dockerfile
+          context: .
+      
+      - name: Push To quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+
   cached-auth-filter:
 
     runs-on: ubuntu-latest
 
     steps:
-     - uses: actions/checkout@v2
+      - uses: actions/checkout@v2
 
-     - name: Build wasm
-       run: |
-         docker run -v $(pwd)/src/cached-auth-filter:/cached-auth-filter --workdir /cached-auth-filter tinygo/tinygo tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go     
+      - name: Build wasm
+        run: |
+          docker run -v $(pwd)/src/cached-auth-filter:/cached-auth-filter --workdir /cached-auth-filter tinygo/tinygo tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go     
 
-     - uses: actions/upload-artifact@v2
-       with:
-         name: cached-auth-filter
-         path: src/cached-auth-filter/cached-auth-filter.wasm
+      - uses: actions/upload-artifact@v2
+        with:
+          name: cached-auth-filter
+          path: src/cached-auth-filter/cached-auth-filter.wasm
 
   git-release:
     needs:
@@ -353,6 +385,7 @@ jobs:
       - iptables-init
       - echo-server
       - cached-auth-filter
+      - service-mesh-extension
 
     runs-on: ubuntu-latest
 

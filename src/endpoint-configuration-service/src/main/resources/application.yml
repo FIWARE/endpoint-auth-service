@@ -49,4 +49,4 @@ proxy:
   listenerYamlPath: ./listener.yaml
   clusterYamlPath: ./cluster.yaml
   updateDelayInS: 2
-  wasmFilterPath: /cache-filter/cache-filter.wasm
+  wasmFilterPath: /cached-auth-filter/cached-auth-filter.wasm
