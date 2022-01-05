@@ -337,6 +337,7 @@ jobs:
       - name: Set extension version
         run: |
           sed -i 's/${cache-filter-wasm.version}/${{ needs.generate-version.outputs.version }}/g' ./service-mesh/openshift/manifest.yaml
+          cat ./service-mesh/openshift/manifest.yaml
 
       - name: Build Image
         id: build-image

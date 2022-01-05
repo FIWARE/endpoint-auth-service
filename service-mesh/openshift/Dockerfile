@@ -6,3 +6,4 @@ RUN tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go
 FROM scratch
 
 COPY --from=build /cached-auth-filter/cached-auth-filter.wasm /cached-auth-filter.wasm
+COPY /service-mesh/openshift/manifest.yaml manifest.yaml
