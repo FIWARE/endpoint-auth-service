@@ -133,7 +133,7 @@ func readAuthTypeFromPluginConfig() {
 		proxywasm.LogCriticalf("Error reading plugin configuration: %v", err)
 	}
 
-	proxywasm.LogCriticalf("Config: %v", string(data))
+	proxywasm.LogInfof("Config: %v", string(data))
 
 	config = parseConfigFromJson(string(data))
 }
@@ -243,7 +243,6 @@ func requestAuthProvider() types.Action {
 * individual tokens are still valid.
  */
 func authCallback(numHeaders, bodySize, numTrailers int) {
-	proxywasm.LogCriticalf("Auth callback executed")
 
 	body, err := proxywasm.GetHttpCallResponseBody(0, bodySize)
 	if err != nil {
@@ -252,7 +251,12 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 		return
 	}
 
-	proxywasm.LogCriticalf("Get headers")
+	if body == nil {
+		proxywasm.LogCriticalf("Failed to get response body for auth-request, body was nil.")
+		proxywasm.ResumeHttpRequest()
+		return
+	}
+
 	headers, _ := proxywasm.GetHttpCallResponseHeaders()
 
 	headersList, err := parseHeaderList(string(body))
@@ -263,11 +267,10 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 	}
 	addCachedHeadersToRequest(headersList)
 
-	proxywasm.LogCriticalf("Resume request")
 	// continue the request before handling the caching
 	proxywasm.ResumeHttpRequest()
 
-	proxywasm.LogCriticalf("Handle caching.")
+	proxywasm.LogDebugf("Handle caching.")
 
 	// handle cachecontrol
 	for _, h := range headers {
