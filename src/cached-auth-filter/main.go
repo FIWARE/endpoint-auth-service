@@ -26,10 +26,8 @@ import (
 )
 
 const (
-	clusterName        = "outbound|80||ext-authz"
-	authRequestTimeout = 5000
-	authorityKey       = ":authority"
-	pathKey            = ":path"
+	authorityKey = ":authority"
+	pathKey      = ":path"
 )
 
 /**
@@ -40,9 +38,32 @@ var domain string
 var path string
 
 /**
-* Authtype to be used by the filter. Default is ISHARE
+* Plugin configurations
  */
-var authType = "ISHARE"
+var config Configuration
+
+// Default configurations
+
+/**
+* Default authtype to be used by the filter
+ */
+var defaultAuthType = "ISHARE"
+
+/**
+* Default (cluster)name to contact the auth-provider at
+ */
+var defaultAuthProviderName = "ext-authz"
+
+/**
+* Default timeout to be used when  requesting the auth provider.
+ */
+var defaultAuthRequestTimeout int64 = 5000
+
+type Configuration struct {
+	authType           string
+	authProviderName   string
+	authRequestTimeout int64
+}
 
 type CachedAuthInformation struct {
 	expirationTime int64       `json:"expiration"`
@@ -113,9 +134,10 @@ func readAuthTypeFromPluginConfig() {
 	}
 
 	proxywasm.LogCriticalf("Config: %v", string(data))
-	// we expect only one config, the auth type.
-	authType = string(data)
-	proxywasm.LogInfof("Plugin configured for auth-type: %s", string(data))
+
+	config = parseConfigFromJson(string(data))
+
+	proxywasm.LogCriticalf("Plugin configured: %s", config)
 }
 
 // Handle the actual request and retrieve the headers used for auth-handling
@@ -154,7 +176,7 @@ func setHeader() types.Action {
 
 	if data != nil {
 		proxywasm.LogDebugf("Cache hit: ", string(data))
-		cachedAuthInfo, err := parsCachedAuthInformation(string(data))
+		cachedAuthInfo, err := parseCachedAuthInformation(string(data))
 		if err != nil {
 			proxywasm.LogCriticalf("Failed to parse cached info, request new instead. %v", err)
 			cas = currentCas
@@ -323,9 +345,48 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 }
 
 /**
+* Parse the jsonstring, containing the configuration
+ */
+func parseConfigFromJson(jsonString string) (config Configuration) {
+	var parser fastjson.Parser
+	parsedJson, err := parser.Parse(jsonString)
+
+	if err != nil {
+		proxywasm.LogCriticalf("Unable to parse config: %v, will use default", err)
+		config.authProviderName = defaultAuthProviderName
+		config.authType = defaultAuthType
+		config.authRequestTimeout = defaultAuthRequestTimeout
+		return config
+	}
+
+	authRequestTimeout := parsedJson.GetInt64("authRequestTimeout")
+	authType := parsedJson.GetStringBytes("authType")
+	authProviderName := parsedJson.GetStringBytes("authProviderName")
+	if authRequestTimeout > 0 {
+		config.authRequestTimeout = authRequestTimeout
+	} else {
+		config.authRequestTimeout = defaultAuthRequestTimeout
+	}
+
+	if authType != nil {
+		config.authType = string(authType)
+	} else {
+		config.authType = defaultAuthType
+	}
+
+	if authProviderName != nil {
+		config.authProviderName = string(authProviderName)
+	} else {
+		config.authProviderName = defaultAuthProviderName
+	}
+
+	return config
+}
+
+/**
 * Parse the cached json to an auth-info object
  */
-func parsCachedAuthInformation(jsonString string) (cachedAuthInfo CachedAuthInformation, err error) {
+func parseCachedAuthInformation(jsonString string) (cachedAuthInfo CachedAuthInformation, err error) {
 
 	var parser fastjson.Parser
 	parsedJson, err := parser.Parse(jsonString)
