@@ -262,10 +262,12 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 		return
 	}
 	addCachedHeadersToRequest(headersList)
+
+	proxywasm.LogCriticalf("Resume request")
 	// continue the request before handling the caching
 	proxywasm.ResumeHttpRequest()
 
-	proxywasm.LogDebugf("Handle caching.")
+	proxywasm.LogCriticalf("Handle caching.")
 
 	// handle cachecontrol
 	for _, h := range headers {
