@@ -191,7 +191,7 @@ func addCachedHeadersToRequest(cachedHeaders HeadersList) {
  */
 func requestAuthProvider() types.Action {
 
-	proxywasm.LogDebugf("Call to %s", clusterName)
+	proxywasm.LogCriticalf("Call to %s", clusterName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
 	var methodIndex int
