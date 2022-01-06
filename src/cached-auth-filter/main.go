@@ -258,11 +258,8 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 	}
 
 	headers, _ := proxywasm.GetHttpCallResponseHeaders()
-	proxywasm.LogCriticalf("Got list %v", body)
-	proxywasm.LogCriticalf("String %s", string(body))
 	headersList, err := parseHeaderList(string(body))
 
-	proxywasm.LogCriticalf("parsed")
 	if err != nil {
 		proxywasm.LogCriticalf("Was not able to decode header list.")
 		proxywasm.ResumeHttpRequest()
@@ -439,7 +436,17 @@ func parseHeaderList(jsonString string) (headerList HeadersList, err error) {
 
 	var parser fastjson.Parser
 	parsedJson, err := parser.Parse(jsonString)
+	if err != nil {
+		proxywasm.LogCriticalf("Was not able to parse string %s", jsonString)
+		return headerList, err
+	}
+
 	jsonArray, err := parsedJson.Array()
+	if err != nil {
+		proxywasm.LogCriticalf("Was not able to parse json to array %s", jsonString)
+		return headerList, err
+	}
+
 	return parseHeaderArray(jsonArray)
 
 }
