@@ -78,7 +78,8 @@ resources:
                                       config:
                                         configuration:
                                           "@type": "type.googleapis.com/google.protobuf.StringValue"
-                                          value: ISHARE
+                                          value:  |
+                                            { "authType":"ISHARE" }
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
@@ -125,7 +126,8 @@ resources:
                                       config:
                                         configuration:
                                           "@type": "type.googleapis.com/google.protobuf.StringValue"
-                                          value: ISHARE
+                                          value: |
+                                            { "authType":"ISHARE" }
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
