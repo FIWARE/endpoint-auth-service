@@ -136,8 +136,6 @@ func readAuthTypeFromPluginConfig() {
 	proxywasm.LogCriticalf("Config: %v", string(data))
 
 	config = parseConfigFromJson(string(data))
-
-	proxywasm.LogCriticalf("Plugin configured: %v", config)
 }
 
 // Handle the actual request and retrieve the headers used for auth-handling
