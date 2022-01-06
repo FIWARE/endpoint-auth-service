@@ -137,7 +137,7 @@ func readAuthTypeFromPluginConfig() {
 
 	config = parseConfigFromJson(string(data))
 
-	proxywasm.LogCriticalf("Plugin configured: %s", config)
+	proxywasm.LogCriticalf("Plugin configured: %v", config)
 }
 
 // Handle the actual request and retrieve the headers used for auth-handling
@@ -348,8 +348,8 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 * Parse the jsonstring, containing the configuration
  */
 func parseConfigFromJson(jsonString string) (config Configuration) {
-	var parser fastjson.Parser
-	parsedJson, err := parser.Parse(jsonString)
+
+	parsedJson, err := fastjson.Parser.Parse(jsonString)
 
 	if err != nil {
 		proxywasm.LogCriticalf("Unable to parse config: %v, will use default", err)
