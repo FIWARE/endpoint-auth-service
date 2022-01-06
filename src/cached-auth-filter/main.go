@@ -359,7 +359,7 @@ func parseConfigFromJson(jsonString string) (config Configuration) {
 		return config
 	}
 
-	authRequestTimeout := parsedJson.GetInt64("authRequestTimeout")
+	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
 	authType := parsedJson.GetStringBytes("authType")
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
 	if authRequestTimeout > 0 {
