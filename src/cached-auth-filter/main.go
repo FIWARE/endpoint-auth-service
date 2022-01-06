@@ -26,7 +26,7 @@ import (
 )
 
 const (
-	clusterName        = "ecs-ishare-endpoint-auth-service"
+	clusterName        = "outbound|80||ext-authz"
 	authRequestTimeout = 5000
 	authorityKey       = ":authority"
 	pathKey            = ":path"
