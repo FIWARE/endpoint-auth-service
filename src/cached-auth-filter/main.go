@@ -346,7 +346,7 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 * Parse the jsonstring, containing the configuration
  */
 func parseConfigFromJson(jsonString string) (config Configuration) {
-	var parser = fastjson.Parser
+	var parser fastjson.Parser
 	parsedJson, err := parser.Parse(jsonString)
 
 	if err != nil {
