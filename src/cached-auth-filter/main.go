@@ -112,7 +112,7 @@ func readAuthTypeFromPluginConfig() {
 		proxywasm.LogCriticalf("Error reading plugin configuration: %v", err)
 	}
 
-	proxywasm.LogCriticalf("Config: %v", data)
+	proxywasm.LogCriticalf("Config: %v", string(data))
 	// we expect only one config, the auth type.
 	authType = string(data)
 	proxywasm.LogInfof("Plugin configured for auth-type: %s", string(data))
