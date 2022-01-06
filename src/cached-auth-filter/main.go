@@ -57,12 +57,12 @@ var defaultAuthProviderName = "ext-authz"
 /**
 * Default timeout to be used when  requesting the auth provider.
  */
-var defaultAuthRequestTimeout int64 = 5000
+var defaultAuthRequestTimeout uint32 = 5000
 
 type Configuration struct {
 	authType           string
 	authProviderName   string
-	authRequestTimeout int64
+	authRequestTimeout uint32
 }
 
 type CachedAuthInformation struct {
