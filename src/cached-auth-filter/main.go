@@ -345,40 +345,45 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 /**
 * Parse the jsonstring, containing the configuration
  */
-func parseConfigFromJson(jsonString string) (config Configuration) {
+func parseConfigFromJson(jsonString string) Configuration {
 	var parser fastjson.Parser
 	parsedJson, err := parser.Parse(jsonString)
+	parsedConfig := Configuration{authType: defaultAuthType, authProviderName: defaultAuthProviderName, authRequestTimeout: defaultAuthRequestTimeout}
 
 	if err != nil {
 		proxywasm.LogCriticalf("Unable to parse config: %v, will use default", err)
-		config.authProviderName = defaultAuthProviderName
-		config.authType = defaultAuthType
-		config.authRequestTimeout = defaultAuthRequestTimeout
-		return config
+		parsedConfig.authProviderName = defaultAuthProviderName
+		parsedConfig.authType = defaultAuthType
+		parsedConfig.authRequestTimeout = defaultAuthRequestTimeout
+		return parsedConfig
 	}
 
 	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
 	authType := parsedJson.GetStringBytes("authType")
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
+
 	if authRequestTimeout > 0 {
-		config.authRequestTimeout = uint32(authRequestTimeout)
+		parsedConfig.authRequestTimeout = uint32(authRequestTimeout)
 	} else {
-		config.authRequestTimeout = defaultAuthRequestTimeout
+		parsedConfig.authRequestTimeout = defaultAuthRequestTimeout
+		proxywasm.LogWarnf("Use default requestTimeout: %v", defaultAuthRequestTimeout)
 	}
 
 	if authType != nil {
-		config.authType = string(authType)
+		parsedConfig.authType = string(authType)
 	} else {
-		config.authType = defaultAuthType
+		parsedConfig.authType = defaultAuthType
+		proxywasm.LogWarnf("Use default authType: %v", defaultAuthType)
 	}
 
 	if authProviderName != nil {
-		config.authProviderName = string(authProviderName)
+		parsedConfig.authProviderName = string(authProviderName)
 	} else {
-		config.authProviderName = defaultAuthProviderName
+		parsedConfig.authProviderName = defaultAuthProviderName
+		proxywasm.LogWarnf("Use default authProvider: %v", defaultAuthProviderName)
 	}
 
-	return config
+	return parsedConfig
 }
 
 /**
