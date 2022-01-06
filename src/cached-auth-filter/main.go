@@ -208,7 +208,7 @@ func requestAuthProvider() types.Action {
 	hs[pathIndex] = [2]string{":path", "/" + authType + "/auth?domain=" + domain + "&path=" + path}
 
 	if _, err := proxywasm.DispatchHttpCall(clusterName, hs, nil, nil, authRequestTimeout, authCallback); err != nil {
-		proxywasm.LogDebugf("Domain " + domain + " , path: " + path + " , authType: " + authType)
+		proxywasm.LogCriticalf("Domain " + domain + " , path: " + path + " , authType: " + authType)
 		proxywasm.LogCriticalf("Call to auth-provider failed: %v", err)
 		return types.ActionContinue
 	}
