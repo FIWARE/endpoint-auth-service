@@ -243,12 +243,16 @@ func requestAuthProvider() types.Action {
 * individual tokens are still valid.
  */
 func authCallback(numHeaders, bodySize, numTrailers int) {
+	proxywasm.LogCriticalf("Auth callback executed")
+
 	body, err := proxywasm.GetHttpCallResponseBody(0, bodySize)
 	if err != nil {
 		proxywasm.LogCriticalf("Failed to get response body for auth-request: %v", err)
 		proxywasm.ResumeHttpRequest()
 		return
 	}
+
+	proxywasm.LogCriticalf("Get headers")
 	headers, _ := proxywasm.GetHttpCallResponseHeaders()
 
 	headersList, err := parseHeaderList(string(body))
