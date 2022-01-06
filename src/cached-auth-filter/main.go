@@ -214,7 +214,7 @@ func addCachedHeadersToRequest(cachedHeaders HeadersList) {
  */
 func requestAuthProvider() types.Action {
 
-	proxywasm.LogCriticalf("Call to %s", clusterName)
+	proxywasm.LogCriticalf("Call to %s", config.authProviderName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
 	var methodIndex int
@@ -228,10 +228,10 @@ func requestAuthProvider() types.Action {
 		}
 	}
 	hs[methodIndex] = [2]string{":method", "GET"}
-	hs[pathIndex] = [2]string{":path", "/" + authType + "/auth?domain=" + domain + "&path=" + path}
+	hs[pathIndex] = [2]string{":path", "/" + config.authType + "/auth?domain=" + domain + "&path=" + path}
 
-	if _, err := proxywasm.DispatchHttpCall(clusterName, hs, nil, nil, authRequestTimeout, authCallback); err != nil {
-		proxywasm.LogCriticalf("Domain " + domain + " , path: " + path + " , authType: " + authType)
+	if _, err := proxywasm.DispatchHttpCall(config.authProviderName, hs, nil, nil, config.authRequestTimeout, authCallback); err != nil {
+		proxywasm.LogCriticalf("Domain " + domain + " , path: " + path + " , authType: " + config.authType)
 		proxywasm.LogCriticalf("Call to auth-provider failed: %v", err)
 		return types.ActionContinue
 	}
