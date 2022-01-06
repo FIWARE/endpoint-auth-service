@@ -259,7 +259,10 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 
 	headers, _ := proxywasm.GetHttpCallResponseHeaders()
 	proxywasm.LogCriticalf("Got list %v", body)
+	proxywasm.LogCriticalf("String %s", string(body))
 	headersList, err := parseHeaderList(string(body))
+
+	proxywasm.LogCriticalf("parsed")
 	if err != nil {
 		proxywasm.LogCriticalf("Was not able to decode header list.")
 		proxywasm.ResumeHttpRequest()
