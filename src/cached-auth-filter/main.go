@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"path"
 	"strconv"
 	"strings"
 	"time"
@@ -20,13 +21,15 @@ const (
 * Global compare & set value for cache control
  */
 var cas uint32 = 0
-var domain string
-var path string
+var requestDomain string
+var requestPath string
 
 /**
 * Plugin configurations
  */
-var config configuration
+var config pluginConfiguration
+
+var endpointAuthConfig endpointAuthConfiguration
 
 // Default configurations
 
@@ -34,12 +37,7 @@ var config configuration
 * Default plugin configuration.
 * The defaults targeting a plain envoy sidecar "ishare"-usecase and WILL NOT work in a mesh setup(istio, ossm)
  */
-var defaultPluginConfig pluginConfiguration = pluginConfiguration{authType: "ISHARE", authProviderName: "ext-authz", authRequestTimeout: 5000}
-
-/**
-* Default overall config. Domain and path will be empty, thus the filter will not be applied to any request
- */
-var defaultConfig configuration = configuration{pluginConfig: defaultPluginConfig, domainConfig: domainConfig{}, pathConfig: pathConfig{}}
+var defaultPluginConfig pluginConfiguration = pluginConfiguration{authProviderName: "ext-authz", authRequestTimeout: 5000, enableEndpointMatching: false, authType: "ISHARE"}
 
 /**
 * Json parser for reading cache and config
@@ -47,22 +45,19 @@ var defaultConfig configuration = configuration{pluginConfig: defaultPluginConfi
 var parser fastjson.Parser
 
 /**
-* Full configuration for the filter
- */
-type configuration struct {
-	pluginConfig pluginConfiguration `json:"general"`
-	domainConfig domainConfig        `json:"domains"`
-	pathConfig   pathConfig          `json:"paths"`
-}
-
-/**
 * Struct to hold the config for this plugin.
  */
 type pluginConfiguration struct {
-	authType           string `json:"authType"`
-	authProviderName   string `json:"authProviderName"`
-	authRequestTimeout uint32 `json:"authRequestTimeout"`
+	authProviderName       string `json:"authProviderName"`
+	authRequestTimeout     uint32 `json:"authRequestTimeout"`
+	enableEndpointMatching bool   `json:"enableEndpointMatching"`
+	authType               string `json:"authType"`
 }
+
+/**
+* Tree like represenation of the endpoint-auth config
+ */
+type endpointAuthConfiguration map[string]map[string]string
 
 /**
 * Array with the paths that should be handled by the plugin.
@@ -146,13 +141,14 @@ func readConfiguration() {
 	data, err := proxywasm.GetPluginConfiguration()
 	if err != nil {
 		proxywasm.LogCriticalf("Error reading plugin configuration: %v. Using the default.", err)
-		config = defaultConfig
+		config = defaultPluginConfig
 		return
 	}
 
 	proxywasm.LogInfof("Config: %v", string(data))
 
 	config = parseConfigFromJson(string(data))
+
 }
 
 // Handle the actual request and retrieve the headers used for auth-handling
@@ -165,7 +161,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		return types.ActionContinue
 	}
 	// we are only interested in the host and want to ignore the port
-	domain = strings.Split(authorityHeader, ":")[0]
+	requestDomain = strings.Split(authorityHeader, ":")[0]
 
 	// :path header is set by envoy and holds the requested path
 	pathHeader, err := proxywasm.GetHttpRequestHeader(pathKey)
@@ -173,38 +169,94 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		proxywasm.LogCriticalf("Failed to get path header: %v", err)
 		return types.ActionContinue
 	}
-	path = pathHeader
+	requestPath = pathHeader
 
-	//matchPath(path)
+	if config.enableEndpointMatching {
 
-	return setHeader()
+		authType, match := matchPath(requestDomain, requestPath)
+
+		if !match {
+			// early exit, nothing to handle for the filter
+			return types.ActionContinue
+		}
+		return setHeader(authType)
+	} else {
+		return setHeader(config.authType)
+	}
+
+}
+
+func matchPath(domainString, pathString string) (authType string, match bool) {
+
+	proxywasm.LogDebugf("Match %s - %s.", domainString, pathString)
+
+	if domainString == "" {
+		// if no domain is provided, return immediatly.
+		return
+	}
+
+	if pathString == "" {
+		// if no path is provided, return immediatly.
+		return
+	}
+
+	pathEntry, domainExists := endpointAuthConfig[domainString]
+	if !domainExists {
+		// domain not configured, return immediatly
+		return
+	}
+
+	var matchLength int = 0
+
+	for configuredPath, configuredAuthType := range pathEntry {
+
+		match, err := path.Match(configuredPath, pathString)
+		proxywasm.LogDebugf("Current match on %s - %s: %v", configuredPath, pathString, match)
+		if err != nil {
+			proxywasm.LogWarnf("Invalid path in configuration: %s", configuredPath)
+			continue
+		}
+		if !match {
+			//early exit, do not count length of path if no match
+			continue
+		}
+		if cpLen := len(configuredPath); cpLen > matchLength {
+			matchLength = cpLen
+			authType = configuredAuthType
+		}
+	}
+
+	// if something matches, the length is bigger than 0
+	match = matchLength > 0
+
+	return
 }
 
 /**
 * Apply the auth headers from either the cache or the auth provider
  */
-func setHeader() types.Action {
-	sharedDataKey := domain + path
+func setHeader(authType string) types.Action {
+	sharedDataKey := requestDomain + requestPath
 	data, currentCas, err := proxywasm.GetSharedData(sharedDataKey)
 
 	if err != nil || data == nil {
-		return requestAuthProvider()
+		return requestAuthProvider(authType)
 	}
 
 	if data != nil {
-		proxywasm.LogDebugf("Cache hit: ", string(data))
+		proxywasm.LogDebugf("Cache hit: %s", string(data))
 		cachedAuthInfo, err := parseCachedAuthInformation(string(data))
 		if err != nil {
 			proxywasm.LogCriticalf("Failed to parse cached info, request new instead. %v", err)
 			cas = currentCas
-			return requestAuthProvider()
+			return requestAuthProvider(authType)
 		}
 
 		proxywasm.LogDebugf("Expiry: %v, Current: %v", cachedAuthInfo.expirationTime, time.Now().Unix())
 		if cachedAuthInfo.expirationTime <= time.Now().Unix() {
 			proxywasm.LogDebugf("Cache expired. Request new auth.")
 			cas = currentCas
-			return requestAuthProvider()
+			return requestAuthProvider(authType)
 		} else {
 			proxywasm.LogDebugf("Cache still valid.")
 			addCachedHeadersToRequest(cachedAuthInfo.cachedHeaders)
@@ -221,7 +273,7 @@ func setHeader() types.Action {
  */
 func addCachedHeadersToRequest(cachedHeaders headersList) {
 	for _, header := range cachedHeaders {
-		proxywasm.LogDebugf("Add header ", fmt.Sprint(header))
+		proxywasm.LogDebugf("Add header %s", fmt.Sprint(header))
 		proxywasm.AddHttpRequestHeader(header.Name, header.Value)
 	}
 }
@@ -229,9 +281,9 @@ func addCachedHeadersToRequest(cachedHeaders headersList) {
 /**
 * Request auth info at the provider. Since the call is executed asynchronous, it needs to pause the actual request handling.
  */
-func requestAuthProvider() types.Action {
+func requestAuthProvider(authType string) types.Action {
 
-	proxywasm.LogCriticalf("Call to %s", config.pluginConfig.authProviderName)
+	proxywasm.LogCriticalf("Call to %s", config.authProviderName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
 	var methodIndex int
@@ -245,10 +297,10 @@ func requestAuthProvider() types.Action {
 		}
 	}
 	hs[methodIndex] = [2]string{":method", "GET"}
-	hs[pathIndex] = [2]string{":path", "/" + config.pluginConfig.authType + "/auth?domain=" + domain + "&path=" + path}
+	hs[pathIndex] = [2]string{":path", "/" + authType + "/auth?domain=" + requestDomain + "&path=" + requestPath}
 
-	if _, err := proxywasm.DispatchHttpCall(config.pluginConfig.authProviderName, hs, nil, nil, config.pluginConfig.authRequestTimeout, authCallback); err != nil {
-		proxywasm.LogCriticalf("Domain " + domain + " , path: " + path + " , authType: " + config.pluginConfig.authType)
+	if _, err := proxywasm.DispatchHttpCall(config.authProviderName, hs, nil, nil, config.authRequestTimeout, authCallback); err != nil {
+		proxywasm.LogCriticalf("Domain " + requestDomain + " , path: " + requestPath + " , authType: " + authType)
 		proxywasm.LogCriticalf("Call to auth-provider failed: %v", err)
 		return types.ActionContinue
 	}
@@ -293,28 +345,28 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 
 	// handle cachecontrol
 	for _, h := range headers {
-		proxywasm.LogDebugf("Parse headers: ", fmt.Sprint(h))
+		proxywasm.LogDebugf("Parse headers: %s", fmt.Sprint(h))
 		if h[0] == "cache-control" {
 			proxywasm.LogDebugf("Found cache-control header.")
 
 			expiry, err := getCacheExpiry(h[1])
 			if err != nil {
-				proxywasm.LogCriticalf("Was not able to read cache control header. ", err)
+				proxywasm.LogCriticalf("Was not able to read cache control header. %v", err)
 				return
 			}
 
 			if expiry > 0 {
-				proxywasm.LogDebugf("Expiry was set to: ", expiry)
+				proxywasm.LogDebugf("Expiry was set to: %v", expiry)
 				parsedInfo, err := parser.Parse(cachedAuthInfoToJson(expiry, headersList))
 				if err != nil {
-					proxywasm.LogCriticalf("Was not able to parse auth info.", err)
+					proxywasm.LogCriticalf("Was not able to parse auth info: %v", err)
 					return
 				}
 				buffer := parsedInfo.Get().MarshalTo(nil)
 				proxywasm.LogDebugf("Buffer is %v", string(buffer))
-				proxywasm.SetSharedData(domain+path, buffer, cas)
+				proxywasm.SetSharedData(requestDomain+requestPath, buffer, cas)
 			}
-			proxywasm.LogDebugf("Cached auth info for %v / %v", domain, path)
+			proxywasm.LogDebugf("Cached auth info for %v / %v", requestDomain, requestPath)
 			return
 		}
 
@@ -338,7 +390,7 @@ func cachedAuthInfoToJson(expirationTime int64, cachedHeaders headersList) (json
 
 	jsonString = fmt.Sprintf(`{"expiration":%d, "cachedHeaders":%s}`, expirationTime, headerArray)
 
-	proxywasm.LogDebugf("Json string to store ", jsonString)
+	proxywasm.LogDebugf("Json string to store: %s ", jsonString)
 	return
 }
 
@@ -365,13 +417,13 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 			return time.Now().Unix() + int64(maxAge), err
 		}
 	}
-	proxywasm.LogDebugf("Did not find any cache directive to be handled. ", cacheControlHeader)
+	proxywasm.LogDebugf("Did not find any cache directive to be handled. Header: %s", cacheControlHeader)
 	return -1, err
 }
 
-func parseConfigFromJson(jsonString string) (config configuration) {
+func parseConfigFromJson(jsonString string) (config pluginConfiguration) {
 
-	config = defaultConfig
+	config = defaultPluginConfig
 	parsedJson, err := parser.Parse(jsonString)
 
 	if err != nil {
@@ -380,56 +432,67 @@ func parseConfigFromJson(jsonString string) (config configuration) {
 	}
 
 	generalConfigJson := parsedJson.GetStringBytes("general")
-	domainsConfigJson := parsedJson.GetArray("domains")
-	pathsConfigJson := parsedJson.GetArray("paths")
+	authConfig := parsedJson.Get("endpoints")
+
 	if generalConfigJson != nil {
-		config.pluginConfig = parsePluginConfigFromJson(string(generalConfigJson))
+		config = parsePluginConfigFromJson(string(generalConfigJson))
 	}
+	parseAuthConfig(authConfig)
 
-	if domainsConfigJson != nil {
-		config.domainConfig = parseDomainConfigFromJson(domainsConfigJson)
-	}
-	if pathsConfigJson != nil {
-		config.pathConfig = parsePathConfigFromJson(pathsConfigJson)
-	}
-	return
-}
-
-// The following two methods contain a lot of code duplication. Thats due to the fact that tinygo does not support
-// generics(yet), thus this approach is the most readable one.
-
-/**
-* Parse the json array containing the domains to be handled and return them as a config object.
- */
-func parseDomainConfigFromJson(valuesArray []*fastjson.Value) (parsedConfig domainConfig) {
-	parsedConfig = domainConfig{}
-
-	if valuesArray == nil {
-		proxywasm.LogWarnf("Did not receive any domain config. Return empty array.")
-		return
-	}
-
-	for _, entry := range valuesArray {
-		parsedConfig = append(parsedConfig, string(entry.GetStringBytes()))
-	}
 	return
 }
 
 /**
-* Parse the json array containing the paths to be handled and return them as a config object.
+* Parse the configuration to a tree-like map of maps for fast request path checking.
  */
-func parsePathConfigFromJson(valuesArray []*fastjson.Value) (parsedConfig pathConfig) {
-	parsedConfig = pathConfig{}
+func parseAuthConfig(authJson *fastjson.Value) {
+	endpointAuthConfig = endpointAuthConfiguration{}
 
-	if valuesArray == nil {
-		proxywasm.LogWarnf("Did not receive any path config. Return empty array.")
+	authJsonObject, err := authJson.Object()
+	if err != nil {
+		proxywasm.LogCriticalf("Was not able to read endpoint configuration. %v", err)
 		return
 	}
 
-	for _, entry := range valuesArray {
-		parsedConfig = append(parsedConfig, string(entry.GetStringBytes()))
-	}
-	return
+	authJsonObject.Visit(func(k []byte, authEntry *fastjson.Value) {
+
+		authType := string(k)
+
+		authEntryObject, _ := authEntry.Object()
+		if err != nil {
+			proxywasm.LogWarnf("Was not able to read auth configuration for %s. %v", authType, err)
+			return
+		}
+
+		authEntryObject.Visit(func(k []byte, domainEntry *fastjson.Value) {
+
+			domainName := string(k)
+			if _, ok := endpointAuthConfig[domainName]; !ok {
+				// initialize map for domain
+				endpointAuthConfig[domainName] = make(map[string]string)
+			}
+
+			domainEntryArray, err := domainEntry.Array()
+			if err != nil {
+				proxywasm.LogWarnf("Was not able to read domain config for %s. %v", domainName, err)
+			}
+			for _, entry := range domainEntryArray {
+				pathEntry := string(entry.GetStringBytes())
+				// the path matcher only takes sub-paths, if the pattern ends with a `*`.
+				// this will lead to:
+				//                   `/path` -> two entries [`/path`, `/path/*`] for exact match and subpaths to work
+				//                   `/path/` -> one entry [`/path/*`] exact match already included
+				if string(pathEntry[len(pathEntry)-1]) != "/" {
+					endpointAuthConfig[domainName][pathEntry] = authType
+					endpointAuthConfig[domainName][pathEntry+"/*"] = authType
+				} else {
+					endpointAuthConfig[domainName][pathEntry+"*"] = authType
+				}
+
+			}
+		})
+
+	})
 }
 
 /**
@@ -446,19 +509,12 @@ func parsePluginConfigFromJson(jsonString string) (parsedConfig pluginConfigurat
 	}
 
 	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
-	authType := parsedJson.GetStringBytes("authType")
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
 
 	if authRequestTimeout > 0 {
 		parsedConfig.authRequestTimeout = uint32(authRequestTimeout)
 	} else {
 		proxywasm.LogWarnf("Use default requestTimeout: %v", defaultPluginConfig.authRequestTimeout)
-	}
-
-	if authType != nil {
-		parsedConfig.authType = string(authType)
-	} else {
-		proxywasm.LogWarnf("Use default authType: %v", defaultPluginConfig.authType)
 	}
 
 	if authProviderName != nil {

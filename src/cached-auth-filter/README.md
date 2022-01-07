@@ -17,4 +17,5 @@ or with a docker-container:
 ```shell
 docker run -v $(pwd)/:/cache-filter --workdir /cache-filter tinygo/tinygo tinygo build -o cache-filter.wasm -scheduler=none -target=wasi ./main.go
 ```
+## Configuration
 
