@@ -432,7 +432,7 @@ func parseConfigFromJson(jsonString string) (config pluginConfiguration) {
 	}
 
 	generalConfigJson := parsedJson.GetStringBytes("general")
-	authConfig := parsedJson.Get("endpoints")
+	authConfig := parsedJson.GetStringBytes("endpoints")
 
 	if generalConfigJson != nil {
 		config = parsePluginConfigFromJson(string(generalConfigJson))
@@ -445,8 +445,15 @@ func parseConfigFromJson(jsonString string) (config pluginConfiguration) {
 /**
 * Parse the configuration to a tree-like map of maps for fast request path checking.
  */
-func parseAuthConfig(authJson *fastjson.Value) {
+func parseAuthConfig(authJsonString string) {
 	endpointAuthConfig = endpointAuthConfiguration{}
+
+	authJson, err := parser.Parse(authJsonString)
+
+	if err != nil {
+		proxywasm.LogCriticalf("Unable to parse auth config: %v, will use default.", err)
+		return
+	}
 
 	authJsonObject, err := authJson.Object()
 	if err != nil {
