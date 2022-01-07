@@ -437,7 +437,9 @@ func parseConfigFromJson(jsonString string) (config pluginConfiguration) {
 	if generalConfigJson != nil {
 		config = parsePluginConfigFromJson(string(generalConfigJson))
 	}
-	parseAuthConfig(authConfig)
+	if authConfig != nil {
+		parseAuthConfig(string(authConfig))
+	}
 
 	return
 }
