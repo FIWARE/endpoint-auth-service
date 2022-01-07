@@ -1,17 +1,3 @@
-// Copyright 2020-2021 Tetrate
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-// http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package main
 
 import (
@@ -40,45 +26,74 @@ var path string
 /**
 * Plugin configurations
  */
-var config Configuration
+var config configuration
 
 // Default configurations
 
 /**
-* Default authtype to be used by the filter
+* Default plugin configuration.
+* The defaults targeting a plain envoy sidecar "ishare"-usecase and WILL NOT work in a mesh setup(istio, ossm)
  */
-var defaultAuthType = "ISHARE"
+var defaultPluginConfig pluginConfiguration = pluginConfiguration{authType: "ISHARE", authProviderName: "ext-authz", authRequestTimeout: 5000}
 
 /**
-* Default (cluster)name to contact the auth-provider at
+* Default overall config. Domain and path will be empty, thus the filter will not be applied to any request
  */
-var defaultAuthProviderName = "ext-authz"
+var defaultConfig configuration = configuration{pluginConfig: defaultPluginConfig, domainConfig: domainConfig{}, pathConfig: pathConfig{}}
 
 /**
-* Default timeout to be used when  requesting the auth provider.
+* Json parser for reading cache and config
  */
-var defaultAuthRequestTimeout uint32 = 5000
+var parser fastjson.Parser
 
-type Configuration struct {
-	authType           string
-	authProviderName   string
-	authRequestTimeout uint32
+/**
+* Full configuration for the filter
+ */
+type configuration struct {
+	pluginConfig pluginConfiguration `json:"general"`
+	domainConfig domainConfig        `json:"domains"`
+	pathConfig   pathConfig          `json:"paths"`
 }
 
-type CachedAuthInformation struct {
+/**
+* Struct to hold the config for this plugin.
+ */
+type pluginConfiguration struct {
+	authType           string `json:"authType"`
+	authProviderName   string `json:"authProviderName"`
+	authRequestTimeout uint32 `json:"authRequestTimeout"`
+}
+
+/**
+* Array with the paths that should be handled by the plugin.
+ */
+type pathConfig []string
+
+/**
+* Array to hold the domains to be handled by the plugin.
+ */
+type domainConfig []string
+
+/**
+* Struct to represent a chache entry containing the auth information
+ */
+type cachedAuthInformation struct {
 	expirationTime int64       `json:"expiration"`
-	cachedHeaders  HeadersList `json:"cachedHeaders"`
+	cachedHeaders  headersList `json:"cachedHeaders"`
 }
 
-type Header struct {
+/**
+* Struct to represent a single header as defined by the auth-provider api
+ */
+type header struct {
 	Name  string `json:"name"`
 	Value string `json:"value"`
 }
 
 /**
-* Struct to contain headers to be returned by the auth provider.
+* Struct containing headers to be returned by the auth provider.
  */
-type HeadersList []Header
+type headersList []header
 
 func main() {
 	proxywasm.SetVMContext(&vmContext{})
@@ -158,6 +173,8 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	}
 	path = pathHeader
 
+	//matchPath(path)
+
 	return setHeader()
 }
 
@@ -200,7 +217,7 @@ func setHeader() types.Action {
 /**
 * Apply the headers from the list to the current request
  */
-func addCachedHeadersToRequest(cachedHeaders HeadersList) {
+func addCachedHeadersToRequest(cachedHeaders headersList) {
 	for _, header := range cachedHeaders {
 		proxywasm.LogDebugf("Add header ", fmt.Sprint(header))
 		proxywasm.AddHttpRequestHeader(header.Name, header.Value)
@@ -212,7 +229,7 @@ func addCachedHeadersToRequest(cachedHeaders HeadersList) {
  */
 func requestAuthProvider() types.Action {
 
-	proxywasm.LogCriticalf("Call to %s", config.authProviderName)
+	proxywasm.LogCriticalf("Call to %s", config.pluginConfig.authProviderName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
 	var methodIndex int
@@ -226,10 +243,10 @@ func requestAuthProvider() types.Action {
 		}
 	}
 	hs[methodIndex] = [2]string{":method", "GET"}
-	hs[pathIndex] = [2]string{":path", "/" + config.authType + "/auth?domain=" + domain + "&path=" + path}
+	hs[pathIndex] = [2]string{":path", "/" + config.pluginConfig.authType + "/auth?domain=" + domain + "&path=" + path}
 
-	if _, err := proxywasm.DispatchHttpCall(config.authProviderName, hs, nil, nil, config.authRequestTimeout, authCallback); err != nil {
-		proxywasm.LogCriticalf("Domain " + domain + " , path: " + path + " , authType: " + config.authType)
+	if _, err := proxywasm.DispatchHttpCall(config.pluginConfig.authProviderName, hs, nil, nil, config.pluginConfig.authRequestTimeout, authCallback); err != nil {
+		proxywasm.LogCriticalf("Domain " + domain + " , path: " + path + " , authType: " + config.pluginConfig.authType)
 		proxywasm.LogCriticalf("Call to auth-provider failed: %v", err)
 		return types.ActionContinue
 	}
@@ -286,7 +303,6 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 
 			if expiry > 0 {
 				proxywasm.LogDebugf("Expiry was set to: ", expiry)
-				var parser fastjson.Parser
 				parsedInfo, err := parser.Parse(cachedAuthInfoToJson(expiry, headersList))
 				if err != nil {
 					proxywasm.LogCriticalf("Was not able to parse auth info.", err)
@@ -307,7 +323,7 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 /**
 * Create a json string to store in cache from the headers list
  */
-func cachedAuthInfoToJson(expirationTime int64, cachedHeaders HeadersList) (jsonString string) {
+func cachedAuthInfoToJson(expirationTime int64, cachedHeaders headersList) (jsonString string) {
 
 	headerArray := `[`
 	for i, header := range cachedHeaders {
@@ -321,7 +337,7 @@ func cachedAuthInfoToJson(expirationTime int64, cachedHeaders HeadersList) (json
 	jsonString = fmt.Sprintf(`{"expiration":%d, "cachedHeaders":%s}`, expirationTime, headerArray)
 
 	proxywasm.LogDebugf("Json string to store ", jsonString)
-	return jsonString
+	return
 }
 
 /**
@@ -351,20 +367,80 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 	return -1, err
 }
 
-/**
-* Parse the jsonstring, containing the configuration
- */
-func parseConfigFromJson(jsonString string) Configuration {
-	var parser fastjson.Parser
+func parseConfigFromJson(jsonString string) (config configuration) {
+
+	config = defaultConfig
 	parsedJson, err := parser.Parse(jsonString)
-	parsedConfig := Configuration{authType: defaultAuthType, authProviderName: defaultAuthProviderName, authRequestTimeout: defaultAuthRequestTimeout}
 
 	if err != nil {
 		proxywasm.LogCriticalf("Unable to parse config: %v, will use default", err)
-		parsedConfig.authProviderName = defaultAuthProviderName
-		parsedConfig.authType = defaultAuthType
-		parsedConfig.authRequestTimeout = defaultAuthRequestTimeout
-		return parsedConfig
+		return
+	}
+
+	generalConfigJson := parsedJson.GetStringBytes("general")
+	domainsConfigJson := parsedJson.GetArray("domains")
+	pathsConfigJson := parsedJson.GetArray("paths")
+	if generalConfigJson != nil {
+		config.pluginConfig = parsePluginConfigFromJson(string(generalConfigJson))
+	}
+
+	if domainsConfigJson != nil {
+		config.domainConfig = parseDomainConfigFromJson(domainsConfigJson)
+	}
+	if pathsConfigJson != nil {
+		config.pathConfig = parsePathConfigFromJson(pathsConfigJson)
+	}
+	return
+}
+
+// The following two methods contain a lot of code duplication. Thats due to the fact that tinygo does not support
+// generics(yet), thus this approach is the most readable one.
+
+/**
+* Parse the json array containing the domains to be handled and return them as a config object.
+ */
+func parseDomainConfigFromJson(valuesArray []*fastjson.Value) (parsedConfig domainConfig) {
+	parsedConfig = domainConfig{}
+
+	if valuesArray == nil {
+		proxywasm.LogWarnf("Did not receive any domain config. Return empty array.")
+		return
+	}
+
+	for _, entry := range valuesArray {
+		parsedConfig = append(parsedConfig, string(entry.GetStringBytes()))
+	}
+	return
+}
+
+/**
+* Parse the json array containing the paths to be handled and return them as a config object.
+ */
+func parsePathConfigFromJson(valuesArray []*fastjson.Value) (parsedConfig pathConfig) {
+	parsedConfig = pathConfig{}
+
+	if valuesArray == nil {
+		proxywasm.LogWarnf("Did not receive any path config. Return empty array.")
+		return
+	}
+
+	for _, entry := range valuesArray {
+		parsedConfig = append(parsedConfig, string(entry.GetStringBytes()))
+	}
+	return
+}
+
+/**
+* Parse the jsonstring, containing the configuration
+ */
+func parsePluginConfigFromJson(jsonString string) (parsedConfig pluginConfiguration) {
+
+	parsedConfig = defaultPluginConfig
+	parsedJson, err := parser.Parse(jsonString)
+
+	if err != nil {
+		proxywasm.LogCriticalf("Unable to parse config: %v, will use default", err)
+		return
 	}
 
 	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
@@ -374,79 +450,75 @@ func parseConfigFromJson(jsonString string) Configuration {
 	if authRequestTimeout > 0 {
 		parsedConfig.authRequestTimeout = uint32(authRequestTimeout)
 	} else {
-		parsedConfig.authRequestTimeout = defaultAuthRequestTimeout
-		proxywasm.LogWarnf("Use default requestTimeout: %v", defaultAuthRequestTimeout)
+		proxywasm.LogWarnf("Use default requestTimeout: %v", defaultPluginConfig.authRequestTimeout)
 	}
 
 	if authType != nil {
 		parsedConfig.authType = string(authType)
 	} else {
-		parsedConfig.authType = defaultAuthType
-		proxywasm.LogWarnf("Use default authType: %v", defaultAuthType)
+		proxywasm.LogWarnf("Use default authType: %v", defaultPluginConfig.authType)
 	}
 
 	if authProviderName != nil {
 		parsedConfig.authProviderName = string(authProviderName)
 	} else {
-		parsedConfig.authProviderName = defaultAuthProviderName
-		proxywasm.LogWarnf("Use default authProvider: %v", defaultAuthProviderName)
+		proxywasm.LogWarnf("Use default authProvider: %v", defaultPluginConfig.authProviderName)
 	}
 
-	return parsedConfig
+	return
 }
 
 /**
 * Parse the cached json to an auth-info object
  */
-func parseCachedAuthInformation(jsonString string) (cachedAuthInfo CachedAuthInformation, err error) {
+func parseCachedAuthInformation(jsonString string) (cachedAuthInfo cachedAuthInformation, err error) {
 
-	var parser fastjson.Parser
 	parsedJson, err := parser.Parse(jsonString)
 
 	expirationTime := parsedJson.GetInt64("expiration")
 	cachedHeaders := parsedJson.GetArray("cachedHeaders")
-	headersList, err := parseHeaderArray(cachedHeaders)
-	if err != nil {
-		return cachedAuthInfo, err
-	}
-	return CachedAuthInformation{expirationTime: expirationTime, cachedHeaders: headersList}, err
+	headersList := parseHeaderArray(cachedHeaders)
+
+	return cachedAuthInformation{expirationTime: expirationTime, cachedHeaders: headersList}, err
 
 }
 
 /**
 * Helper method to parse a json-array to the headers list
  */
-func parseHeaderArray(valuesArray []*fastjson.Value) (headerList HeadersList, err error) {
-	if err != nil {
-		return headerList, err
+func parseHeaderArray(valuesArray []*fastjson.Value) (headerList headersList) {
+
+	if valuesArray == nil {
+		proxywasm.LogWarnf("Not headers to parse. Return empty array.")
+		return headersList{}
 	}
+
 	for _, entry := range valuesArray {
 		var name string = string(entry.GetStringBytes("name"))
 		var value string = string(entry.GetStringBytes("value"))
 		proxywasm.LogDebugf("Header entry is %s : %s", name, value)
-		headerList = append(headerList, Header{name, value})
+		headerList = append(headerList, header{name, value})
 	}
-	return headerList, err
+	return
 }
 
 /**
 * Helper method to parse a json-string to the headers list
  */
-func parseHeaderList(jsonString string) (headerList HeadersList, err error) {
+func parseHeaderList(jsonString string) (headerList headersList, err error) {
 
-	var parser fastjson.Parser
 	parsedJson, err := parser.Parse(jsonString)
 	if err != nil {
 		proxywasm.LogCriticalf("Was not able to parse string %s", jsonString)
-		return headerList, err
+		return
 	}
 
 	jsonArray, err := parsedJson.Array()
 	if err != nil {
 		proxywasm.LogCriticalf("Was not able to parse json to array %s", jsonString)
-		return headerList, err
+		return
 	}
 
-	return parseHeaderArray(jsonArray)
+	return parseHeaderArray(jsonArray), err
 
 }
