@@ -521,7 +521,7 @@ func parsePluginConfigFromJson(jsonString string) (parsedConfig pluginConfigurat
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
 	authType := parsedJson.GetStringBytes("authType")
 	// in case of error, the boolean zero value is used
-	parsedConfig.enableEndpointMatching := parsedJson.GetBool("enableEndpointMatching")
+	parsedConfig.enableEndpointMatching = parsedJson.GetBool("enableEndpointMatching")
 
 	if authRequestTimeout > 0 {
 		parsedConfig.authRequestTimeout = uint32(authRequestTimeout)
