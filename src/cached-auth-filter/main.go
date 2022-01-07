@@ -123,14 +123,14 @@ func (*vmContext) OnVMStart(vmConfigurationSize int) types.OnVMStartStatus {
 
 // Handle the plugin start and read the config
 func (ctx pluginContext) OnPluginStart(pluginConfigurationSize int) types.OnPluginStartStatus {
-	readAuthTypeFromPluginConfig()
+	readConfiguration()
 	proxywasm.LogInfo("Successfully started plugin.")
 	return types.OnPluginStartStatusOK
 }
 
 // Update the plugin context and read the config and override types.DefaultPluginContext.
 func (*vmContext) NewPluginContext(contextID uint32) types.PluginContext {
-	readAuthTypeFromPluginConfig()
+	readConfiguration()
 	return &pluginContext{}
 }
 
@@ -142,10 +142,12 @@ func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
 /**
 * Reads the auth-type from the plugin config
  */
-func readAuthTypeFromPluginConfig() {
+func readConfiguration() {
 	data, err := proxywasm.GetPluginConfiguration()
 	if err != nil {
-		proxywasm.LogCriticalf("Error reading plugin configuration: %v", err)
+		proxywasm.LogCriticalf("Error reading plugin configuration: %v. Using the default.", err)
+		config = defaultConfig
+		return
 	}
 
 	proxywasm.LogInfof("Config: %v", string(data))
