@@ -519,6 +519,9 @@ func parsePluginConfigFromJson(jsonString string) (parsedConfig pluginConfigurat
 
 	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
+	authType := parsedJson.GetStringBytes("authType")
+	// in case of error, the boolean zero value is used
+	parsedConfig.enableEndpointMatching := parsedJson.GetBool("enableEndpointMatching")
 
 	if authRequestTimeout > 0 {
 		parsedConfig.authRequestTimeout = uint32(authRequestTimeout)
@@ -530,6 +533,12 @@ func parsePluginConfigFromJson(jsonString string) (parsedConfig pluginConfigurat
 		parsedConfig.authProviderName = string(authProviderName)
 	} else {
 		proxywasm.LogWarnf("Use default authProvider: %v", defaultPluginConfig.authProviderName)
+	}
+
+	if authType != nil {
+		parsedConfig.authType = string(authType)
+	} else {
+		proxywasm.LogWarnf("Use default authType: %v", defaultPluginConfig.authType)
 	}
 
 	return
