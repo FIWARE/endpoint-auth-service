@@ -99,7 +99,7 @@ jobs:
         path: src/cached-auth-filter/coverage.lcov
 
   aggregate-report:
-    needs: [endpoint-service-test, ishare-auth-provider-test]
+    needs: [endpoint-service-test, ishare-auth-provider-test, cached-auth-filter-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -116,6 +116,12 @@ jobs:
           name: auth-provider
           path: coverage/auth-provider
 
+      - name: download cached-auth-filter report
+        uses: actions/download-artifact@v2
+        with:
+          name: cached-auth-filter
+          path: coverage/cached-auth-filter
+
       - name: prepare
         run: |
           sudo apt-get install -y lcov
@@ -123,7 +129,7 @@ jobs:
       - name: aggregate
         run: |  
           cd coverage
-          lcov -a auth-provider/coverage.lcov -a ecs/lcov.info -o ../lcov.info
+          lcov -a auth-provider/coverage.lcov -a cached-auth-filter/coverage.lcov -a ecs/lcov.info -o ../lcov.info
 
       - name: Upload coverage-report
         uses: actions/upload-artifact@v2
