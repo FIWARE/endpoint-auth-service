@@ -85,17 +85,17 @@ jobs:
         cd src/cached-auth-filter/
         go test -v -tags=proxytest -covermode=count -coverprofile=coverage.out
 
-    - name: Make it coveralls compatible
-      run: |
-        cd src/cached-auth-filter/
-        sed -i 's/fiware.org/src/g' coverage.out
-
     - name: Transform report
       uses: jandelgado/gcov2lcov-action@v1.0.8
       with:
         infile: coverage.out
         outfile: coverage.lcov
         working-directory: src/cached-auth-filter/  
+
+    - name: Make it coveralls compatible
+      run: |
+        cd src/cached-auth-filter/
+        sed -i 's/fiware.org/src/g' coverage.lcov
 
     - name: Upload coverage-report
       uses: actions/upload-artifact@v2
