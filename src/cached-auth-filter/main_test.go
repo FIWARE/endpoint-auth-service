@@ -1,7 +1,6 @@
 package main
 
 import (
-	"github.com/valyala/fastjson"
 	"log"
 	"testing"
 
@@ -53,9 +52,7 @@ func TestPathMatching(t *testing.T) {
 
 	for _, tc := range tests {
 		log.Print("TestPathMatching +++++++++++++++++++++ Running test: " + tc.testName)
-		var parser fastjson.Parser
-		v, _ := parser.Parse(tc.testConfig)
-		parseAuthConfig(v)
+		parseAuthConfig(tc.testConfig)
 
 		authType, match := matchPath(tc.testDomain, tc.testPath)
 		if match != tc.expectedResult {

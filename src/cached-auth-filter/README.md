@@ -19,3 +19,50 @@ docker run -v $(pwd)/:/cache-filter --workdir /cache-filter tinygo/tinygo tinygo
 ```
 ## Configuration
 
+The filter supports two working-modes:
+* handle everything
+* handle configured endpoints
+
+### Handle everything
+
+In this case, the filter will handle all requests forwarded to it. This is mode should either be used if all requests from an application should be handled the same way(e.g. every outgoing request gets an auth-header) or if the filter is used with something like [envoy's matching api](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/matching/matching_api), so that the requests are pre-filtered, before they enter the cached-auth-filter.
+Be aware that the MatchingApi currently is an experimental-feature, that needs to be enabled explictly. See for example: [docker-compose setup](docker-compose/initial-config/envoy.yaml). The [endpoint-configuration-service](src/endpoint-configuration-service/) supports configuration-generation for the MatchingApi.
+
+
+### Handle configured endpoints
+
+When this mode is enabled, the filter will check if the requested endpoint is configured and only handle it in this case. Everything else will be passed-by.
+
+### Configuration reference
+
+```json
+
+    {
+        // general plugin configuration
+        "general": {
+            // timeout to be used when authprovider is requested
+            "authRequestTimeout": 5000,
+            // address of the authprovider, depending on the proxy it will be a cluster-name(envoy) or something like an upstream
+            "authProviderName": "ext-authz",
+            // authtype to request
+            "authType": "ISHARE",
+            // should the filter do endpoint matching
+            "enableEndpointMatching" : false
+        },
+        // configuration for endpoint matching
+        "endpoints": {
+            // auth type to be used for the following endpoints
+            "<AUTHTYPE>-1": {
+                // domain to be used with the authtype
+                "<DOMAIN-1>": 
+                    // paths to be handled. Be aware: if an endpoint is configured twice for multiple auth-types, only the last one will be used.
+                    ["/path"],
+                "<DOMAIN-2>": ["/path"]
+            },
+            "<AUTHTYPE>-2": {
+                "<DOMAIN-3>": ["/"]
+            }
+        }
+    }
+
+```

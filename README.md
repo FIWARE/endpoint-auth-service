@@ -57,7 +57,7 @@ See [kubernetes](kubernetes) for a full example.
 
 ## Component specific documentation
 
-* [envoy](doc/ENVOY.md)
+* [envoy](envoy/README.md)
 * [auth-provider](doc/AUTHPROVIDER.md)
 * [endpoint-configuration-servcie](src/endpoint-configuration-service/README.md)
 * [iShare-auth-provider](src/ishare-auth-provider/README.md)

@@ -69,6 +69,35 @@ jobs:
         name: auth-provider
         path: src/ishare-auth-provider/coverage.lcov
 
+  cached-auth-filter-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17.3
+
+    - name: Go test
+      run: |
+        cd src/cached-auth-filter/
+        go test -v -tags=proxytest -covermode=count -coverprofile=coverage.out
+
+    - name: Transform report
+      uses: jandelgado/gcov2lcov-action@v1.0.8
+      with:
+        infile: coverage.out
+        outfile: coverage.lcov
+        working-directory: src/cached-auth-filter/
+
+    - name: Upload coverage-report
+      uses: actions/upload-artifact@v2
+      with:
+        name: cached-auth-filter
+        path: src/cached-auth-filter/coverage.lcov
+
   aggregate-report:
     needs: [endpoint-service-test, ishare-auth-provider-test]
     runs-on: ubuntu-latest
