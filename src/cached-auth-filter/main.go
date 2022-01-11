@@ -48,10 +48,10 @@ var parser fastjson.Parser
 * Struct to hold the config for this plugin.
  */
 type pluginConfiguration struct {
-	authProviderName       string `json:"authProviderName"`
-	authRequestTimeout     uint32 `json:"authRequestTimeout"`
-	enableEndpointMatching bool   `json:"enableEndpointMatching"`
-	authType               string `json:"authType"`
+	authProviderName       string
+	authRequestTimeout     uint32
+	enableEndpointMatching bool
+	authType               string
 }
 
 /**
@@ -73,8 +73,8 @@ type domainConfig []string
 * Struct to represent a chache entry containing the auth information
  */
 type cachedAuthInformation struct {
-	expirationTime int64       `json:"expiration"`
-	cachedHeaders  headersList `json:"cachedHeaders"`
+	expirationTime int64
+	cachedHeaders  headersList
 }
 
 /**
@@ -147,7 +147,7 @@ func readConfiguration() {
 
 	proxywasm.LogInfof("Config: %v", string(data))
 
-	config = parseConfigFromJson(string(data))
+	parseConfigFromJson(string(data))
 	proxywasm.LogDebugf("Parsed config: %v", config)
 
 }
@@ -424,9 +424,12 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 	return -1, err
 }
 
-func parseConfigFromJson(jsonString string) (config pluginConfiguration) {
+func parseConfigFromJson(jsonString string) {
 
+	// initialize with defaults
 	config = defaultPluginConfig
+	endpointAuthConfig = endpointAuthConfiguration{}
+
 	parsedJson, err := parser.Parse(jsonString)
 
 	if err != nil {
@@ -494,7 +497,10 @@ func parseAuthConfig(authJson *fastjson.Value) {
 				} else {
 					endpointAuthConfig[domainName][pathEntry+"*"] = authType
 				}
-
+			}
+			if len(endpointAuthConfig[domainName]) < 1 {
+				proxywasm.LogWarnf("The config for %s-%s was empty, removing it.", authType, domainName)
+				delete(endpointAuthConfig, domainName)
 			}
 		})
 
