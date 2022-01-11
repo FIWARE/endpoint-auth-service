@@ -44,6 +44,13 @@ func TestCaching(t *testing.T) {
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "Cache multiple headers for responses.",
+			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", true, false}},
+			testConfig:        "{}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}, {"name": "Just-another", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}, {"Just-another", "token"}}},
 		{testName: "Cache headers for responses on multiple requests.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"POST", "other-domain.org", "/", false, false}, {"POST", "domain.org", "/", true, false}},
 			testConfig:        "{}",
@@ -72,12 +79,19 @@ func TestCaching(t *testing.T) {
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-store"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
-		{testName: "No cache for responses on cache-control 'must-revalidate.",
+		{testName: "No cache for responses on cache-control 'must-revalidate'.",
 			testRequests:      []testRequest{{"POST", "domain.org", "/", false, false}, {"DELETE", "domain.org", "/", false, false}},
 			testConfig:        "{}",
 			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "must-revalidate"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "No cache for responses on cache-control with invalid 'max-age'.",
+			testRequests:      []testRequest{{"POST", "domain.org", "/", false, false}, {"DELETE", "domain.org", "/", false, false}},
+			testConfig:        "{}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=invalid-value"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 	}
 
@@ -107,7 +121,7 @@ func TestCaching(t *testing.T) {
 					}
 				} else {
 					if action != types.ActionPause {
-						t.Errorf("%s: Request was not  expected to be served from cache, but action is %v.", tc.testName, action)
+						t.Errorf("%s: Request was not expected to be served from cache, but action is %v.", tc.testName, action)
 					}
 				}
 				if !request.cached && !request.expectIgnored {
@@ -132,7 +146,7 @@ func TestCaching(t *testing.T) {
 
 func verifyHeaders(t *testing.T, generalHeaders, expectedHeaders, resultHeaders [][2]string, testName string) {
 	if len(generalHeaders)+len(expectedHeaders) != len(resultHeaders) {
-		t.Errorf("%s: To much headers on request. Was expected to be %v, but was %v.", testName, len(generalHeaders)+len(expectedHeaders), len(resultHeaders))
+		t.Errorf("%s: Wrong number of headers on request. Was expected to be %v, but was %v.", testName, len(generalHeaders)+len(expectedHeaders), len(resultHeaders))
 		return
 	}
 	for _, v := range resultHeaders {
@@ -175,6 +189,12 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 		{testName: "Do nothing for no path.", testPath: "", testDomain: "domain.org",
 			testConfig:      "{}",
 			expectedAction:  types.ActionContinue,
+			expectedHeaders: [][2]string{}},
+		{testName: "No headers for empty repsonse arrays.", testPath: "/", testDomain: "domain.org",
+			testConfig:      "{}",
+			expectExtCall:   true,
+			expectedAction:  types.ActionPause,
+			authResponse:    `[]`,
 			expectedHeaders: [][2]string{}},
 		{testName: "Add token for everything configured.", testPath: "/", testDomain: "domain.org",
 			testConfig:      "{}",
