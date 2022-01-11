@@ -562,8 +562,15 @@ func parseHeaderArray(valuesArray []*fastjson.Value) (headerList headersList) {
 	}
 
 	for _, entry := range valuesArray {
-		var name string = string(entry.GetStringBytes("name"))
-		var value string = string(entry.GetStringBytes("value"))
+		nameBytes := entry.GetStringBytes("name")
+		valueBytes := entry.GetStringBytes("value")
+		if nameBytes == nil || valueBytes == nil {
+			proxywasm.LogWarnf("Response from the auth-povider contained invalid entries.")
+			continue
+		}
+		name := string(nameBytes)
+		value := string(valueBytes)
+
 		proxywasm.LogDebugf("Header entry is %s : %s", name, value)
 		headerList = append(headerList, header{name, value})
 	}

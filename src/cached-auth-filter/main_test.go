@@ -128,6 +128,12 @@ func TestCaching(t *testing.T) {
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=invalid-value"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "No cache for responses on cache-control with invalid control header.",
+			testRequests:      []testRequest{{"POST", "domain.org", "/", false, false}, {"DELETE", "domain.org", "/", false, false}},
+			testConfig:        "{}",
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-valid-directive"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 	}
 
 	for _, tc := range tests {
@@ -180,7 +186,10 @@ func TestCaching(t *testing.T) {
 
 func verifyHeaders(t *testing.T, generalHeaders, expectedHeaders, resultHeaders [][2]string, testName string) {
 	if len(generalHeaders)+len(expectedHeaders) != len(resultHeaders) {
-		t.Errorf("%s: Wrong number of headers on request. Was expected to be %v, but was %v.", testName, len(generalHeaders)+len(expectedHeaders), len(resultHeaders))
+		log.Print(fmt.Sprint(generalHeaders))
+		log.Print(fmt.Sprint(expectedHeaders))
+		log.Print(fmt.Sprint(resultHeaders))
+		t.Errorf("%s: Wrong number of headers on request. Was expected to be %v, but was %v. ", testName, len(generalHeaders)+len(expectedHeaders), len(resultHeaders))
 		return
 	}
 	for _, v := range resultHeaders {
@@ -309,13 +318,47 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 			authResponse:    `[{"name": "Authorization", "value": "token"}]`,
 			expectedHeaders: [][2]string{{"Authorization", "token"}},
 		},
-
 		{testName: "Match for sub-path of in complex config with multiple headers.", testPath: "/sub-path/p2", testDomain: "domain.org",
 			testConfig:      "{\"general\":{\"enableEndpointMatching\":true},\"endpoints\":{\"ISHARE\":{\"domain.org\": [\"/sub-path\"]}, \"OIC\": {\"domain.org\":[\"/\"]}}}",
 			expectExtCall:   true,
 			expectedAction:  types.ActionPause,
 			authResponse:    `[{"name": "Authorization", "value": "token"}, {"name": "Other-header", "value": "header-2"}]`,
 			expectedHeaders: [][2]string{{"Authorization", "token"}, {"Other-header", "header-2"}},
+		},
+		{testName: "No header for empty auth body.", testPath: "/", testDomain: "domain.org",
+			testConfig:      "{}",
+			expectExtCall:   true,
+			expectedAction:  types.ActionPause,
+			authResponse:    ``,
+			expectedHeaders: [][2]string{},
+		},
+		{testName: "No header for invalid auth body entry.", testPath: "/", testDomain: "domain.org",
+			testConfig:      "{}",
+			expectExtCall:   true,
+			expectedAction:  types.ActionPause,
+			authResponse:    `[{"some": "header"}]`,
+			expectedHeaders: [][2]string{},
+		},
+		{testName: "No header for invalid auth body.", testPath: "/", testDomain: "domain.org",
+			testConfig:      "{}",
+			expectExtCall:   true,
+			expectedAction:  types.ActionPause,
+			authResponse:    `{"some": "header"}`,
+			expectedHeaders: [][2]string{},
+		},
+		{testName: "No header for invalid json in auth body.", testPath: "/", testDomain: "domain.org",
+			testConfig:      "{}",
+			expectExtCall:   true,
+			expectedAction:  types.ActionPause,
+			authResponse:    `"some-thing-invalid"`,
+			expectedHeaders: [][2]string{},
+		},
+		{testName: "No header for empty list in auth body.", testPath: "/", testDomain: "domain.org",
+			testConfig:      "{}",
+			expectExtCall:   true,
+			expectedAction:  types.ActionPause,
+			authResponse:    `[]`,
+			expectedHeaders: [][2]string{},
 		},
 	}
 
