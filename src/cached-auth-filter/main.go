@@ -441,7 +441,6 @@ func parseConfigFromJson(jsonString string) {
 
 	if generalConfig != nil {
 		config = parsePluginConfigFromJson(generalConfig)
-		proxywasm.LogDebugf("Parsed config: %v", config)
 	}
 
 	if authConfig != nil {
