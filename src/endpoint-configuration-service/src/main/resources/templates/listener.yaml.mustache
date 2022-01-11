@@ -79,7 +79,12 @@ resources:
                                       config:
                                         configuration:
                                           "@type": "type.googleapis.com/google.protobuf.StringValue"
-                                          value: {{authType}}
+                                          value: |
+                                            {
+                                              "general": {
+                                                "authType": {{authType}}
+                                              }
+                                            }
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
