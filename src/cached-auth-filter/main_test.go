@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"testing"
+	"time"
 
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/proxytest"
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
@@ -23,6 +24,49 @@ type authResponse struct {
 	headers [][2]string
 }
 
+func TestCacheExpiry(t *testing.T) {
+
+	opt := proxytest.NewEmulatorOption().WithPluginConfiguration([]byte("{}")).WithVMContext(&vmContext{})
+	host, reset := proxytest.NewHostEmulator(opt)
+	defer reset()
+	log.Print("TestCacheExpiry +++++++++++++++++++++")
+
+	// Initialize http context.
+	id := host.InitializeHttpContext()
+
+	// initial request
+	hs := [][2]string{{":authority", "domain.org"}, {":path", "/"}, {":method", "GET"}}
+
+	host.CallOnRequestHeaders(id, hs, true)
+
+	attrs := host.GetCalloutAttributesFromContext(id)
+	body := []byte(`[{"name": "Authorization", "value": "token"}]`)
+	// answer and set cachecontrol to 1s
+	host.CallOnHttpCallResponse(attrs[0].CalloutID, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=1"}}, nil, body)
+	verifyEndAction(t, host.GetCurrentHttpStreamAction(id), "Verify that call ended.")
+
+	// wait for time to expire
+	time.Sleep(2 * time.Second)
+
+	// call again after cache should have been expired
+	action := host.CallOnRequestHeaders(id, hs, true)
+	if action != types.ActionPause {
+		t.Errorf("Request was not expected to be served from cache, but action is %v.", action)
+	}
+	// now cache
+	host.CallOnHttpCallResponse(attrs[0].CalloutID, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}, nil, body)
+	verifyEndAction(t, host.GetCurrentHttpStreamAction(id), "Verify that call ended.")
+
+	// call again, should be cached now.
+	action = host.CallOnRequestHeaders(id, hs, true)
+	if action != types.ActionContinue {
+		t.Errorf("Request was not expected to be served from cache, but action is %v.", action)
+	}
+	resultHeaders := host.GetCurrentRequestHeaders(id)
+	verifyHeaders(t, hs, [][2]string{{"Authorization", "token"}}, resultHeaders, "Verfying cached headers.")
+	verifyEndAction(t, host.GetCurrentHttpStreamAction(id), "Verify that call ended.")
+}
+
 func TestCaching(t *testing.T) {
 	type test struct {
 		testName          string
@@ -30,7 +74,6 @@ func TestCaching(t *testing.T) {
 		testRequests      []testRequest
 		testDomain        string
 		testPath          string
-		expectedAction    types.Action
 		expectedHeaders   [][2]string
 		expectExpectCache bool
 		authResponse      authResponse
@@ -40,56 +83,48 @@ func TestCaching(t *testing.T) {
 		{testName: "Cache headers for responses.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", true, false}},
 			testConfig:        "{}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "Cache multiple headers for responses.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", true, false}},
 			testConfig:        "{}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}, {"name": "Just-another", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}, {"Just-another", "token"}}},
 		{testName: "Cache headers for responses on multiple requests.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"POST", "other-domain.org", "/", false, false}, {"POST", "domain.org", "/", true, false}},
 			testConfig:        "{}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "Cache headers for responses on multiple requests with endpoint matching.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "other-domain.org", "/", false, true}, {"DELETE", "domain.org", "/", true, false}},
 			testConfig:        "{\"general\":{\"enableEndpointMatching\":true},\"endpoints\":{\"ISHARE\":{\"domain.org\": [\"/\"]}}}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "No cache for responses on cache-control 'no-cache'.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", false, false}},
 			testConfig:        "{}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-cache"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "No cache for responses on cache-control 'no-store'.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", false, false}},
 			testConfig:        "{}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-store"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "No cache for responses on cache-control 'must-revalidate'.",
 			testRequests:      []testRequest{{"POST", "domain.org", "/", false, false}, {"DELETE", "domain.org", "/", false, false}},
 			testConfig:        "{}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "must-revalidate"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "No cache for responses on cache-control with invalid 'max-age'.",
 			testRequests:      []testRequest{{"POST", "domain.org", "/", false, false}, {"DELETE", "domain.org", "/", false, false}},
 			testConfig:        "{}",
-			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=invalid-value"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
@@ -101,8 +136,7 @@ func TestCaching(t *testing.T) {
 			opt := proxytest.NewEmulatorOption().WithPluginConfiguration([]byte(tc.testConfig)).WithVMContext(&vmContext{})
 			host, reset := proxytest.NewHostEmulator(opt)
 			defer reset()
-			// required to not fail due to logging
-			log.Print("TestOnHttpRequestHeadersWithCaching +++++++++++++++++++++ Running test: " + tc.testName)
+			log.Print("TestCaching +++++++++++++++++++++ Running test: " + tc.testName)
 
 			// Initialize http context.
 			id := host.InitializeHttpContext()
@@ -291,7 +325,6 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 			opt := proxytest.NewEmulatorOption().WithPluginConfiguration([]byte(tc.testConfig)).WithVMContext(&vmContext{})
 			host, reset := proxytest.NewHostEmulator(opt)
 			defer reset()
-			// required to not fail due to logging
 			log.Print("TestOnHttpRequestHeaders +++++++++++++++++++++ Running test: " + tc.testName)
 
 			// Initialize http context.
@@ -339,7 +372,6 @@ func verifyEndAction(t *testing.T, endAction types.Action, testName string) {
 func TestPathMatching(t *testing.T) {
 	var parser fastjson.Parser
 
-	// required to not fail due to logging
 	opt := proxytest.NewEmulatorOption().WithVMContext(&vmContext{})
 	_, reset := proxytest.NewHostEmulator(opt)
 	defer reset()
