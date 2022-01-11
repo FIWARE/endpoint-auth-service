@@ -534,7 +534,7 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig pluginC
 	}
 
 	if authType != nil {
-		proxywasm.LogDebugf("Use %s", parsedConfig.authType)
+		proxywasm.LogDebugf("Use authtype")
 		parsedConfig.authType = string(authType)
 	} else {
 		proxywasm.LogWarnf("Use default authType: %s", defaultPluginConfig.authType)
