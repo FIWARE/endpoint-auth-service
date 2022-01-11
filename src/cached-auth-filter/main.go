@@ -148,6 +148,7 @@ func readConfiguration() {
 	proxywasm.LogInfof("Config: %v", string(data))
 
 	config = parseConfigFromJson(string(data))
+	proxywasm.LogDebugf("Parsed config: %v", config)
 
 }
 
@@ -172,9 +173,10 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	requestPath = pathHeader
 
 	if config.enableEndpointMatching {
+		proxywasm.LogDebug("Endpoint matching is enabled. Match the path")
 
-		authType, match := matchPath(requestDomain, requestPath)
-
+		authType, match := matchEndpoint(requestDomain, requestPath)
+		proxywasm.LogDebugf("Match result was %v - type %v", match, authType)
 		if !match {
 			// early exit, nothing to handle for the filter
 			return types.ActionContinue
@@ -186,7 +188,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 
 }
 
-func matchPath(domainString, pathString string) (authType string, match bool) {
+func matchEndpoint(domainString, pathString string) (authType string, match bool) {
 
 	proxywasm.LogDebugf("Match %s - %s.", domainString, pathString)
 
@@ -315,6 +317,8 @@ func requestAuthProvider(authType string) types.Action {
  */
 func authCallback(numHeaders, bodySize, numTrailers int) {
 
+	proxywasm.LogDebug("Auth callback")
+
 	body, err := proxywasm.GetHttpCallResponseBody(0, bodySize)
 	if err != nil {
 		proxywasm.LogCriticalf("Failed to get response body for auth-request: %v", err)
@@ -431,14 +435,15 @@ func parseConfigFromJson(jsonString string) (config pluginConfiguration) {
 		return
 	}
 
-	generalConfigJson := parsedJson.GetStringBytes("general")
-	authConfig := parsedJson.GetStringBytes("endpoints")
+	generalConfig := parsedJson.Get("general")
+	authConfig := parsedJson.Get("endpoints")
 
-	if generalConfigJson != nil {
-		config = parsePluginConfigFromJson(string(generalConfigJson))
+	if generalConfig != nil {
+		config = parsePluginConfigFromJson(generalConfig)
 	}
+
 	if authConfig != nil {
-		parseAuthConfig(string(authConfig))
+		parseAuthConfig(authConfig)
 	}
 
 	return
@@ -447,15 +452,8 @@ func parseConfigFromJson(jsonString string) (config pluginConfiguration) {
 /**
 * Parse the configuration to a tree-like map of maps for fast request path checking.
  */
-func parseAuthConfig(authJsonString string) {
+func parseAuthConfig(authJson *fastjson.Value) {
 	endpointAuthConfig = endpointAuthConfiguration{}
-
-	authJson, err := parser.Parse(authJsonString)
-
-	if err != nil {
-		proxywasm.LogCriticalf("Unable to parse auth config: %v, will use default.", err)
-		return
-	}
 
 	authJsonObject, err := authJson.Object()
 	if err != nil {
@@ -507,15 +505,10 @@ func parseAuthConfig(authJsonString string) {
 /**
 * Parse the jsonstring, containing the configuration
  */
-func parsePluginConfigFromJson(jsonString string) (parsedConfig pluginConfiguration) {
+func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig pluginConfiguration) {
+	proxywasm.LogDebugf("Parse the config: %v", parsedJson)
 
 	parsedConfig = defaultPluginConfig
-	parsedJson, err := parser.Parse(jsonString)
-
-	if err != nil {
-		proxywasm.LogCriticalf("Unable to parse config: %v, will use default", err)
-		return
-	}
 
 	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
@@ -540,6 +533,8 @@ func parsePluginConfigFromJson(jsonString string) (parsedConfig pluginConfigurat
 	} else {
 		proxywasm.LogWarnf("Use default authType: %v", defaultPluginConfig.authType)
 	}
+
+	proxywasm.LogDebugf("Parsed config is %v", parsedConfig)
 
 	return
 }
