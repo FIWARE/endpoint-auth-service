@@ -37,7 +37,7 @@ var endpointAuthConfig endpointAuthConfiguration
 * Default plugin configuration.
 * The defaults targeting a plain envoy sidecar "ishare"-usecase and WILL NOT work in a mesh setup(istio, ossm)
  */
-var defaultPluginConfig pluginConfiguration = pluginConfiguration{authProviderName: "ext-authz", authRequestTimeout: 5000, enableEndpointMatching: false, authType: "ISHARE"}
+var defaultPluginConfig pluginConfiguration = pluginConfiguration{AuthProviderName: "ext-authz", AuthRequestTimeout: 5000, EnableEndpointMatching: false, AuthType: "ISHARE"}
 
 /**
 * Json parser for reading cache and config
@@ -48,10 +48,10 @@ var parser fastjson.Parser
 * Struct to hold the config for this plugin.
  */
 type pluginConfiguration struct {
-	authProviderName       string
-	authRequestTimeout     uint32
-	enableEndpointMatching bool
-	authType               string
+	AuthProviderName       string
+	AuthRequestTimeout     uint32
+	EnableEndpointMatching bool
+	AuthType               string
 }
 
 /**
@@ -171,7 +171,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 	}
 	requestPath = pathHeader
 
-	if config.enableEndpointMatching {
+	if config.EnableEndpointMatching {
 		proxywasm.LogDebug("Endpoint matching is enabled. Match the path")
 
 		authType, match := matchEndpoint(requestDomain, requestPath)
@@ -182,7 +182,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		}
 		return setHeader(authType)
 	} else {
-		return setHeader(config.authType)
+		return setHeader(config.AuthType)
 	}
 
 }
@@ -280,7 +280,7 @@ func addCachedHeadersToRequest(cachedHeaders headersList) {
  */
 func requestAuthProvider(authType string) types.Action {
 
-	proxywasm.LogCriticalf("Call to %s", config.authProviderName)
+	proxywasm.LogCriticalf("Call to %s", config.AuthProviderName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
 
 	var methodIndex int
@@ -296,7 +296,7 @@ func requestAuthProvider(authType string) types.Action {
 	hs[methodIndex] = [2]string{":method", "GET"}
 	hs[pathIndex] = [2]string{":path", "/" + authType + "/auth?domain=" + requestDomain + "&path=" + requestPath}
 
-	if _, err := proxywasm.DispatchHttpCall(config.authProviderName, hs, nil, nil, config.authRequestTimeout, authCallback); err != nil {
+	if _, err := proxywasm.DispatchHttpCall(config.AuthProviderName, hs, nil, nil, config.AuthRequestTimeout, authCallback); err != nil {
 		proxywasm.LogCriticalf("Domain " + requestDomain + " , path: " + requestPath + " , authType: " + authType)
 		proxywasm.LogCriticalf("Call to auth-provider failed: %v", err)
 		return types.ActionContinue
@@ -519,25 +519,25 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig pluginC
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
 	authType := parsedJson.GetStringBytes("authType")
 	// in case of error, the boolean zero value is used
-	parsedConfig.enableEndpointMatching = parsedJson.GetBool("enableEndpointMatching")
+	parsedConfig.EnableEndpointMatching = parsedJson.GetBool("enableEndpointMatching")
 
 	if authRequestTimeout > 0 {
-		parsedConfig.authRequestTimeout = uint32(authRequestTimeout)
+		parsedConfig.AuthRequestTimeout = uint32(authRequestTimeout)
 	} else {
-		proxywasm.LogWarnf("Use default requestTimeout: %v", defaultPluginConfig.authRequestTimeout)
+		proxywasm.LogWarnf("Use default requestTimeout: %v", defaultPluginConfig.AuthRequestTimeout)
 	}
 
 	if authProviderName != nil {
-		parsedConfig.authProviderName = string(authProviderName)
+		parsedConfig.AuthProviderName = string(authProviderName)
 	} else {
-		proxywasm.LogWarnf("Use default authProvider: %v", defaultPluginConfig.authProviderName)
+		proxywasm.LogWarnf("Use default authProvider: %v", defaultPluginConfig.AuthProviderName)
 	}
 
 	if authType != nil {
 		proxywasm.LogDebugf("Use authtype")
-		parsedConfig.authType = string(authType)
+		parsedConfig.AuthType = string(authType)
 	} else {
-		proxywasm.LogWarnf("Use default authType: %s", defaultPluginConfig.authType)
+		proxywasm.LogWarnf("Use default authType: %s", defaultPluginConfig.AuthType)
 	}
 
 	proxywasm.LogDebugf("Parsed config is %v", parsedConfig)
