@@ -245,29 +245,25 @@ func setHeader(authType string) types.Action {
 		return requestAuthProvider(authType)
 	}
 
-	if data != nil {
-		proxywasm.LogDebugf("Cache hit: %s", string(data))
-		cachedAuthInfo, err := parseCachedAuthInformation(string(data))
-		if err != nil {
-			proxywasm.LogCriticalf("Failed to parse cached info, request new instead. %v", err)
-			cas = currentCas
-			return requestAuthProvider(authType)
-		}
-
-		proxywasm.LogDebugf("Expiry: %v, Current: %v", cachedAuthInfo.expirationTime, time.Now().Unix())
-		if cachedAuthInfo.expirationTime <= time.Now().Unix() {
-			proxywasm.LogDebugf("Cache expired. Request new auth.")
-			cas = currentCas
-			return requestAuthProvider(authType)
-		} else {
-			proxywasm.LogDebugf("Cache still valid.")
-			addCachedHeadersToRequest(cachedAuthInfo.cachedHeaders)
-			return types.ActionContinue
-		}
-
+	proxywasm.LogDebugf("Cache hit: %s", string(data))
+	cachedAuthInfo, err := parseCachedAuthInformation(string(data))
+	if err != nil {
+		proxywasm.LogCriticalf("Failed to parse cached info, request new instead. %v", err)
+		cas = currentCas
+		return requestAuthProvider(authType)
 	}
 
-	return types.ActionContinue
+	proxywasm.LogDebugf("Expiry: %v, Current: %v", cachedAuthInfo.expirationTime, time.Now().Unix())
+	if cachedAuthInfo.expirationTime <= time.Now().Unix() {
+		proxywasm.LogDebugf("Cache expired. Request new auth.")
+		cas = currentCas
+		return requestAuthProvider(authType)
+	} else {
+		proxywasm.LogDebugf("Cache still valid.")
+		addCachedHeadersToRequest(cachedAuthInfo.cachedHeaders)
+		return types.ActionContinue
+	}
+
 }
 
 /**
