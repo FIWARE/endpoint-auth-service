@@ -427,8 +427,8 @@ func TestParseConfig(t *testing.T) {
 	type test struct {
 		testName                    string
 		testConfig                  string
-		expectedPluginConfiguration pluginConfiguration
-		expectedAuthConfiguration   endpointAuthConfiguration
+		expectedPluginConfiguration PluginConfiguration
+		expectedAuthConfiguration   EndpointAuthConfiguration
 	}
 
 	defaultEndpointAuthConfig := map[string]map[string]string{"other-domain.org": map[string]string{"/*": "ISHARE"}}
@@ -440,44 +440,44 @@ func TestParseConfig(t *testing.T) {
 			expectedAuthConfiguration:   defaultEndpointAuthConfig},
 		{testName: "Use default for everything else than endpoint matching.",
 			testConfig:                  "{\"general\": {\"enableEndpointMatching\":true}, \"endpoints\":{\"ISHARE\":{\"other-domain.org\": [\"/\"]}}}",
-			expectedPluginConfiguration: pluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, true, defaultPluginConfig.AuthType},
+			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, true, defaultPluginConfig.AuthType},
 			expectedAuthConfiguration:   defaultEndpointAuthConfig},
 		{testName: "Use default for everything else than provider name.",
 			testConfig:                  "{\"general\": {\"authProviderName\":\"outbound|80||ext-authz\"}}",
-			expectedPluginConfiguration: pluginConfiguration{"outbound|80||ext-authz", defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedPluginConfiguration: PluginConfiguration{"outbound|80||ext-authz", defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default for everything else than request timeout.",
 			testConfig:                  "{\"general\": {\"authRequestTimeout\":12}}",
-			expectedPluginConfiguration: pluginConfiguration{defaultPluginConfig.AuthProviderName, 12, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, 12, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default for everything else than authType.",
 			testConfig:                  "{\"general\": {\"authType\":\"OIDC\"}}",
-			expectedPluginConfiguration: pluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, "OIDC"},
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, "OIDC"},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default in case of invalid general config.",
 			testConfig:                  "{\"general\": }}",
 			expectedPluginConfiguration: defaultPluginConfig,
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default in case of invalid value for provider name.",
 			testConfig:                  "{\"general\": {\"authProviderName\": 12}}",
 			expectedPluginConfiguration: defaultPluginConfig,
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default in case of invalid value for request timeout.",
 			testConfig:                  "{\"general\": {\"authRequestTimeout\": \"12\"}}",
 			expectedPluginConfiguration: defaultPluginConfig,
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default in case of invalid value for authType.",
 			testConfig:                  "{\"general\": {\"authType\": 42}}",
 			expectedPluginConfiguration: defaultPluginConfig,
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default in case of invalid value for endpoint matching.",
 			testConfig:                  "{\"general\": {\"enableEndpointMatching\": 42}}",
 			expectedPluginConfiguration: defaultPluginConfig,
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Set multiple configs.",
 			testConfig:                  "{\"general\": {\"enableEndpointMatching\": true,\"authRequestTimeout\": 42, \"authType\":\"OIDC\", \"authProviderName\":\"outbound|80||ext-authz\" }}",
-			expectedPluginConfiguration: pluginConfiguration{"outbound|80||ext-authz", 42, true, "OIDC"},
-			expectedAuthConfiguration:   endpointAuthConfiguration{}},
+			expectedPluginConfiguration: PluginConfiguration{"outbound|80||ext-authz", 42, true, "OIDC"},
+			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 	}
 
 	for _, tc := range tests {
@@ -506,7 +506,7 @@ func TestAuthParseErrorCases(t *testing.T) {
 	type test struct {
 		testName                   string
 		testConfig                 string
-		expectedEndpointAuthConfig endpointAuthConfiguration
+		expectedEndpointAuthConfig EndpointAuthConfiguration
 	}
 
 	tests := []test{

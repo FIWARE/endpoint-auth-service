@@ -27,9 +27,9 @@ var requestPath string
 /**
 * Plugin configurations
  */
-var config pluginConfiguration
+var config PluginConfiguration
 
-var endpointAuthConfig endpointAuthConfiguration
+var endpointAuthConfig EndpointAuthConfiguration
 
 // Default configurations
 
@@ -37,7 +37,7 @@ var endpointAuthConfig endpointAuthConfiguration
 * Default plugin configuration.
 * The defaults targeting a plain envoy sidecar "ishare"-usecase and WILL NOT work in a mesh setup(istio, ossm)
  */
-var defaultPluginConfig pluginConfiguration = pluginConfiguration{AuthProviderName: "ext-authz", AuthRequestTimeout: 5000, EnableEndpointMatching: false, AuthType: "ISHARE"}
+var defaultPluginConfig PluginConfiguration = PluginConfiguration{AuthProviderName: "ext-authz", AuthRequestTimeout: 5000, EnableEndpointMatching: false, AuthType: "ISHARE"}
 
 /**
 * Json parser for reading cache and config
@@ -47,7 +47,7 @@ var parser fastjson.Parser
 /**
 * Struct to hold the config for this plugin.
  */
-type pluginConfiguration struct {
+type PluginConfiguration struct {
 	AuthProviderName       string
 	AuthRequestTimeout     uint32
 	EnableEndpointMatching bool
@@ -57,7 +57,7 @@ type pluginConfiguration struct {
 /**
 * Tree like represenation of the endpoint-auth config
  */
-type endpointAuthConfiguration map[string]map[string]string
+type EndpointAuthConfiguration map[string]map[string]string
 
 /**
 * Array with the paths that should be handled by the plugin.
@@ -427,7 +427,7 @@ func parseConfigFromJson(jsonString string) {
 
 	// initialize with defaults
 	config = defaultPluginConfig
-	endpointAuthConfig = endpointAuthConfiguration{}
+	endpointAuthConfig = EndpointAuthConfiguration{}
 
 	parsedJson, err := parser.Parse(jsonString)
 
@@ -455,7 +455,7 @@ func parseConfigFromJson(jsonString string) {
 * Parse the configuration to a tree-like map of maps for fast request path checking.
  */
 func parseAuthConfig(authJson *fastjson.Value) {
-	endpointAuthConfig = endpointAuthConfiguration{}
+	endpointAuthConfig = EndpointAuthConfiguration{}
 
 	authJsonObject, err := authJson.Object()
 	if err != nil {
@@ -510,7 +510,7 @@ func parseAuthConfig(authJson *fastjson.Value) {
 /**
 * Parse the jsonstring, containing the configuration
  */
-func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig pluginConfiguration) {
+func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig PluginConfiguration) {
 	proxywasm.LogDebugf("Parse the config: %v", parsedJson)
 
 	parsedConfig = defaultPluginConfig
@@ -533,15 +533,13 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig pluginC
 		proxywasm.LogWarnf("Use default authProvider: %v", defaultPluginConfig.AuthProviderName)
 	}
 
-	proxywasm.LogWarnf("On to authtype")
 	if authType != nil {
-		proxywasm.LogWarnf("Use authtype")
 		parsedConfig.AuthType = string(authType)
 	} else {
 		proxywasm.LogWarnf("Use default authType: %s", defaultPluginConfig.AuthType)
 	}
 
-	proxywasm.LogWarnf("Parsed config is %v", parsedConfig)
+	proxywasm.LogInfof("Parsed config is %v", parsedConfig)
 
 	return
 }
