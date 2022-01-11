@@ -539,7 +539,7 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig PluginC
 		proxywasm.LogWarnf("Use default authType: %s", defaultPluginConfig.AuthType)
 	}
 
-	proxywasm.LogInfof("Parsed config is %v", parsedConfig)
+	proxywasm.LogInfo("Parsed config")
 
 	return
 }
