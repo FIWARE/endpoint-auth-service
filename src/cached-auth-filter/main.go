@@ -416,6 +416,8 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 				return -1, err
 			}
 			return time.Now().Unix() + int64(maxAge), err
+		default:
+			continue
 		}
 	}
 	proxywasm.LogDebugf("Did not find any cache directive to be handled. Header: %s", cacheControlHeader)
