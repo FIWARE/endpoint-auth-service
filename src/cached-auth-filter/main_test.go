@@ -11,6 +11,7 @@ import (
 )
 
 type testRequest struct {
+	method        string
 	domain        string
 	path          string
 	cached        bool
@@ -37,42 +38,42 @@ func TestCaching(t *testing.T) {
 
 	tests := []test{
 		{testName: "Cache headers for responses.",
-			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", true, false}},
+			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", true, false}},
 			testConfig:        "{}",
 			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "Cache headers for responses on multiple requests.",
-			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"other-domain.org", "/", false, false}, {"domain.org", "/", true, false}},
+			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"POST", "other-domain.org", "/", false, false}, {"POST", "domain.org", "/", true, false}},
 			testConfig:        "{}",
 			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "Cache headers for responses on multiple requests with endpoint matching.",
-			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"other-domain.org", "/", false, true}, {"domain.org", "/", true, false}},
+			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "other-domain.org", "/", false, true}, {"DELETE", "domain.org", "/", true, false}},
 			testConfig:        "{\"general\":{\"enableEndpointMatching\":true},\"endpoints\":{\"ISHARE\":{\"domain.org\": [\"/\"]}}}",
 			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "No cache for responses on cache-control 'no-cache'.",
-			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", false, false}},
+			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", false, false}},
 			testConfig:        "{}",
 			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-cache"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "No cache for responses on cache-control 'no-store'.",
-			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", false, false}},
+			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", false, false}},
 			testConfig:        "{}",
 			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-store"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
 		{testName: "No cache for responses on cache-control 'must-revalidate.",
-			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", false, false}},
+			testRequests:      []testRequest{{"POST", "domain.org", "/", false, false}, {"DELETE", "domain.org", "/", false, false}},
 			testConfig:        "{}",
 			expectedAction:    types.ActionPause,
 			expectExpectCache: true,
@@ -96,7 +97,7 @@ func TestCaching(t *testing.T) {
 
 				log.Print("Current request: " + fmt.Sprint(request))
 
-				hs := [][2]string{{":authority", request.domain}, {":path", request.path}}
+				hs := [][2]string{{":authority", request.domain}, {":path", request.path}, {":method", request.method}}
 
 				action := host.CallOnRequestHeaders(id, hs, true)
 
