@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"testing"
 
@@ -8,6 +9,149 @@ import (
 	"github.com/tetratelabs/proxy-wasm-go-sdk/proxywasm/types"
 	"github.com/valyala/fastjson"
 )
+
+type testRequest struct {
+	domain        string
+	path          string
+	cached        bool
+	expectIgnored bool
+}
+
+type authResponse struct {
+	body    string
+	headers [][2]string
+}
+
+func TestCaching(t *testing.T) {
+	type test struct {
+		testName          string
+		testConfig        string
+		testRequests      []testRequest
+		testDomain        string
+		testPath          string
+		expectedAction    types.Action
+		expectedHeaders   [][2]string
+		expectExpectCache bool
+		authResponse      authResponse
+	}
+
+	tests := []test{
+		{testName: "Cache headers for responses.",
+			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", true, false}},
+			testConfig:        "{}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "Cache headers for responses on multiple requests.",
+			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"other-domain.org", "/", false, false}, {"domain.org", "/", true, false}},
+			testConfig:        "{}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "Cache headers for responses on multiple requests with endpoint matching.",
+			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"other-domain.org", "/", false, true}, {"domain.org", "/", true, false}},
+			testConfig:        "{\"general\":{\"enableEndpointMatching\":true},\"endpoints\":{\"ISHARE\":{\"domain.org\": [\"/\"]}}}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "No cache for responses on cache-control 'no-cache'.",
+			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", false, false}},
+			testConfig:        "{}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-cache"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "No cache for responses on cache-control 'no-store'.",
+			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", false, false}},
+			testConfig:        "{}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "no-store"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+		{testName: "No cache for responses on cache-control 'must-revalidate.",
+			testRequests:      []testRequest{{"domain.org", "/", false, false}, {"domain.org", "/", false, false}},
+			testConfig:        "{}",
+			expectedAction:    types.ActionPause,
+			expectExpectCache: true,
+			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "must-revalidate"}}},
+			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
+	}
+
+	for _, tc := range tests {
+
+		t.Run(tc.testName, func(t *testing.T) {
+			opt := proxytest.NewEmulatorOption().WithPluginConfiguration([]byte(tc.testConfig)).WithVMContext(&vmContext{})
+			host, reset := proxytest.NewHostEmulator(opt)
+			defer reset()
+			// required to not fail due to logging
+			log.Print("TestOnHttpRequestHeadersWithCaching +++++++++++++++++++++ Running test: " + tc.testName)
+
+			// Initialize http context.
+			id := host.InitializeHttpContext()
+
+			for _, request := range tc.testRequests {
+
+				log.Print("Current request: " + fmt.Sprint(request))
+
+				hs := [][2]string{{":authority", request.domain}, {":path", request.path}}
+
+				action := host.CallOnRequestHeaders(id, hs, true)
+
+				if request.cached || request.expectIgnored {
+					if action != types.ActionContinue {
+						t.Errorf("%s: Request was expected to be served from cache, but action is %v.", tc.testName, action)
+					}
+				} else {
+					if action != types.ActionPause {
+						t.Errorf("%s: Request was not  expected to be served from cache, but action is %v.", tc.testName, action)
+					}
+				}
+				if !request.cached && !request.expectIgnored {
+					attrs := host.GetCalloutAttributesFromContext(id)
+					body := []byte(tc.authResponse.body)
+					host.CallOnHttpCallResponse(attrs[0].CalloutID, tc.authResponse.headers, nil, body)
+				}
+				// we do not verify headers for ignore case here, since its already tested extensively in the TestOnHttpRequestHeaders
+				if !request.expectIgnored {
+					resultHeaders := host.GetCurrentRequestHeaders(id)
+					verifyHeaders(t, hs, tc.expectedHeaders, resultHeaders, tc.testName)
+					endAction := host.GetCurrentHttpStreamAction(id)
+					verifyEndAction(t, endAction, tc.testName)
+				}
+			}
+
+		})
+
+	}
+
+}
+
+func verifyHeaders(t *testing.T, generalHeaders, expectedHeaders, resultHeaders [][2]string, testName string) {
+	if len(generalHeaders)+len(expectedHeaders) != len(resultHeaders) {
+		t.Errorf("%s: To much headers on request. Was expected to be %v, but was %v.", testName, len(generalHeaders)+len(expectedHeaders), len(resultHeaders))
+		return
+	}
+	for _, v := range resultHeaders {
+		var contains bool
+		for _, eh := range expectedHeaders {
+			if eh == v {
+				contains = true
+			}
+		}
+
+		for _, eh := range generalHeaders {
+			if eh == v {
+				contains = true
+			}
+		}
+		if !contains {
+			t.Errorf("%s: Header %v was not expected.", testName, v)
+		}
+	}
+}
 
 func TestOnHttpRequestHeaders(t *testing.T) {
 
@@ -23,7 +167,15 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 	}
 
 	tests := []test{
-		{testName: "Add toke for everything configured.", testPath: "/", testDomain: "domain.org",
+		{testName: "Do nothing for no domain.", testPath: "/", testDomain: "",
+			testConfig:      "{}",
+			expectedAction:  types.ActionContinue,
+			expectedHeaders: [][2]string{}},
+		{testName: "Do nothing for no path.", testPath: "", testDomain: "domain.org",
+			testConfig:      "{}",
+			expectedAction:  types.ActionContinue,
+			expectedHeaders: [][2]string{}},
+		{testName: "Add token for everything configured.", testPath: "/", testDomain: "domain.org",
 			testConfig:      "{}",
 			expectExtCall:   true,
 			expectedAction:  types.ActionPause,
@@ -124,7 +276,13 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 			// Initialize http context.
 			id := host.InitializeHttpContext()
 
-			hs := [][2]string{{":authority", tc.testDomain}, {":path", tc.testPath}}
+			hs := [][2]string{}
+			if tc.testDomain != "" {
+				hs = append(hs, [][2]string{{":authority", tc.testDomain}}...)
+			}
+			if tc.testPath != "" {
+				hs = append(hs, [][2]string{{":path", tc.testPath}}...)
+			}
 
 			action := host.CallOnRequestHeaders(id, hs, true)
 			if action != tc.expectedAction {
@@ -142,37 +300,19 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 
 			resultHeaders := host.GetCurrentRequestHeaders(id)
 
-			if len(hs)+len(tc.expectedHeaders) != len(resultHeaders) {
-				t.Errorf("%s: To much headers on request. Was expected to be %v, but was %v.", tc.testName, len(hs)+len(tc.expectedHeaders), len(resultHeaders))
-				return
-			}
-			for _, v := range resultHeaders {
-				var contains bool
-				for _, eh := range tc.expectedHeaders {
-					if eh == v {
-						contains = true
-					}
-				}
-
-				for _, eh := range hs {
-					if eh == v {
-						contains = true
-					}
-				}
-				if !contains {
-					t.Errorf("%s: Header %v was not expected.", tc.testName, v)
-				}
-			}
-
+			verifyHeaders(t, hs, tc.expectedHeaders, resultHeaders, tc.testName)
 			endAction := host.GetCurrentHttpStreamAction(id)
-			if endAction != types.ActionContinue {
-				t.Errorf("%s: Request should continue in any case, but did %v.", tc.testName, endAction)
-			}
-
+			verifyEndAction(t, endAction, tc.testName)
 		})
 
 	}
 
+}
+
+func verifyEndAction(t *testing.T, endAction types.Action, testName string) {
+	if endAction != types.ActionContinue {
+		t.Errorf("%s: Request should continue in any case, but did %v.", testName, endAction)
+	}
 }
 
 func TestPathMatching(t *testing.T) {

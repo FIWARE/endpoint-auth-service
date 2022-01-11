@@ -369,8 +369,8 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 				buffer := parsedInfo.Get().MarshalTo(nil)
 				proxywasm.LogDebugf("Buffer is %v", string(buffer))
 				proxywasm.SetSharedData(requestDomain+requestPath, buffer, cas)
+				proxywasm.LogDebugf("Cached auth info for %v / %v", requestDomain, requestPath)
 			}
-			proxywasm.LogDebugf("Cached auth info for %v / %v", requestDomain, requestPath)
 			return
 		}
 
@@ -412,6 +412,7 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 		case "no-store":
 			fallthrough
 		case "must-revalidate":
+			proxywasm.LogDebugf("Do not cache, since cache-control is %s", directiveArray[0])
 			return -1, err
 		case "max-age":
 			maxAge, err := strconv.Atoi(directiveArray[1])
