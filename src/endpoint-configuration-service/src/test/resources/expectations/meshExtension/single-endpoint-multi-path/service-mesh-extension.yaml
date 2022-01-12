@@ -15,8 +15,8 @@ spec:
     endpoints:
       ISHARE:
         domain:
-          - /path2
           - /path1
+          - /path2
   workloadSelector:
     labels:
       my-workload: selected

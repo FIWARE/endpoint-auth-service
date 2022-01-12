@@ -14,12 +14,12 @@ spec:
       enableEndpointMatching: true
     endpoints:
       ISHARE:
-        domain-2:
-          - /
-          - /nonRoot
         domain:
           - /path1
           - /path2
+        domain-2:
+          - /
+          - /nonRoot
   workloadSelector:
     labels:
       my-workload: selected
