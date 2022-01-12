@@ -143,6 +143,33 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
+  mesh-extension-updater:
+    needs: [ "generate-version" ]
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Build Image
+        id: build-image
+        uses: redhat-actions/buildah-build@v2
+        with:
+          image: mesh-extension-updater
+          tags: latest ${{ github.sha }} ${{needs.generate-version.outputs.version}}
+          dockerfiles: |
+            ./src/mesh-extension-updater/Dockerfile
+          context: ./src/mesh-extension-updater
+
+      - name: Push To quay.io
+        id: push-to-quay
+        uses: redhat-actions/push-to-registry@v2
+        with:
+          image: ${{ steps.build-image.outputs.image }}
+          tags: ${{ steps.build-image.outputs.tags }}
+          registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
+          username: ${{ secrets.QUAY_USERNAME }}
+          password: ${{ secrets.QUAY_PASSWORD }}
+
   envoy:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
@@ -280,6 +307,7 @@ jobs:
       - generate-version
       - cached-auth-filter
       - service-mesh-extension
+      - mesh-extension-updater
 
     runs-on: ubuntu-latest
 
