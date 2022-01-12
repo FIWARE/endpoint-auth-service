@@ -64,7 +64,8 @@ public class ServiceMeshUpdateService extends MustacheUpdateService {
 		Map<String, Map<String, List<Endpoint>>> endpointsByAuthType = new LinkedHashMap<>();
 
 		StreamSupport
-				.stream(endpointRepository.findAll().spliterator(), true)
+				// do not stream in parallel, will create duplicate keys in the map
+				.stream(endpointRepository.findAll().spliterator(), false)
 				.forEach(endpoint -> {
 					String authType = endpoint.getAuthType().toString();
 					Map<String, List<Endpoint>> endpointsByDomain = endpointsByAuthType.getOrDefault(authType, new LinkedHashMap<>());

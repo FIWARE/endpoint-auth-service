@@ -93,15 +93,15 @@ class EnvoyUpdateServiceTest {
 		return envoyProperties;
 	}
 
-//	// deletes all generated results. Disable this mechanism if you need to debug them.
-//	@AfterEach
-//	public void cleanUpResults() throws Exception {
-//		try (Stream<Path> walk = Files.walk(Path.of(String.format("./%s", testId)))) {
-//			walk.sorted(Comparator.reverseOrder())
-//					.map(Path::toFile)
-//					.forEach(File::delete);
-//		}
-//	}
+	// deletes all generated results. Disable this mechanism if you need to debug them.
+	@AfterEach
+	public void cleanUpResults() throws Exception {
+		try (Stream<Path> walk = Files.walk(Path.of(String.format("./%s", testId)))) {
+			walk.sorted(Comparator.reverseOrder())
+					.map(Path::toFile)
+					.forEach(File::delete);
+		}
+	}
 
 	@ParameterizedTest
 	@MethodSource("getTestConfig")
@@ -112,10 +112,8 @@ class EnvoyUpdateServiceTest {
 		when(endpointRepository.findAll()).thenReturn(endpoints);
 		meshUpdateService.applyConfiguration();
 
-		Map<String, String> replacementMap = buildIdReplacementMap(endpoints);
-
 		Map<String, Object> expectedListener = getYamlAsMap(Path.of(String.format("%s/service-mesh-extension.yaml", String.format(expectationsFolder, "meshExtension"))), null);
-		Map<String, Object> generatedListener = getYamlAsMap(Path.of(String.format("%s/service-mesh-extension.yaml", testId)), replacementMap);
+		Map<String, Object> generatedListener = getYamlAsMap(Path.of(String.format("%s/service-mesh-extension.yaml", testId)), null);
 		Assertions.assertEquals(expectedListener, generatedListener, "Generated service-mesh-extension should be as expected.");
 
 	}
