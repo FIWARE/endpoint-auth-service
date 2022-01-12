@@ -3,14 +3,14 @@ package org.fiware.sidecar.service;
 import com.github.mustachejava.Mustache;
 import com.github.mustachejava.MustacheFactory;
 import io.micronaut.context.annotation.Context;
-import lombok.RequiredArgsConstructor;
+import io.micronaut.context.annotation.Requires;
 import lombok.extern.slf4j.Slf4j;
-import org.fiware.sidecar.configuration.ProxyProperties;
+import org.fiware.sidecar.configuration.EnvoyProperties;
+import org.fiware.sidecar.configuration.GeneralProperties;
 import org.fiware.sidecar.exception.EnvoyUpdateException;
 import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.model.MustacheAuthType;
 import org.fiware.sidecar.model.MustacheEndpoint;
-import org.fiware.sidecar.model.MustachePort;
 import org.fiware.sidecar.model.MustacheVirtualHost;
 import org.fiware.sidecar.persistence.EndpointRepository;
 
@@ -19,46 +19,39 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
- * Service to update the envoy configuration
+ * Service to create and update the envoy configuration
  */
 @Slf4j
-@RequiredArgsConstructor
 @Context
-public class EnvoyUpdateService {
+@Requires(property = "envoy.enabled", value = "true")
+public class EnvoyUpdateService extends MustacheUpdateService{
 
 	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used", "/", null, "true", 0, "");
 
-	private final MustacheFactory mustacheFactory;
-	private final EndpointRepository endpointRepository;
-	private final EndpointMapper endpointMapper;
-	private final ProxyProperties proxyProperties;
-	private final ScheduledExecutorService executorService;
+	private final EnvoyProperties envoyProperties;
 
 	private Mustache listenerTemplate;
 	private Mustache clusterTemplate;
+
+	public EnvoyUpdateService(MustacheFactory mustacheFactory, EndpointRepository endpointRepository, EndpointMapper endpointMapper, ScheduledExecutorService executorService, GeneralProperties generalProperties, EnvoyProperties envoyProperties) {
+		super(mustacheFactory, endpointRepository, endpointMapper, executorService, generalProperties);
+		this.envoyProperties = envoyProperties;
+	}
+
 
 	@PostConstruct
 	public void setupTemplates() {
 		listenerTemplate = mustacheFactory.compile("./templates/listener.yaml.mustache");
 		clusterTemplate = mustacheFactory.compile("./templates/cluster.yaml.mustache");
-	}
-
-	/**
-	 * Schedule a new configuration generation
-	 */
-	public void scheduleConfigUpdate() {
-		executorService.schedule(this::applyConfiguration, proxyProperties.getUpdateDelayInS(), TimeUnit.SECONDS);
 	}
 
 	/**
@@ -78,51 +71,33 @@ public class EnvoyUpdateService {
 				.map(MustacheAuthType::new)
 				.collect(Collectors.toList());
 
-		Map<String, List<MustacheEndpoint>> endpointMap = StreamSupport
-				.stream(endpointRepository.findAll().spliterator(), true)
-				.map(endpointMapper::endpointToMustacheEndpoint)
-				.collect(Collectors.toMap(MustacheEndpoint::domain, me -> new ArrayList<>(List.of(me)), (v1, v2) -> {
-					v1.addAll(v2);
-					return v1;
-				}));
-
-		List<MustacheVirtualHost> mustacheVirtualHosts = endpointMap
-				.entrySet().stream()
-				.map(entry -> new MustacheVirtualHost(
-						entry.getKey(),
-						entry.getValue().stream()
-								.map(MustacheEndpoint::port)
-								.distinct()
-								.map(MustachePort::new)
-								.collect(Collectors.toSet()),
-						addPassThroughIfNoRoot(entry.getValue())))
-				.toList();
+		List<MustacheVirtualHost> mustacheVirtualHosts = getMustacheVirtualHosts();
 
 
-		ProxyProperties.AddressConfig socketAddress = proxyProperties.getSocketAddress();
-		ProxyProperties.AddressConfig authAddress = proxyProperties.getExternalAuth();
+		EnvoyProperties.AddressConfig socketAddress = envoyProperties.getSocketAddress();
+		EnvoyProperties.AddressConfig authAddress = envoyProperties.getExternalAuth();
 
 		Map<String, Object> mustacheRenderContext = new HashMap<>();
-		mustacheRenderContext.put("socket-address", socketAddress.getAddress());
-		mustacheRenderContext.put("socket-port", socketAddress.getPort());
-		mustacheRenderContext.put("auth-service-address", authAddress.getAddress());
-		mustacheRenderContext.put("auth-service-port", authAddress.getPort());
-		mustacheRenderContext.put("wasm-filter-path", proxyProperties.getWasmFilterPath());
+		mustacheRenderContext.put("socketAddress", socketAddress.getAddress());
+		mustacheRenderContext.put("socketPort", socketAddress.getPort());
+		mustacheRenderContext.put("authServiceAddress", authAddress.getAddress());
+		mustacheRenderContext.put("authServicePort", authAddress.getPort());
+		mustacheRenderContext.put("wasmFilterPath", envoyProperties.getWasmFilterPath());
 		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
 		mustacheRenderContext.put("endpoints", mustacheEndpoints);
 		mustacheRenderContext.put("authTypes", mustacheAuthTypes);
-		mustacheRenderContext.put("enable-wasm-filter", mustacheAuthTypes.isEmpty() ? null : "true");
+		mustacheRenderContext.put("enableWasmFilter", mustacheAuthTypes.isEmpty() ? null : "true");
 
-		if (!Files.exists(Path.of(proxyProperties.getListenerYamlPath()))) {
+		if (!Files.exists(Path.of(envoyProperties.getListenerYamlPath()))) {
 			try {
-				Files.createFile(Path.of(proxyProperties.getListenerYamlPath()));
+				Files.createFile(Path.of(envoyProperties.getListenerYamlPath()));
 			} catch (IOException e) {
 				throw new EnvoyUpdateException("Was not able to create listener.yaml", e);
 			}
 		}
-		if (!Files.exists(Path.of(proxyProperties.getClusterYamlPath()))) {
+		if (!Files.exists(Path.of(envoyProperties.getClusterYamlPath()))) {
 			try {
-				Files.createFile(Path.of(proxyProperties.getClusterYamlPath()));
+				Files.createFile(Path.of(envoyProperties.getClusterYamlPath()));
 			} catch (IOException e) {
 				throw new EnvoyUpdateException("Was not able to create cluster.yaml", e);
 			}
@@ -130,26 +105,27 @@ public class EnvoyUpdateService {
 
 		// BE AWARE: Order matters here. Due to the dynamic resource updates of envoy, first updating the listeners can lead to illegally referencing clusters
 		// that do not yet exist.
-		updateEnvoyConfig(proxyProperties.getClusterYamlPath(), clusterTemplate, mustacheRenderContext, "Was not able to update cluster.yaml");
-		updateEnvoyConfig(proxyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
+		updateEnvoyConfig(envoyProperties.getClusterYamlPath(), clusterTemplate, mustacheRenderContext, "Was not able to update cluster.yaml");
+		updateEnvoyConfig(envoyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
 	}
 
 	/*
 	 * If only sub-paths are configured, add a passthrough route match for the domain
 	 */
-	private List<MustacheEndpoint> addPassThroughIfNoRoot(List<MustacheEndpoint> originalList) {
-		Optional<MustacheEndpoint> optionalRootEndpoint = originalList.stream()
+	@Override
+	List<MustacheEndpoint> extendEndpointList(List<MustacheEndpoint> endpointList) {
+		Optional<MustacheEndpoint> optionalRootEndpoint = endpointList.stream()
 				.filter(mustacheEndpoint -> mustacheEndpoint.path().equals(PASSTHROUGH_ENDPOINT.path()))
 				.findAny();
 		if (optionalRootEndpoint.isEmpty()) {
-			originalList.add(PASSTHROUGH_ENDPOINT);
+			endpointList.add(PASSTHROUGH_ENDPOINT);
 		}
-		return originalList;
+		return endpointList;
 	}
 
-	private void updateEnvoyConfig(String proxyProperties, Mustache clusterTemplate, Map<String, Object> mustacheRenderContext, String message) {
+	private void updateEnvoyConfig(String configFilename, Mustache clusterTemplate, Map<String, Object> mustacheRenderContext, String message) {
 		try {
-			FileWriter clusterFileWriter = new FileWriter(proxyProperties);
+			FileWriter clusterFileWriter = new FileWriter(configFilename);
 			clusterTemplate.execute(clusterFileWriter, mustacheRenderContext).flush();
 			clusterFileWriter.close();
 		} catch (IOException e) {

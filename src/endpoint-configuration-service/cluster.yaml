@@ -21,48 +21,23 @@ resources:
               address:
                 socket_address:
                   protocol: TCP
-                  address: {{authServiceAddress}}
-                  port_value: {{authServicePort}}
-  {{#endpoints}}
-  {{#httpsPort}}
+                  address: auth-service
+                  port_value: 7070
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    name: {{id}}
+    name: fb465ec3-f6b9-4ec9-8bc0-ac5e84d7ff7b
     connect_timeout: 5s
     type: STRICT_DNS
     lb_policy: ROUND_ROBIN
     load_assignment:
-      cluster_name: {{id}}
+      cluster_name: fb465ec3-f6b9-4ec9-8bc0-ac5e84d7ff7b
       endpoints:
         - lb_endpoints:
           - endpoint:
               address:
                 socket_address:
                   protocol: TCP
-                  address: "{{domain}}"
-                  port_value: {{port}}
-    transport_socket:
-      name: envoy.transport_sockets.tls
-      typed_config:
-        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
-  {{/httpsPort}}
-  {{^httpsPort}}
-  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    name: {{id}}
-    connect_timeout: 5s
-    type: STRICT_DNS
-    lb_policy: ROUND_ROBIN
-    load_assignment:
-      cluster_name: {{id}}
-      endpoints:
-        - lb_endpoints:
-          - endpoint:
-              address:
-                socket_address:
-                  protocol: TCP
-                  address: "{{domain}}"
-                  port_value: {{port}}
-  {{/httpsPort}}
-  {{/endpoints}}
+                  address: "other-domain"
+                  port_value: 6060
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: passthrough
     type: ORIGINAL_DST

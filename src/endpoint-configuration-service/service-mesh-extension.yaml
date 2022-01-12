@@ -1,0 +1,23 @@
+apiVersion: maistra.io/v1
+kind: ServiceMeshExtension
+metadata:
+  name: cached-auth-filter-extension
+  namespace: extension-namespace
+  labels:
+    label: label-value
+  annotations:
+    annotation: annotation-value
+spec:
+  config:
+    general:
+      authProviderName: outbound|80||ext-authz
+      enableEndpointMatching: true
+    endpoints:
+      ISHARE:
+        other-domain:
+          - /blub
+  workloadSelector:
+    labels:
+      app: app
+  image: quay.io/fiware/cached-auth-filter-extension:0.1
+  phase: PreAuthN

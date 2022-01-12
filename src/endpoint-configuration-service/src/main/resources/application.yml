@@ -38,8 +38,32 @@ datasources:
     dialect: H2
 
 ---
+general:
+  updateDelayInS: 2
 
-proxy:
+# configuration when running inside openshift service mesh
+---
+meshExtension:
+  enabled: true
+  authProviderName: outbound|80||ext-authz
+  workloadSelector:
+    name: app
+    value: app
+  filterVersion: ${project.version}
+  extensionName: cached-auth-filter-extension
+  extensionNamespace: extension-namespace
+  meshExtensionYamlPath: ./service-mesh-extension.yaml
+  annotations:
+    - name: annotation
+      value: annotation-value
+  labels:
+    - name: label
+      value: label-value
+
+# Congiuration when running with plain envoy
+---
+envoy:
+  enabled: true
   externalAuth:
     address: auth-service
     port: 7070
@@ -48,5 +72,4 @@ proxy:
     port: 15001
   listenerYamlPath: ./listener.yaml
   clusterYamlPath: ./cluster.yaml
-  updateDelayInS: 2
   wasmFilterPath: /cached-auth-filter/cached-auth-filter.wasm

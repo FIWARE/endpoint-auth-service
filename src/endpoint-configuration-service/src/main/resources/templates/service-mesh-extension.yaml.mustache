@@ -1,0 +1,33 @@
+apiVersion: maistra.io/v1
+kind: ServiceMeshExtension
+metadata:
+  name: {{extensionName}}
+  namespace: {{extensionNamespace}}
+  labels:
+  {{#labels}}
+    {{name}}: {{value}}
+  {{/labels}}
+  annotations:
+  {{#annotations}}
+    {{name}}: {{value}}
+  {{/annotations}}
+spec:
+  config:
+    general:
+      authProviderName: {{authProviderName}}
+      enableEndpointMatching: true
+    endpoints:
+    {{#meshEndpoints}}
+      {{authType}}:
+        {{#domains}}
+        {{domain}}:
+          {{#paths}}
+          - {{path}}
+          {{/paths}}
+        {{/domains}}
+    {{/meshEndpoints}}
+  workloadSelector:
+    labels:
+      {{selectorLabel}}: {{selectorValue}}
+  image: quay.io/fiware/cached-auth-filter-extension:{{filterVersion}}
+  phase: PreAuthN

@@ -1,11 +1,13 @@
 package org.fiware.sidecar.mapping;
 
+import org.fiware.sidecar.configuration.MeshExtensionProperties;
 import org.fiware.sidecar.model.AuthInfoVO;
 import org.fiware.sidecar.model.AuthType;
 import org.fiware.sidecar.model.AuthTypeVO;
 import org.fiware.sidecar.model.EndpointInfoVO;
 import org.fiware.sidecar.model.EndpointRegistrationVO;
 import org.fiware.sidecar.model.MustacheEndpoint;
+import org.fiware.sidecar.model.MustacheMetaData;
 import org.fiware.sidecar.persistence.Endpoint;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -36,6 +38,7 @@ public interface EndpointMapper {
 	@Mapping(source = "useHttps", target = "httpsPort", qualifiedByName = "useHttpsMustacheMapping")
 	MustacheEndpoint endpointToMustacheEndpoint(Endpoint endpoint);
 
+	MustacheMetaData metaDataToMustacheMetadata(MeshExtensionProperties.MetaData metaData);
 
 	default AuthInfoVO endpointToAuthInfoVo(Endpoint endpoint) {
 		AuthInfoVO authInfoVO = new AuthInfoVO();

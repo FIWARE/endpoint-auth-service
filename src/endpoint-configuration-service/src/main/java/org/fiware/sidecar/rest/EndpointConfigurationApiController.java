@@ -16,6 +16,7 @@ import org.fiware.sidecar.persistence.Endpoint;
 import org.fiware.sidecar.persistence.EndpointRepository;
 import org.fiware.sidecar.service.EndpointWriteService;
 import org.fiware.sidecar.service.EnvoyUpdateService;
+import org.fiware.sidecar.service.UpdateService;
 
 import javax.transaction.Transactional;
 import java.net.URI;
@@ -35,7 +36,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 	private final List<EndpointWriteService> subscriberWriteServices;
 	private final EndpointRepository endpointRepository;
 	private final EndpointMapper endpointMapper;
-	private final EnvoyUpdateService envoyUpdateService;
+	private final List<UpdateService> updateServices;
 
 	@Transactional
 	@Override
@@ -55,7 +56,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()))
 				.createEndpoint(endpoint.getId(), endpointRegistrationVO);
 
-		envoyUpdateService.scheduleConfigUpdate();
+		updateServices.forEach(UpdateService::scheduleConfigUpdate);
 
 		return HttpResponse.created(URI.create(endpoint.getId().toString()));
 	}
@@ -67,7 +68,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		if (optionalEndpoint.isPresent()) {
 			endpointRepository.deleteById(id);
 			getServiceForAuthType(optionalEndpoint.get().getAuthType()).deleteEndpoint(id);
-			envoyUpdateService.scheduleConfigUpdate();
+			updateServices.forEach(UpdateService::scheduleConfigUpdate);
 
 			return HttpResponse.noContent();
 		}

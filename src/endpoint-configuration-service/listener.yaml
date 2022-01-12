@@ -3,8 +3,8 @@ resources:
     name: envoy_listener
     address:
       socket_address:
-        address: {{socketAddress}}
-        port_value: {{socketPort}}
+        address: 0.0.0.0
+        port_value: 15001
     traffic_direction: OUTBOUND
     listener_filters:
       - name: envoy.filters.listener.tls_inspector
@@ -29,21 +29,19 @@ resources:
               route_config:
                 name: local_route
                 virtual_hosts:
-                {{#virtualHosts}}
-                  - name: {{domain}}
+                  - name: other-domain
                     domains:
-                      - '{{domain}}'
-                  {{#ports}}
-                      - '{{domain}}:{{port}}'
-                  {{/ports}}
+                      - 'other-domain'
+                      - 'other-domain:6060'
                     routes:
-                  {{#endpoints}}
                       - match:
-                          prefix: "{{path}}"
+                          prefix: "/blub"
                         route:
-                          cluster: {{id}}
-                  {{/endpoints}}
-                {{/virtualHosts}}
+                          cluster: fb465ec3-f6b9-4ec9-8bc0-ac5e84d7ff7b
+                      - match:
+                          prefix: "/"
+                        route:
+                          cluster: passthrough
                   - name: allow_any
                     domains:
                       - "*"
@@ -53,7 +51,6 @@ resources:
                         route:
                           cluster: passthrough
               http_filters:
-                {{#enableWasmFilter}}
                 - name: composite
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
@@ -64,9 +61,6 @@ resources:
                     xds_matcher:
                       matcher_list:
                         matchers:
-                          {{#virtualHosts}}
-                          {{#endpoints}}
-                          {{^passthrough}}
                           - on_match:
                               action:
                                 name: composite-action
@@ -80,12 +74,12 @@ resources:
                                         configuration:
                                           "@type": "type.googleapis.com/google.protobuf.StringValue"
                                           value: |
-                                            { "general": {"authType":"{{authType}}"} }
+                                            { "general": {"authType":"ISHARE"} }
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
                                             local:
-                                              filename: "{{wasmFilterPath}}"
+                                              filename: "/cached-auth-filter/cached-auth-filter.wasm"
                             predicate:
                               and_matcher:
                                 predicate:
@@ -96,7 +90,7 @@ resources:
                                           "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
                                           header_name: ":path"
                                       value_match:
-                                        prefix: {{path}}
+                                        prefix: /blub
                                   - or_matcher:
                                       predicate:
                                         - single_predicate:
@@ -106,19 +100,13 @@ resources:
                                                 "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
                                                 header_name: ":authority"
                                             value_match:
-                                              exact: {{domain}}
-                                        {{#ports}}
+                                              exact: other-domain
                                         - single_predicate:
                                             input:
-                                              name: request-domain-{{port}}
+                                              name: request-domain-6060
                                               typed_config:
                                                 "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
                                                 header_name: ":authority"
                                             value_match:
-                                              exact: {{domain}}:{{port}}
-                                        {{/ports}}
-                          {{/passthrough}}
-                          {{/endpoints}}
-                          {{/virtualHosts}}
-                {{/enableWasmFilter}}
+                                              exact: other-domain:6060
                 - name: envoy.filters.http.router
