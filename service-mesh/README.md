@@ -19,3 +19,19 @@ An example for installing the mesh-extension can be found under the [example-fol
 ## Envoy in the mesh
 
 The current stable version of [envoy](https://www.envoyproxy.io/) is 1.20.1. Since the [MatchingApi](https://www.envoyproxy.io/docs/envoy/latest/intro/arch_overview/advanced/matching/matching_api) is not productive yet, the plugin either needs to be configured to handle every call or the ```general.enableEndpointMatching``` feature needs to be enabled and the endpoints to be handle. See the [plugin documentation](../src/cached-auth-filter/README.md) for more.
+
+## Deployment architecture on OSSM
+
+> :warning: PRECONDITION: To use the extension mechanism of the Openshift Service Mesh, it needs to be deployed first. See the [RedHat "Installing OSSM" doc](https://docs.openshift.com/container-platform/4.6/service_mesh/v2x/installing-ossm.html) for that.
+
+To provide a native integration into the [Openshift Service Mesh](https://cloud.redhat.com/learn/topics/service-mesh), the extension mechanism via [ServiceMeshExtension-Objects](https://docs.openshift.com/container-platform/4.6/service_mesh/v2x/ossm-extensions.html) is supported.
+Therefor a dedicated sidecar-proxy is not required(and not recommended, to not interfer with mesh-functionality). A deployment view of the service can be seen in the image below:
+
+![OSSM-Deployment-View](./openshift/ossm-integration.svg)
+
+The [Endpoint-Configuration-Service](../src/endpoint-configuration-service) is deployed together with the [Mesh-Extension-Updater](../src/mesh-extension-updater) in order to automatically create the ServiceMeshExtension Objects at the Kubernetes API. Its picked up by the Openshift ServiceMesh ControlPlane and applied to OSSM's sidecar Envoys in the selected workloads. The authprovider still needs to be available, either via direct deployment to the cluster or via an [mesh-external ServiceEntry](https://docs.openshift.com/container-platform/4.6/service_mesh/v2x/ossm-traffic-manage.html#ossm-routing-se_routing-traffic).
+
+
+## HTTPS inside the OSSM 
+
+Since the [ServiceMeshExtension](https://docs.openshift.com/container-platform/4.6/service_mesh/v2x/ossm-extensions.html) is in fact an [envoy-(http)filter](https://www.envoyproxy.io/docs/envoy/latest/configuration/http/http_filters/http_filters), the ssl-mechanism of envoy's [cluster-objects](https://www.envoyproxy.io/docs/envoy/latest/api-v3/config/cluster/v3/cluster.proto) cannot be used. Openshift Service Mesh does bring a lot of security focused features and can be configured to apply ssl to all outgoing traffic. See the [Openshift Service Mesh Documentation](https://docs.openshift.com/container-platform/4.6/service_mesh/v2x/ossm-traffic-manage.html) for that.
