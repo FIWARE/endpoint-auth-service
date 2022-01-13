@@ -434,7 +434,7 @@ func TestParseConfig(t *testing.T) {
 	h := fnv.New32a()
 	h.Write([]byte("other-domain.org/"))
 
-	defaultEndpointAuthConfig := map[string]map[string]AuthEntry{"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}
+	defaultEndpointAuthConfig := map[string]map[string]EndpointAuthEntry{"other-domain.org": map[string]EndpointAuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}
 
 	tests := []test{
 		{testName: "Use default config when only endpoints are configured.",
@@ -518,16 +518,16 @@ func TestAuthParseErrorCases(t *testing.T) {
 	tests := []test{
 		{testName: "Do not include auth entries without domain and path.",
 			testConfig: "{\"ISHARE\":{\"other-domain.org\": [\"/\"]}, \"INVALID\":[]}",
-			expectedEndpointAuthConfig: map[string]map[string]AuthEntry{
-				"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
+			expectedEndpointAuthConfig: map[string]map[string]EndpointAuthEntry{
+				"other-domain.org": map[string]EndpointAuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
 		{testName: "Do not include auth entries in an invalid format.",
 			testConfig: "{\"ISHARE\":{\"other-domain.org\": [\"/\"]}, \"INVALID\":{}}",
-			expectedEndpointAuthConfig: map[string]map[string]AuthEntry{
-				"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
+			expectedEndpointAuthConfig: map[string]map[string]EndpointAuthEntry{
+				"other-domain.org": map[string]EndpointAuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
 		{testName: "Do not include auth entries without a path.",
 			testConfig: "{\"ISHARE\":{\"other-domain.org\": [\"/\"]}, \"INVALID\":{\"domain.org\":[]}}",
-			expectedEndpointAuthConfig: map[string]map[string]AuthEntry{
-				"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
+			expectedEndpointAuthConfig: map[string]map[string]EndpointAuthEntry{
+				"other-domain.org": map[string]EndpointAuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
 	}
 
 	for _, tc := range tests {

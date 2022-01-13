@@ -23,6 +23,9 @@ const (
  */
 var config PluginConfiguration
 
+/**
+* Global configuration to be used for endpoint matching
+ */
 var endpointAuthConfig EndpointAuthConfiguration
 
 // Default configurations
@@ -48,7 +51,10 @@ type PluginConfiguration struct {
 	AuthType               string
 }
 
-type AuthEntry struct {
+/**
+* Struct to hold the information of an endpoint inside the Endpoint config for faster access.
+ */
+type EndpointAuthEntry struct {
 	// hash over domain and path to provide a sufficent key for accesing the cache
 	CacheId  uint32
 	AuthType string
@@ -59,7 +65,7 @@ type AuthEntry struct {
 /**
 * Tree like represenation of the endpoint-auth config
  */
-type EndpointAuthConfiguration map[string]map[string]AuthEntry
+type EndpointAuthConfiguration map[string]map[string]EndpointAuthEntry
 
 /**
 * Struct to represent a chache entry containing the auth information
@@ -127,7 +133,7 @@ func (*pluginContext) NewHttpContext(contextID uint32) types.HttpContext {
 }
 
 /**
-* Reads the auth-type from the plugin config
+* Reads the plugin config
  */
 func readConfiguration() {
 	data, err := proxywasm.GetPluginConfiguration()
@@ -175,12 +181,12 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		return setHeader(authType)
 	} else {
 		// in case of 'handle all', we only have to maintain one cache entry
-		return setHeader(AuthEntry{1, config.AuthType, requestDomain, requestPath})
+		return setHeader(EndpointAuthEntry{1, config.AuthType, requestDomain, requestPath})
 	}
 
 }
 
-func matchEndpoint(domainString, pathString string) (authEntry AuthEntry, match bool) {
+func matchEndpoint(domainString, pathString string) (authEntry EndpointAuthEntry, match bool) {
 
 	proxywasm.LogDebugf("Match %s - %s.", domainString, pathString)
 
@@ -229,7 +235,7 @@ func matchEndpoint(domainString, pathString string) (authEntry AuthEntry, match 
 /**
 * Apply the auth headers from either the cache or the auth provider
  */
-func setHeader(authEntry AuthEntry) types.Action {
+func setHeader(authEntry EndpointAuthEntry) types.Action {
 	data, currentCas, err := proxywasm.GetSharedData(fmt.Sprint(authEntry.CacheId))
 
 	if err != nil || data == nil {
@@ -268,7 +274,7 @@ func addCachedHeadersToRequest(cachedHeaders headersList) {
 /**
 * Request auth info at the provider. Since the call is executed asynchronous, it needs to pause the actual request handling.
  */
-func requestAuthProvider(authEntry AuthEntry, cas uint32) types.Action {
+func requestAuthProvider(authEntry EndpointAuthEntry, cas uint32) types.Action {
 
 	proxywasm.LogCriticalf("Call to %s", config.AuthProviderName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
@@ -304,7 +310,7 @@ func requestAuthProvider(authEntry AuthEntry, cas uint32) types.Action {
 * duplicate updates in edge-cases(e.g. many parallel requests), but wont lead to problems since the cache will only store the first of them, while the
 * individual tokens are still valid.
  */
-func authCallback(authEntry AuthEntry, cas uint32, bodySize int) {
+func authCallback(authEntry EndpointAuthEntry, cas uint32, bodySize int) {
 
 	proxywasm.LogDebug("Auth callback")
 
@@ -472,7 +478,7 @@ func parseAuthConfig(authJson *fastjson.Value) {
 			domainName := string(k)
 			if _, ok := endpointAuthConfig[domainName]; !ok {
 				// initialize map for domain
-				endpointAuthConfig[domainName] = make(map[string]AuthEntry)
+				endpointAuthConfig[domainName] = make(map[string]EndpointAuthEntry)
 			}
 
 			domainEntryArray, err := domainEntry.Array()
@@ -484,7 +490,7 @@ func parseAuthConfig(authJson *fastjson.Value) {
 
 				domainPathHash := fnv.New32a()
 				domainPathHash.Write([]byte(domainName + pathEntry))
-				authEntry := AuthEntry{domainPathHash.Sum32(), authType, domainName, pathEntry}
+				authEntry := EndpointAuthEntry{domainPathHash.Sum32(), authType, domainName, pathEntry}
 
 				// the path matcher only takes sub-paths, if the pattern ends with a `*`.
 				// this will lead to:
