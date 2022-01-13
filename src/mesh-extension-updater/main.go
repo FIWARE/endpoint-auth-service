@@ -22,14 +22,21 @@ import (
 )
 
 var meshYamlFolder string
+var meshYamlFile string
 
 func main() {
 
 	// Folder to read cluster and listener.yaml from
 	meshYamlFolder = os.Getenv("MESH_CONFIG_FOLDER")
+	meshYamlFile = os.Getenv("MESH_EXTENSION_FILE_NAME")
 
 	if meshYamlFolder == "" {
 		log.Fatal("No mesh-yaml folder was provided.")
+		return
+	}
+
+	if meshYamlFile == "" {
+		log.Fatal("No mesh-yaml file was provided.")
 		return
 	}
 
@@ -83,7 +90,7 @@ func patchMeshExtension() {
 	}
 
 	// read extension
-	b, _ := ioutil.ReadFile(meshYamlFolder + "/service-mesh-extension.yaml")
+	b, _ := ioutil.ReadFile(meshYamlFolder + "/" + meshYamlFile)
 	obj := &unstructured.Unstructured{}
 
 	dec := yaml.NewDecodingSerializer(unstructured.UnstructuredJSONScheme)
