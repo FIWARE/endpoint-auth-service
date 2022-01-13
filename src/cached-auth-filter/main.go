@@ -424,6 +424,9 @@ func getCacheExpiry(cacheControlHeader string) (expiry int64, err error) {
 	return -1, err
 }
 
+/**
+* Parses the config provided by the plugin context. Will use defaults for invalid entries.
+ */
 func parseConfigFromJson(jsonString string) {
 
 	// initialize with defaults
@@ -488,6 +491,8 @@ func parseAuthConfig(authJson *fastjson.Value) {
 			for _, entry := range domainEntryArray {
 				pathEntry := string(entry.GetStringBytes())
 
+				// Calculate a hash of domain and path, that will be used as key for the cache to allow the usage of one
+				// cache entry for all sub-paths of an entry
 				domainPathHash := fnv.New32a()
 				domainPathHash.Write([]byte(domainName + pathEntry))
 				authEntry := EndpointAuthEntry{domainPathHash.Sum32(), authType, domainName, pathEntry}
@@ -513,7 +518,7 @@ func parseAuthConfig(authJson *fastjson.Value) {
 }
 
 /**
-* Parse the jsonstring, containing the configuration
+* Parse the json-object, containing the configuration
  */
 func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig PluginConfiguration) {
 	proxywasm.LogDebugf("Parse the config: %v", parsedJson)
