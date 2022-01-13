@@ -64,6 +64,7 @@ See [kubernetes](kubernetes) for a full example.
 * [init-iptables](src/iptables-init/IPTABLES.md)
 * [envoy-configmap-updater](src/envoy-configmap-updater/README.md)
 * [envoy-resource-updater](src/envoy-resource-updater/README.md)
+* [mesh-extension-updater](src/mesh-extension-updater/README.md)
 
 ## ADRs
 
