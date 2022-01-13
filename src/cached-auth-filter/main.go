@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"hash/fnv"
 	"path"
 	"strconv"
 	"strings"
@@ -16,13 +17,6 @@ const (
 	authorityKey = ":authority"
 	pathKey      = ":path"
 )
-
-/**
-* Global compare & set value for cache control
- */
-var cas uint32 = 0
-var requestDomain string
-var requestPath string
 
 /**
 * Plugin configurations
@@ -54,20 +48,18 @@ type PluginConfiguration struct {
 	AuthType               string
 }
 
+type AuthEntry struct {
+	// hash over domain and path to provide a sufficent key for accesing the cache
+	CacheId  uint32
+	AuthType string
+	Domain   string
+	Path     string
+}
+
 /**
 * Tree like represenation of the endpoint-auth config
  */
-type EndpointAuthConfiguration map[string]map[string]string
-
-/**
-* Array with the paths that should be handled by the plugin.
- */
-type pathConfig []string
-
-/**
-* Array to hold the domains to be handled by the plugin.
- */
-type domainConfig []string
+type EndpointAuthConfiguration map[string]map[string]AuthEntry
 
 /**
 * Struct to represent a chache entry containing the auth information
@@ -161,7 +153,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		return types.ActionContinue
 	}
 	// we are only interested in the host and want to ignore the port
-	requestDomain = strings.Split(authorityHeader, ":")[0]
+	requestDomain := strings.Split(authorityHeader, ":")[0]
 
 	// :path header is set by envoy and holds the requested path
 	pathHeader, err := proxywasm.GetHttpRequestHeader(pathKey)
@@ -169,7 +161,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		proxywasm.LogCriticalf("Failed to get path header: %v", err)
 		return types.ActionContinue
 	}
-	requestPath = pathHeader
+	requestPath := pathHeader
 
 	if config.EnableEndpointMatching {
 		proxywasm.LogDebug("Endpoint matching is enabled. Match the path")
@@ -182,12 +174,13 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		}
 		return setHeader(authType)
 	} else {
-		return setHeader(config.AuthType)
+		// in case of 'handle all', we only have to maintain one cache entry
+		return setHeader(AuthEntry{1, config.AuthType, requestDomain, requestPath})
 	}
 
 }
 
-func matchEndpoint(domainString, pathString string) (authType string, match bool) {
+func matchEndpoint(domainString, pathString string) (authEntry AuthEntry, match bool) {
 
 	proxywasm.LogDebugf("Match %s - %s.", domainString, pathString)
 
@@ -223,7 +216,7 @@ func matchEndpoint(domainString, pathString string) (authType string, match bool
 		}
 		if cpLen := len(configuredPath); cpLen > matchLength {
 			matchLength = cpLen
-			authType = configuredAuthType
+			authEntry = configuredAuthType
 		}
 	}
 
@@ -236,27 +229,24 @@ func matchEndpoint(domainString, pathString string) (authType string, match bool
 /**
 * Apply the auth headers from either the cache or the auth provider
  */
-func setHeader(authType string) types.Action {
-	sharedDataKey := requestDomain + requestPath
-	data, currentCas, err := proxywasm.GetSharedData(sharedDataKey)
+func setHeader(authEntry AuthEntry) types.Action {
+	data, currentCas, err := proxywasm.GetSharedData(fmt.Sprint(authEntry.CacheId))
 
 	if err != nil || data == nil {
-		return requestAuthProvider(authType)
+		return requestAuthProvider(authEntry, currentCas)
 	}
 
 	proxywasm.LogDebugf("Cache hit: %s", string(data))
 	cachedAuthInfo, err := parseCachedAuthInformation(string(data))
 	if err != nil {
 		proxywasm.LogCriticalf("Failed to parse cached info, request new instead. %v", err)
-		cas = currentCas
-		return requestAuthProvider(authType)
+		return requestAuthProvider(authEntry, currentCas)
 	}
 
 	proxywasm.LogDebugf("Expiry: %v, Current: %v", cachedAuthInfo.expirationTime, time.Now().Unix())
 	if cachedAuthInfo.expirationTime <= time.Now().Unix() {
 		proxywasm.LogDebugf("Cache expired. Request new auth.")
-		cas = currentCas
-		return requestAuthProvider(authType)
+		return requestAuthProvider(authEntry, currentCas)
 	} else {
 		proxywasm.LogDebugf("Cache still valid.")
 		addCachedHeadersToRequest(cachedAuthInfo.cachedHeaders)
@@ -278,7 +268,7 @@ func addCachedHeadersToRequest(cachedHeaders headersList) {
 /**
 * Request auth info at the provider. Since the call is executed asynchronous, it needs to pause the actual request handling.
  */
-func requestAuthProvider(authType string) types.Action {
+func requestAuthProvider(authEntry AuthEntry, cas uint32) types.Action {
 
 	proxywasm.LogCriticalf("Call to %s", config.AuthProviderName)
 	hs, _ := proxywasm.GetHttpRequestHeaders()
@@ -294,10 +284,14 @@ func requestAuthProvider(authType string) types.Action {
 		}
 	}
 	hs[methodIndex] = [2]string{":method", "GET"}
-	hs[pathIndex] = [2]string{":path", "/" + authType + "/auth?domain=" + requestDomain + "&path=" + requestPath}
+	hs[pathIndex] = [2]string{":path", "/" + authEntry.AuthType + "/auth?domain=" + authEntry.Domain + "&path=" + authEntry.Path}
 
-	if _, err := proxywasm.DispatchHttpCall(config.AuthProviderName, hs, nil, nil, config.AuthRequestTimeout, authCallback); err != nil {
-		proxywasm.LogCriticalf("Domain " + requestDomain + " , path: " + requestPath + " , authType: " + authType)
+	if _, err := proxywasm.DispatchHttpCall(config.AuthProviderName, hs, nil, nil, config.AuthRequestTimeout,
+		func(numHeaders, bodySize, numTrailers int) {
+			proxywasm.LogDebugf("Callback on auth-request response.")
+			authCallback(authEntry, cas, bodySize)
+		}); err != nil {
+		proxywasm.LogCriticalf("Domain " + authEntry.Domain + " , path: " + authEntry.Path + " , authType: " + authEntry.AuthType)
 		proxywasm.LogCriticalf("Call to auth-provider failed: %v", err)
 		return types.ActionContinue
 	}
@@ -310,7 +304,7 @@ func requestAuthProvider(authType string) types.Action {
 * duplicate updates in edge-cases(e.g. many parallel requests), but wont lead to problems since the cache will only store the first of them, while the
 * individual tokens are still valid.
  */
-func authCallback(numHeaders, bodySize, numTrailers int) {
+func authCallback(authEntry AuthEntry, cas uint32, bodySize int) {
 
 	proxywasm.LogDebug("Auth callback")
 
@@ -363,8 +357,9 @@ func authCallback(numHeaders, bodySize, numTrailers int) {
 				}
 				buffer := parsedInfo.Get().MarshalTo(nil)
 				proxywasm.LogDebugf("Buffer is %v", string(buffer))
-				proxywasm.SetSharedData(requestDomain+requestPath, buffer, cas)
-				proxywasm.LogDebugf("Cached auth info for %v / %v", requestDomain, requestPath)
+
+				proxywasm.SetSharedData(fmt.Sprint(authEntry.CacheId), buffer, cas)
+				proxywasm.LogDebugf("Cached auth info for %v / %v", authEntry.Domain, authEntry.Path)
 			}
 			return
 		}
@@ -477,7 +472,7 @@ func parseAuthConfig(authJson *fastjson.Value) {
 			domainName := string(k)
 			if _, ok := endpointAuthConfig[domainName]; !ok {
 				// initialize map for domain
-				endpointAuthConfig[domainName] = make(map[string]string)
+				endpointAuthConfig[domainName] = make(map[string]AuthEntry)
 			}
 
 			domainEntryArray, err := domainEntry.Array()
@@ -486,15 +481,20 @@ func parseAuthConfig(authJson *fastjson.Value) {
 			}
 			for _, entry := range domainEntryArray {
 				pathEntry := string(entry.GetStringBytes())
+
+				domainPathHash := fnv.New32a()
+				domainPathHash.Write([]byte(domainName + pathEntry))
+				authEntry := AuthEntry{domainPathHash.Sum32(), authType, domainName, pathEntry}
+
 				// the path matcher only takes sub-paths, if the pattern ends with a `*`.
 				// this will lead to:
 				//                   `/path` -> two entries [`/path`, `/path/*`] for exact match and subpaths to work
 				//                   `/path/` -> one entry [`/path/*`] exact match already included
 				if string(pathEntry[len(pathEntry)-1]) != "/" {
-					endpointAuthConfig[domainName][pathEntry] = authType
-					endpointAuthConfig[domainName][pathEntry+"/*"] = authType
+					endpointAuthConfig[domainName][pathEntry] = authEntry
+					endpointAuthConfig[domainName][pathEntry+"/*"] = authEntry
 				} else {
-					endpointAuthConfig[domainName][pathEntry+"*"] = authType
+					endpointAuthConfig[domainName][pathEntry+"*"] = authEntry
 				}
 			}
 			if len(endpointAuthConfig[domainName]) < 1 {

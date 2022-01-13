@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"hash/fnv"
 	"log"
 	"testing"
 	"time"
@@ -82,7 +83,7 @@ func TestCaching(t *testing.T) {
 	tests := []test{
 		{testName: "Cache headers for responses.",
 			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"GET", "domain.org", "/", true, false}},
-			testConfig:        "{}",
+			testConfig:        "{\"general\":{\"enableEndpointMatching\":true},\"endpoints\":{\"ISHARE\":{\"domain.org\": [\"/\"]}}}",
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}}},
@@ -92,8 +93,8 @@ func TestCaching(t *testing.T) {
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}, {"name": "Just-another", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
 			expectedHeaders:   [][2]string{{"Authorization", "token"}, {"Just-another", "token"}}},
-		{testName: "Cache headers for responses on multiple requests.",
-			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"POST", "other-domain.org", "/", false, false}, {"POST", "domain.org", "/", true, false}},
+		{testName: "Cache headers for responses on multiple requests, everything should be served from cache.",
+			testRequests:      []testRequest{{"GET", "domain.org", "/", false, false}, {"POST", "other-domain.org", "/", true, false}, {"POST", "domain.org", "/", true, false}},
 			testConfig:        "{}",
 			expectExpectCache: true,
 			authResponse:      authResponse{`[{"name": "Authorization", "value": "token"}]`, [][2]string{{"HTTP/1.1", "200 OK"}, {"cache-control", "max-age=60"}}},
@@ -430,8 +431,10 @@ func TestParseConfig(t *testing.T) {
 		expectedPluginConfiguration PluginConfiguration
 		expectedAuthConfiguration   EndpointAuthConfiguration
 	}
+	h := fnv.New32a()
+	h.Write([]byte("other-domain.org/"))
 
-	defaultEndpointAuthConfig := map[string]map[string]string{"other-domain.org": map[string]string{"/*": "ISHARE"}}
+	defaultEndpointAuthConfig := map[string]map[string]AuthEntry{"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}
 
 	tests := []test{
 		{testName: "Use default config when only endpoints are configured.",
@@ -509,19 +512,22 @@ func TestAuthParseErrorCases(t *testing.T) {
 		expectedEndpointAuthConfig EndpointAuthConfiguration
 	}
 
+	h := fnv.New32a()
+	h.Write([]byte("other-domain.org/"))
+
 	tests := []test{
 		{testName: "Do not include auth entries without domain and path.",
 			testConfig: "{\"ISHARE\":{\"other-domain.org\": [\"/\"]}, \"INVALID\":[]}",
-			expectedEndpointAuthConfig: map[string]map[string]string{
-				"other-domain.org": map[string]string{"/*": "ISHARE"}}},
+			expectedEndpointAuthConfig: map[string]map[string]AuthEntry{
+				"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
 		{testName: "Do not include auth entries in an invalid format.",
 			testConfig: "{\"ISHARE\":{\"other-domain.org\": [\"/\"]}, \"INVALID\":{}}",
-			expectedEndpointAuthConfig: map[string]map[string]string{
-				"other-domain.org": map[string]string{"/*": "ISHARE"}}},
+			expectedEndpointAuthConfig: map[string]map[string]AuthEntry{
+				"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
 		{testName: "Do not include auth entries without a path.",
 			testConfig: "{\"ISHARE\":{\"other-domain.org\": [\"/\"]}, \"INVALID\":{\"domain.org\":[]}}",
-			expectedEndpointAuthConfig: map[string]map[string]string{
-				"other-domain.org": map[string]string{"/*": "ISHARE"}}},
+			expectedEndpointAuthConfig: map[string]map[string]AuthEntry{
+				"other-domain.org": map[string]AuthEntry{"/*": {h.Sum32(), "ISHARE", "other-domain.org", "/"}}}},
 	}
 
 	for _, tc := range tests {
@@ -587,13 +593,13 @@ func TestPathMatching(t *testing.T) {
 		parsedJson, _ := parser.Parse(tc.testConfig)
 		parseAuthConfig(parsedJson)
 
-		authType, match := matchEndpoint(tc.testDomain, tc.testPath)
+		authEntry, match := matchEndpoint(tc.testDomain, tc.testPath)
 		if match != tc.expectedResult {
 			t.Errorf("%s: Match was expected to be %v, but was %v.", tc.testName, tc.expectedResult, match)
 			continue
 		}
-		if authType != tc.expectedAuthType {
-			t.Errorf("%s: Authtype was expected to be %s, but was %s.", tc.testName, tc.expectedAuthType, authType)
+		if authEntry.AuthType != tc.expectedAuthType {
+			t.Errorf("%s: Authtype was expected to be %s, but was %s.", tc.testName, tc.expectedAuthType, authEntry.AuthType)
 			continue
 		}
 	}
