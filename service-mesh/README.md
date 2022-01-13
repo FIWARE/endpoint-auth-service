@@ -6,7 +6,7 @@ In general, every [Service-Mesh](https://en.wikipedia.org/wiki/Service_mesh) tha
 ## Precondition
 
 For the solution to properly work, the [endpoint-configuration-service](https://quay.io/repository/fiware/endpoint-configuration-service) and the [auth-provider](../doc/AUTHPROVIDER.md)(currently only [iShare](https://quay.io/repository/fiware/ishare-auth-provider)) should be deployed. 
-The [helm-chart](https://github.com/FIWARE/helm-charts/tree/main/charts/endpoint-auth-service can be used for that, only the [sidecar-injection](https://github.com/FIWARE/helm-charts/tree/main/charts/endpoint-auth-service#sidecar-injection) needs to be disabled.
+The [helm-chart](https://github.com/FIWARE/helm-charts/tree/main/charts/endpoint-auth-service) can be used for that, only the [sidecar-injection](https://github.com/FIWARE/helm-charts/tree/main/charts/endpoint-auth-service#sidecar-injection) needs to be disabled.
 
 ## OpenShift Service Mesh
 
