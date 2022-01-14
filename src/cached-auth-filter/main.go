@@ -186,6 +186,10 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 
 }
 
+/**
+* Match the given domain/path combination with the pre-built endpoint configuration tree and return the
+* tree entry.
+ */
 func matchEndpoint(domainString, pathString string) (authEntry EndpointAuthEntry, match bool) {
 
 	proxywasm.LogDebugf("Match %s - %s.", domainString, pathString)
