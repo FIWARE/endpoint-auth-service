@@ -57,13 +57,14 @@ See [kubernetes](kubernetes) for a full example.
 
 ## Component specific documentation
 
-* [envoy](doc/ENVOY.md)
+* [envoy](envoy/README.md)
 * [auth-provider](doc/AUTHPROVIDER.md)
 * [endpoint-configuration-servcie](src/endpoint-configuration-service/README.md)
 * [iShare-auth-provider](src/ishare-auth-provider/README.md)
 * [init-iptables](src/iptables-init/IPTABLES.md)
 * [envoy-configmap-updater](src/envoy-configmap-updater/README.md)
 * [envoy-resource-updater](src/envoy-resource-updater/README.md)
+* [mesh-extension-updater](src/mesh-extension-updater/README.md)
 
 ## ADRs
 

@@ -9,9 +9,14 @@ import lombok.Setter;
 /**
  * Configuration of proxy(e.g. envoy) related properties
  */
-@ConfigurationProperties("proxy")
+@ConfigurationProperties("envoy")
 @Data
-public class ProxyProperties {
+public class EnvoyProperties {
+
+	/**
+	 * Should the generation of envoy-proxy configurations be enabled?
+	 */
+	private boolean enabled;
 
 	/**
 	 * Path to the listener.yaml.mustache file used for configuration of the listeners in the envoy proxy.
@@ -22,11 +27,6 @@ public class ProxyProperties {
 	 * Path to the cluster.yaml file used for configuration of the clusters in the envoy proxy.
 	 */
 	private String clusterYamlPath;
-
-	/**
-	 * Delay to be used when updating envoy. Should prevent to frequent config changes.
-	 */
-	private long updateDelayInS;
 
 	/**
 	 * Absolute path to the wasm cached-auth-filter

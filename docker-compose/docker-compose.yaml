@@ -72,10 +72,10 @@ services:
     # required to write at the mounted volumes
     user: root
     environment:
-      - PROXY_LISTENER_YAML_PATH=/envoy-config/listener.yaml
-      - PROXY_CLUSTER_YAML_PATH=/envoy-config/cluster.yaml
-      - PROXY_EXTERNAL_AUTH_ADDRESS=auth-provider
-      - PROXY_EXTERNAL_AUTH_PORT=7070
+      - ENVOY_LISTENER_YAML_PATH=/envoy-config/listener.yaml
+      - ENVOY_CLUSTER_YAML_PATH=/envoy-config/cluster.yaml
+      - ENVOY_EXTERNAL_AUTH_ADDRESS=auth-provider
+      - ENVOY_EXTERNAL_AUTH_PORT=7070
       - MICRONAUT_SERVER_PORT=9090
     volumes:
       - map-folder:/envoy-config:rw

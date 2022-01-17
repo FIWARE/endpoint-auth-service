@@ -69,8 +69,42 @@ jobs:
         name: auth-provider
         path: src/ishare-auth-provider/coverage.lcov
 
+  cached-auth-filter-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: Set up Go
+      uses: actions/setup-go@v2
+      with:
+        go-version: 1.17.3
+
+    - name: Go test
+      run: |
+        cd src/cached-auth-filter/
+        go test -v -tags=proxytest -covermode=count -coverprofile=coverage.out
+
+    - name: Transform report
+      uses: jandelgado/gcov2lcov-action@v1.0.8
+      with:
+        infile: coverage.out
+        outfile: coverage.lcov
+        working-directory: src/cached-auth-filter/  
+
+    - name: Make it coveralls compatible
+      run: |
+        cd src/cached-auth-filter/
+        sed -i 's/fiware.org/src/g' coverage.lcov
+
+    - name: Upload coverage-report
+      uses: actions/upload-artifact@v2
+      with:
+        name: cached-auth-filter
+        path: src/cached-auth-filter/coverage.lcov
+
   aggregate-report:
-    needs: [endpoint-service-test, ishare-auth-provider-test]
+    needs: [endpoint-service-test, ishare-auth-provider-test, cached-auth-filter-test]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -87,6 +121,12 @@ jobs:
           name: auth-provider
           path: coverage/auth-provider
 
+      - name: download cached-auth-filter report
+        uses: actions/download-artifact@v2
+        with:
+          name: cached-auth-filter
+          path: coverage/cached-auth-filter
+
       - name: prepare
         run: |
           sudo apt-get install -y lcov
@@ -94,7 +134,9 @@ jobs:
       - name: aggregate
         run: |  
           cd coverage
-          lcov -a auth-provider/coverage.lcov -a ecs/lcov.info -o ../lcov.info
+          cat cached-auth-filter/coverage.lcov
+          cat auth-provider/coverage.lcov
+          lcov -a auth-provider/coverage.lcov -a cached-auth-filter/coverage.lcov -a ecs/lcov.info -o ../lcov.info
 
       - name: Upload coverage-report
         uses: actions/upload-artifact@v2

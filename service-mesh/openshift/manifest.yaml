@@ -1,0 +1,7 @@
+schemaVersion: 1
+name: Cached Auth Filter
+description: Http-Filter to handle calls to apply auth-information to requests. It handles calls to the auth-provider and caching of the auth-information.
+version: ${cache-filter-wasm.version}
+phase: UNSPECIFIED_PHASE
+priority: 0
+module: cached-auth-filter.wasm

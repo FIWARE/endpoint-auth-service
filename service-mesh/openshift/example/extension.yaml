@@ -1,0 +1,14 @@
+apiVersion: maistra.io/v1
+kind: ServiceMeshExtension
+metadata:
+  name: cached-auth-filter-extension
+  namespace: proxy-test
+spec:
+  config:
+    authType: ISHARE
+    authProviderName: outbound|80||ext-authz
+  workloadSelector: 
+    labels:
+      app: orion
+  image: quay.io/fiware/cached-auth-filter-extension:0.1.0-PRE-9
+  phase: PreAuthN
