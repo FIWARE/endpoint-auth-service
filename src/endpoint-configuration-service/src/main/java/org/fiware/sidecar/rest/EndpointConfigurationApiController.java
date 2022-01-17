@@ -41,13 +41,9 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 	@Transactional
 	@Override
 	public HttpResponse<Object> createEndpoint(EndpointRegistrationVO endpointRegistrationVO) {
+
 		// check if a service to handle the endpoint exists.
-		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()));
-
-
-		if (!endpointRegistrationVO.authType().equals(AuthTypeVO.ISHARE)) {
-			throw new UnsupportedOperationException("Currently only iShare-authentication is supported.");
-		}
+		EndpointWriteService endpointWriteService = getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()));
 
 		if (endpointRepository.findByDomainAndPath(endpointRegistrationVO.getDomain(), endpointRegistrationVO.getPath()).isPresent()) {
 			return HttpResponse.status(HttpStatus.CONFLICT);
@@ -56,7 +52,7 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 		Endpoint endpoint = endpointRepository.save(endpointMapper.endpointRegistrationVoToEndpoint(endpointRegistrationVO));
 
 		// type specific creations
-		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()))
+		endpointWriteService
 				.createEndpoint(endpoint.getId(), endpointRegistrationVO);
 
 		updateServices.forEach(UpdateService::scheduleConfigUpdate);
