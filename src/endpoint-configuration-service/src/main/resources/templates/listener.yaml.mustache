@@ -3,8 +3,8 @@ resources:
     name: envoy_listener
     address:
       socket_address:
-        address: {{socket-address}}
-        port_value: {{socket-port}}
+        address: {{socketAddress}}
+        port_value: {{socketPort}}
     traffic_direction: OUTBOUND
     listener_filters:
       - name: envoy.filters.listener.tls_inspector
@@ -53,7 +53,7 @@ resources:
                         route:
                           cluster: passthrough
               http_filters:
-                {{#enable-wasm-filter}}
+                {{#enableWasmFilter}}
                 - name: composite
                   typed_config:
                     "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
@@ -79,12 +79,13 @@ resources:
                                       config:
                                         configuration:
                                           "@type": "type.googleapis.com/google.protobuf.StringValue"
-                                          value: {{authType}}
+                                          value: |
+                                            { "general": {"authType":"{{authType}}"} }
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
                                             local:
-                                              filename: "{{wasm-filter-path}}"
+                                              filename: "{{wasmFilterPath}}"
                             predicate:
                               and_matcher:
                                 predicate:
@@ -119,5 +120,5 @@ resources:
                           {{/passthrough}}
                           {{/endpoints}}
                           {{/virtualHosts}}
-                {{/enable-wasm-filter}}
+                {{/enableWasmFilter}}
                 - name: envoy.filters.http.router

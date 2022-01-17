@@ -21,8 +21,8 @@ resources:
               address:
                 socket_address:
                   protocol: TCP
-                  address: {{auth-service-address}}
-                  port_value: {{auth-service-port}}
+                  address: {{authServiceAddress}}
+                  port_value: {{authServicePort}}
   {{#endpoints}}
   {{#httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster

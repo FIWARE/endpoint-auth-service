@@ -2,7 +2,9 @@ package org.fiware.sidecar.service;
 
 import com.github.mustachejava.DefaultMustacheFactory;
 import com.github.mustachejava.MustacheFactory;
-import org.fiware.sidecar.configuration.ProxyProperties;
+import org.fiware.sidecar.configuration.EnvoyProperties;
+import org.fiware.sidecar.configuration.GeneralProperties;
+import org.fiware.sidecar.configuration.MeshExtensionProperties;
 import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.mapping.EndpointMapperImpl;
 import org.fiware.sidecar.model.AuthType;
@@ -11,7 +13,6 @@ import org.fiware.sidecar.persistence.EndpointRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
@@ -36,27 +37,60 @@ class EnvoyUpdateServiceTest {
 	private static final MustacheFactory MUSTACHE_FACTORY = new DefaultMustacheFactory();
 	private static final EndpointMapper ENDPOINT_MAPPER = new EndpointMapperImpl();
 	private EndpointRepository endpointRepository;
-	private ProxyProperties proxyProperties;
-	private EnvoyUpdateService envoyUpdateService;
+	private GeneralProperties generalProperties;
 	private String testId;
 
 	@BeforeEach
 	public void setup() throws Exception {
+		generalProperties = new GeneralProperties();
+		generalProperties.setUpdateDelayInS(2);
 		endpointRepository = mock(EndpointRepository.class);
-		proxyProperties = new ProxyProperties();
 		testId = UUID.randomUUID().toString();
 		Files.createDirectory(Path.of(String.format("./%s", testId)));
+	}
 
-		proxyProperties.setListenerYamlPath(String.format("./%s/listener.yaml", testId));
-		proxyProperties.setClusterYamlPath(String.format("./%s/cluster.yaml", testId));
-		ProxyProperties.AddressConfig authService = new ProxyProperties.AddressConfig();
+	private MeshExtensionProperties getMeshExtensionProperties() {
+
+		MeshExtensionProperties meshExtensionProperties = new MeshExtensionProperties();
+
+		meshExtensionProperties.setAuthProviderName("outbount|8080||auth-provider");
+		meshExtensionProperties.setFilterVersion("1.0.0");
+		meshExtensionProperties.setExtensionName("my-extension");
+		meshExtensionProperties.setExtensionNamespace("my-extension-namespace");
+		meshExtensionProperties.setMeshExtensionYamlPath(String.format("./%s/service-mesh-extension.yaml", testId));
+
+		MeshExtensionProperties.MetaData label = new MeshExtensionProperties.MetaData();
+		label.setName("my-label");
+		label.setValue("my-label-value");
+
+		MeshExtensionProperties.MetaData annotation = new MeshExtensionProperties.MetaData();
+		annotation.setName("my-annotation");
+		annotation.setValue("my-annotation-value");
+		meshExtensionProperties.setLabels(List.of(label));
+		meshExtensionProperties.setAnnotations(List.of(annotation));
+
+		MeshExtensionProperties.MetaData workloadSelector = new MeshExtensionProperties.MetaData();
+		workloadSelector.setName("my-workload");
+		workloadSelector.setValue("selected");
+		meshExtensionProperties.setWorkloadSelector(workloadSelector);
+
+		return meshExtensionProperties;
+	}
+
+	private EnvoyProperties getEnvoyProperties() {
+
+		EnvoyProperties envoyProperties = new EnvoyProperties();
+		envoyProperties.setListenerYamlPath(String.format("./%s/listener.yaml", testId));
+		envoyProperties.setClusterYamlPath(String.format("./%s/cluster.yaml", testId));
+		EnvoyProperties.AddressConfig authService = new EnvoyProperties.AddressConfig();
 		authService.setPort(7070);
 		authService.setAddress("auth-service");
-		ProxyProperties.AddressConfig socketAddress = new ProxyProperties.AddressConfig();
+		EnvoyProperties.AddressConfig socketAddress = new EnvoyProperties.AddressConfig();
 		socketAddress.setPort(15001);
 		socketAddress.setAddress("0.0.0.0");
-		proxyProperties.setExternalAuth(authService);
-		proxyProperties.setSocketAddress(socketAddress);
+		envoyProperties.setExternalAuth(authService);
+		envoyProperties.setSocketAddress(socketAddress);
+		return envoyProperties;
 	}
 
 	// deletes all generated results. Disable this mechanism if you need to debug them.
@@ -71,8 +105,23 @@ class EnvoyUpdateServiceTest {
 
 	@ParameterizedTest
 	@MethodSource("getTestConfig")
-	public void applyConfiguration(List<Endpoint> endpoints, String expectationsFolder) throws Exception {
-		envoyUpdateService = new EnvoyUpdateService(MUSTACHE_FACTORY, endpointRepository, ENDPOINT_MAPPER, proxyProperties, Executors.newSingleThreadScheduledExecutor());
+	public void applyConfigurationToServiceMesh(List<Endpoint> endpoints, String expectationsFolder) throws Exception {
+		ServiceMeshUpdateService meshUpdateService = new ServiceMeshUpdateService(MUSTACHE_FACTORY, endpointRepository, ENDPOINT_MAPPER, Executors.newSingleThreadScheduledExecutor(), generalProperties, getMeshExtensionProperties());
+		meshUpdateService.setupTemplates();
+
+		when(endpointRepository.findAll()).thenReturn(endpoints);
+		meshUpdateService.applyConfiguration();
+
+		Map<String, Object> expectedListener = getYamlAsMap(Path.of(String.format("%s/service-mesh-extension.yaml", String.format(expectationsFolder, "meshExtension"))), null);
+		Map<String, Object> generatedListener = getYamlAsMap(Path.of(String.format("%s/service-mesh-extension.yaml", testId)), null);
+		Assertions.assertEquals(expectedListener, generatedListener, "Generated service-mesh-extension should be as expected.");
+
+	}
+
+	@ParameterizedTest
+	@MethodSource("getTestConfig")
+	public void applyConfigurationToEnvoy(List<Endpoint> endpoints, String expectationsFolder) throws Exception {
+		EnvoyUpdateService envoyUpdateService = new EnvoyUpdateService(MUSTACHE_FACTORY, endpointRepository, ENDPOINT_MAPPER, Executors.newSingleThreadScheduledExecutor(), generalProperties, getEnvoyProperties());
 		envoyUpdateService.setupTemplates();
 
 		when(endpointRepository.findAll()).thenReturn(endpoints);
@@ -80,11 +129,11 @@ class EnvoyUpdateServiceTest {
 
 		Map<String, String> replacementMap = buildIdReplacementMap(endpoints);
 
-		Map<String, Object> expectedListener = getYamlAsMap(Path.of(String.format("%s/listener.yaml", expectationsFolder)), null);
+		Map<String, Object> expectedListener = getYamlAsMap(Path.of(String.format("%s/listener.yaml", String.format(expectationsFolder, "envoy"))), null);
 		Map<String, Object> generatedListener = getYamlAsMap(Path.of(String.format("%s/listener.yaml", testId)), replacementMap);
 		Assertions.assertEquals(expectedListener, generatedListener, "Generated listener should be as expected.");
 
-		Map<String, Object> expectedCluster = getYamlAsMap(Path.of(String.format("%s/cluster.yaml", expectationsFolder)), null);
+		Map<String, Object> expectedCluster = getYamlAsMap(Path.of(String.format("%s/cluster.yaml", String.format(expectationsFolder, "envoy"))), null);
 		Map<String, Object> generatedCluster = getYamlAsMap(Path.of(String.format("%s/cluster.yaml", testId)), replacementMap);
 		Assertions.assertEquals(expectedCluster, generatedCluster, "Generated cluster should be as expected.");
 	}
@@ -108,34 +157,34 @@ class EnvoyUpdateServiceTest {
 		return yaml.load(expectedString);
 	}
 
-	private static Stream<Arguments> getTestConfig() {
+	public static Stream<Arguments> getTestConfig() {
 		return Stream.of(
 				Arguments.of(
 						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 6060, AuthType.ISHARE, true)),
-						"src/test/resources/expectations/single-endpoint/"),
+						"src/test/resources/expectations/%s/single-endpoint/"),
 				Arguments.of(
 						List.of(),
-						"src/test/resources/expectations/empty/"),
+						"src/test/resources/expectations/%s/empty/"),
 				Arguments.of(
 						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 6060, AuthType.ISHARE, true),
 								getEndpoint(UUID.randomUUID(), "domain-2", "/", 6070, AuthType.ISHARE, false)),
-						"src/test/resources/expectations/multi-endpoint/"),
+						"src/test/resources/expectations/%s/multi-endpoint/"),
 				Arguments.of(
 						List.of(getEndpoint(UUID.randomUUID(), "domain", "/", 6060, AuthType.ISHARE, false)),
-						"src/test/resources/expectations/single-endpoint-no-ssl/"),
+						"src/test/resources/expectations/%s/single-endpoint-no-ssl/"),
 				Arguments.of(
 						List.of(getEndpoint(UUID.randomUUID(), "domain", "/nonRoot", 6060, AuthType.ISHARE, true)),
-						"src/test/resources/expectations/single-non-root-path/"),
+						"src/test/resources/expectations/%s/single-non-root-path/"),
 				Arguments.of(
 						List.of(getEndpoint(UUID.randomUUID(), "domain", "/path1", 6060, AuthType.ISHARE, true),
 								getEndpoint(UUID.randomUUID(), "domain", "/path2", 6060, AuthType.ISHARE, true)),
-						"src/test/resources/expectations/single-endpoint-multi-path/"),
+						"src/test/resources/expectations/%s/single-endpoint-multi-path/"),
 				Arguments.of(
 						List.of(getEndpoint(UUID.randomUUID(), "domain", "/path1", 6060, AuthType.ISHARE, true),
 								getEndpoint(UUID.randomUUID(), "domain", "/path2", 6060, AuthType.ISHARE, true),
 								getEndpoint(UUID.randomUUID(), "domain-2", "/", 6060, AuthType.ISHARE, true),
 								getEndpoint(UUID.randomUUID(), "domain-2", "/nonRoot", 6070, AuthType.ISHARE, false)),
-						"src/test/resources/expectations/multi-endpoint-multi-path/")
+						"src/test/resources/expectations/%s/multi-endpoint-multi-path/")
 		);
 	}
 

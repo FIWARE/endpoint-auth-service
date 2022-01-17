@@ -43,7 +43,7 @@ class EndpointConfigurationApiControllerTest {
 	@BeforeEach
 	public void setup() {
 		endpointRepository = mock(EndpointRepository.class);
-		endpointConfigurationApiController = new EndpointConfigurationApiController(List.of(new IShareEndpointWriteService()), endpointRepository, ENDPOINT_MAPPER, mock(EnvoyUpdateService.class));
+		endpointConfigurationApiController = new EndpointConfigurationApiController(List.of(new IShareEndpointWriteService()), endpointRepository, ENDPOINT_MAPPER, List.of(mock(EnvoyUpdateService.class)));
 	}
 
 	@ParameterizedTest

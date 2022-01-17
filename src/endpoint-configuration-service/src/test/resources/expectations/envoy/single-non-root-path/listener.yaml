@@ -35,13 +35,9 @@ resources:
                       - 'domain:6060'
                     routes:
                       - match:
-                          prefix: "/path1"
+                          prefix: "/nonRoot"
                         route:
                           cluster: expected-0
-                      - match:
-                          prefix: "/path2"
-                        route:
-                          cluster: expected-1
                       - match:
                           prefix: "/"
                         route:
@@ -77,7 +73,8 @@ resources:
                                       config:
                                         configuration:
                                           "@type": "type.googleapis.com/google.protobuf.StringValue"
-                                          value: ISHARE
+                                          value: |
+                                            { "general": {"authType":"ISHARE"} }
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
@@ -93,54 +90,7 @@ resources:
                                           "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
                                           header_name: ":path"
                                       value_match:
-                                        prefix: /path1
-                                  - or_matcher:
-                                      predicate:
-                                        - single_predicate:
-                                            input:
-                                              name: request-domain-no-port
-                                              typed_config:
-                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                                header_name: ":authority"
-                                            value_match:
-                                              exact: domain
-                                        - single_predicate:
-                                            input:
-                                              name: request-domain-6060
-                                              typed_config:
-                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                                header_name: ":authority"
-                                            value_match:
-                                              exact: domain:6060
-                          - on_match:
-                              action:
-                                name: composite-action
-                                typed_config:
-                                  "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
-                                  typed_config:
-                                    name: wasm
-                                    typed_config:
-                                      "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-                                      config:
-                                        configuration:
-                                          "@type": "type.googleapis.com/google.protobuf.StringValue"
-                                          value: ISHARE
-                                        vm_config:
-                                          runtime: "envoy.wasm.runtime.v8"
-                                          code:
-                                            local:
-                                              filename: "/cache-filter/cache-filter.wasm"
-                            predicate:
-                              and_matcher:
-                                predicate:
-                                  - single_predicate:
-                                      input:
-                                        name: request-path
-                                        typed_config:
-                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                          header_name: ":path"
-                                      value_match:
-                                        prefix: /path2
+                                        prefix: /nonRoot
                                   - or_matcher:
                                       predicate:
                                         - single_predicate:
