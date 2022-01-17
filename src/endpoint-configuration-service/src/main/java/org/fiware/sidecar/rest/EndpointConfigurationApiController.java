@@ -41,6 +41,9 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 	@Transactional
 	@Override
 	public HttpResponse<Object> createEndpoint(EndpointRegistrationVO endpointRegistrationVO) {
+		// check if a service to handle the endpoint exists.
+		getServiceForAuthType(endpointMapper.authTypeVoToAuthType(endpointRegistrationVO.authType()));
+
 
 		if (!endpointRegistrationVO.authType().equals(AuthTypeVO.ISHARE)) {
 			throw new UnsupportedOperationException("Currently only iShare-authentication is supported.");
