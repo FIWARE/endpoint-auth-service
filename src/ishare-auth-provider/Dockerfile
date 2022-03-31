@@ -1,4 +1,4 @@
-FROM ubi8/go-toolset:1.16.12-7
+FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12-7
 
 ENV SERVER_PORT="8080"
 ENV CONFIGURATION_SERVICE_URL="http://endpoint-configuration-service:8080"

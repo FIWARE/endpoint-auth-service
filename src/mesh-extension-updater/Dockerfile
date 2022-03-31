@@ -1,4 +1,4 @@
-FROM golang:1.18-alpine
+FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12-7
 
 ENV MESH_CONFIG_FOLDER="/mesh-config"
 ENV MESH_EXTENSION_FILE_NAME="service-mesh-extension.yaml"
