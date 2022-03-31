@@ -457,7 +457,7 @@
                 <artifactId>jib-maven-plugin</artifactId>
                 <configuration>
                     <from>
-                        <image>openjdk:${jdk.version}-alpine</image>
+                        <image>registry.access.redhat.com/ubi8/openjdk-17:1.11</image>
                     </from>
                     <to>
                         <image>${image.registry}${image.repository}/${artifactId}</image>
