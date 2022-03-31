@@ -1,5 +1,8 @@
 FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12-7
 
+ENV GOPATH=$APP_ROOT
+ENV GOBIN=$APP_ROOT/bin
+
 ENV MESH_CONFIG_FOLDER="/mesh-config"
 ENV MESH_EXTENSION_FILE_NAME="service-mesh-extension.yaml"
 

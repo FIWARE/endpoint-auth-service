@@ -1,5 +1,8 @@
 FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12-7
 
+ENV GOPATH=$APP_ROOT
+ENV GOBIN=$APP_ROOT/bin
+
 ENV SERVER_PORT="8080"
 ENV CONFIGURATION_SERVICE_URL="http://endpoint-configuration-service:8080"
 ENV CERTIFICATE_FOLDER="/certs"
@@ -16,6 +19,5 @@ USER 1001
 COPY ./ ./ 
 
 RUN go install ishare-auth-provider
-
 
 CMD ["ishare-auth-provider"]
