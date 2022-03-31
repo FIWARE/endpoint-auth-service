@@ -19,7 +19,7 @@
         <version.org.openapitools.generator-maven-plugin>5.1.0
         </version.org.openapitools.generator-maven-plugin>
         <version.io.kokuwa.micronaut.codegen>2.2.1</version.io.kokuwa.micronaut.codegen>
-        <version.io.swagger.swagger-annotations>1.6.3</version.io.swagger.swagger-annotations>
+        <version.io.swagger.swagger-annotations>1.6.5</version.io.swagger.swagger-annotations>
         <version.com.squareup.okhttp3>4.9.3</version.com.squareup.okhttp3>
         <version.com.google.code.gson>2.9.0</version.com.google.code.gson>
         <version.org.threeten.threetenbp>1.5.2</version.org.threeten.threetenbp>
