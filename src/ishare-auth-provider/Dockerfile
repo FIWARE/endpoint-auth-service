@@ -1,4 +1,4 @@
-FROM golang:1.17.3-alpine
+FROM golang:1.18-alpine
 
 ENV SERVER_PORT="8080"
 ENV CONFIGURATION_SERVICE_URL="http://endpoint-configuration-service:8080"
@@ -15,3 +15,4 @@ RUN go get -d -v ./...
 RUN go install -v ./...
 
 CMD ["ishare-auth-provider"]
+
