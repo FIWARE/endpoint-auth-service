@@ -1,4 +1,4 @@
-FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12-7
+FROM golang:1.18-alpine
 
 ENV GOPATH=$APP_ROOT
 ENV GOBIN=$APP_ROOT/bin
