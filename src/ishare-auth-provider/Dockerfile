@@ -16,7 +16,6 @@ RUN chmod a+rw /certs
 
 USER 1001
 
-WORKDIR /go/src/app
 COPY ./ ./
 
 RUN go get
