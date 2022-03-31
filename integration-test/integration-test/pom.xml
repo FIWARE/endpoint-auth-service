@@ -21,7 +21,7 @@
         <version.io.kokuwa.micronaut.codegen>2.2.1</version.io.kokuwa.micronaut.codegen>
         <version.io.swagger.swagger-annotations>1.6.5</version.io.swagger.swagger-annotations>
         <version.com.squareup.okhttp3>4.9.3</version.com.squareup.okhttp3>
-        <version.com.google.code.gson>2.8.9</version.com.google.code.gson>
+        <version.com.google.code.gson>2.9.0</version.com.google.code.gson>
         <version.org.threeten.threetenbp>1.5.2</version.org.threeten.threetenbp>
         <version.io.gsonfire>1.8.5</version.io.gsonfire>
         <version.jakarta.annotation-api>2.0.0</version.jakarta.annotation-api>
