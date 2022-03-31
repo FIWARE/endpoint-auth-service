@@ -11,14 +11,12 @@ USER root
 RUN mkdir /certs
 RUN chmod a+rw /certs
 
-USER 1001
-
 WORKDIR /go/src/app
 COPY ./ ./
 
 RUN go get -d -v ./...
 RUN go install -v ./...
 
-
+USER 1001
 
 CMD ["ishare-auth-provider"]
