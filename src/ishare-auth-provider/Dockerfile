@@ -13,9 +13,8 @@ RUN chmod a+rw /certs
 
 USER 1001
 
-COPY ./ ./
+COPY ./ ./ 
 
-RUN go get
 RUN go install ishare-auth-provider
 
 
