@@ -65,7 +65,7 @@
         <version.org.openapitools.generator-maven-plugin>5.1.0
         </version.org.openapitools.generator-maven-plugin>
         <version.io.kokuwa.micronaut.codegen>2.2.1</version.io.kokuwa.micronaut.codegen>
-        <version.org.openapitools.jackson.nullable>0.2.1</version.org.openapitools.jackson.nullable>
+        <version.org.openapitools.jackson.nullable>0.2.2</version.org.openapitools.jackson.nullable>
 
         <!-- test -->
         <version.org.mockito>3.11.0</version.org.mockito>
