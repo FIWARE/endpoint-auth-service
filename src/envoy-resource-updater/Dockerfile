@@ -11,7 +11,6 @@ COPY ./go.mod ./go.mod
 COPY ./go.sum ./go.sum
 COPY ./updater.go ./updater.go
 
-RUN go get
 RUN go install envoy-resource-updater
 
 CMD ["envoy-resource-updater"]

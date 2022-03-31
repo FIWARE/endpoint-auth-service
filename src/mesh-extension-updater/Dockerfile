@@ -7,7 +7,6 @@ COPY ./go.mod ./go.mod
 COPY ./go.sum ./go.sum
 COPY ./main.go ./main.go
 
-RUN go get -d -v ./...
-RUN go install -v ./...
+RUN go install mesh-extension-updater
 
 CMD ["mesh-extension-updater"]

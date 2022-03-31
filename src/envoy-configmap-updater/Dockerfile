@@ -8,7 +8,6 @@ COPY ./go.mod ./go.mod
 COPY ./go.sum ./go.sum
 COPY ./updater.go ./updater.go
 
-RUN go get -d -v ./...
-RUN go install -v ./...
+RUN go install envoy-configmap-updater
 
 CMD ["envoy-configmap-updater"]
