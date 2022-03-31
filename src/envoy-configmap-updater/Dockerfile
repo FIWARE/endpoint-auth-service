@@ -4,7 +4,6 @@ ENV PROXY_CONFIG_FOLDER="/proxy-config"
 ENV PROXY_CONFIG_MAP="envoy-config"
 ENV PROXY_CONFIG_MAP_NAMESPACE="envoy"
 
-WORKDIR /go/src/app
 COPY ./go.mod ./go.mod
 COPY ./go.sum ./go.sum
 COPY ./updater.go ./updater.go

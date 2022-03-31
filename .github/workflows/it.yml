@@ -17,7 +17,13 @@ jobs:
 
     - name: Build auth provider
       id: auth-provider
-      run: docker build -f ./src/ishare-auth-provider/Dockerfile ./src/ishare-auth-provider -t ishare-auth-provider
+      uses: redhat-actions/buildah-build@v2
+      with:
+        image: ishare-auth-provider
+        tags: latest
+        dockerfiles: |
+          ./src/ishare-auth-provider/Dockerfile
+        context: ./src/ishare-auth-provider
 
     - name: Build resource updater
       id: resource-updater
@@ -45,7 +51,7 @@ jobs:
         ENVOY_IMAGE: envoy
         RESOURCE_UPDATER_IMAGE: envoy-resource-updater
         CONFIG_SERVICE_IMAGE: fiware/endpoint-configuration-service
-        AUTH_PROVIDER_IMAGE: ishare-auth-provider
+        AUTH_PROVIDER_IMAGE: ${{ steps.auth-provider.outputs.image }}:latest
       run: |
         cd docker-compose/
         docker-compose up -d

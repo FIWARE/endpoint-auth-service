@@ -3,7 +3,6 @@ FROM registry.access.redhat.com/ubi8/go-toolset:1.16.12-7
 ENV MESH_CONFIG_FOLDER="/mesh-config"
 ENV MESH_EXTENSION_FILE_NAME="service-mesh-extension.yaml"
 
-WORKDIR /go/src/app
 COPY ./go.mod ./go.mod
 COPY ./go.sum ./go.sum
 COPY ./main.go ./main.go
