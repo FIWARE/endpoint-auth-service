@@ -9,17 +9,16 @@ ENV CERTIFICATE_FOLDER="/certs"
 ENV GIN_MODE=release
 ENV JSON_LOGGING_ENABLED=true
 
+COPY ./ ./
+
+RUN go get
+RUN go install ishare-auth-provider
+
 USER root
 
 RUN mkdir /certs
 RUN chmod a+rw /certs
 
 USER 1001
-
-COPY ./ ./
-
-RUN go get
-RUN go install ishare-auth-provider
-
 
 CMD ["ishare-auth-provider"]
