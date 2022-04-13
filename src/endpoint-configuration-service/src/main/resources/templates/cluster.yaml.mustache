@@ -11,7 +11,7 @@ resources:
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: ext-authz
     type: STRICT_DNS
-    connect_timeout: 1s
+    connect_timeout: 10s
     lb_policy: ROUND_ROBIN
     load_assignment:
       cluster_name: ext-authz
@@ -27,7 +27,7 @@ resources:
   {{#httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: {{id}}
-    connect_timeout: 5s
+    connect_timeout: 15s
     type: STRICT_DNS
     lb_policy: ROUND_ROBIN
     load_assignment:
@@ -48,7 +48,7 @@ resources:
   {{^httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: {{id}}
-    connect_timeout: 5s
+    connect_timeout: 15s
     type: STRICT_DNS
     lb_policy: ROUND_ROBIN
     load_assignment:
