@@ -80,7 +80,7 @@ resources:
                                         configuration:
                                           "@type": "type.googleapis.com/google.protobuf.StringValue"
                                           value: |
-                                            { "general": {"authType":"{{authType}}"} }
+                                            { "general": {"authType":"{{authType}}", "authRequestTimeout":15000} }
                                         vm_config:
                                           runtime: "envoy.wasm.runtime.v8"
                                           code:
