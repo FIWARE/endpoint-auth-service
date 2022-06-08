@@ -55,7 +55,7 @@
         <image.registry/>
 
         <!-- lazy dev -->
-        <version.org.projectlombok>1.18.22</version.org.projectlombok>
+        <version.org.projectlombok>1.18.24</version.org.projectlombok>
         <version.org.mapstruct>1.4.2.Final</version.org.mapstruct>
 
         <!-- logging -->
@@ -457,7 +457,7 @@
                 <artifactId>jib-maven-plugin</artifactId>
                 <configuration>
                     <from>
-                        <image>registry.access.redhat.com/ubi8/openjdk-17:1.12-1</image>
+                        <image>registry.access.redhat.com/ubi8/openjdk-17:1.13-1</image>
                     </from>
                     <to>
                         <image>${image.registry}${image.repository}/${artifactId}</image>
