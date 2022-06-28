@@ -52,10 +52,10 @@
         <image.repository>fiware</image.repository>
         <image.tag>latest</image.tag>
         <!-- empty for local build -->
-        <image.registry></image.registry>
+        <image.registry/>
 
         <!-- lazy dev -->
-        <version.org.projectlombok>1.18.22</version.org.projectlombok>
+        <version.org.projectlombok>1.18.24</version.org.projectlombok>
 
         <!-- logging -->
         <version.ch.qos.logback>1.2.3</version.ch.qos.logback>
