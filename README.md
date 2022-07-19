@@ -19,6 +19,9 @@ outgoing requests via ip-tables(see [iptables-init](./src/iptables-init)). The s
 and adds it to the requests accordingly. The endpoints to be handled and there auth-information can be configured through
 [endpoint-configuration-service](./src/endpoint-configuration-service).
 
+This project is part of [FIWARE](https://www.fiware.org/). For more information check the FIWARE Catalogue entry for the
+[API Management](https://github.com/Fiware/catalogue/tree/master/security).
+
 ## Overview
 
 ![Proxy-Architecture](./doc/img/arch-overview.svg)
