@@ -1,3 +1,5 @@
+# Endpoint-Auth-Service
+
 [![](https://nexus.lab.fiware.org/repository/raw/public/badges/chapters/api-management.svg)](https://www.fiware.org/developers/catalogue/)
 [![License badge](https://img.shields.io/github/license/FIWARE/endpoint-auth-service.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![Container Repository on Quay](https://img.shields.io/badge/quay.io-FIWARE-green "Container Repository on Quay")](https://quay.io/repository/fiware/endpoint-configuration-service?tab=tags)
@@ -7,10 +9,6 @@
 [![Coverage Status](https://coveralls.io/repos/github/FIWARE/endpoint-auth-service/badge.svg?branch=main)](https://coveralls.io/github/FIWARE/endpoint-auth-service?branch=main)
 [![Unit-Test](https://github.com/fiware/endpoint-auth-service/actions/workflows/unit.yml/badge.svg)](https://github.com/fiware/endpoint-auth-service/actions/workflows/unit.yml)
 [![Integration-test](https://messages.cucumber.io/api/report-collections/28ab3c23-79eb-4497-89f0-429a11c0eeff/badge)](https://reports.cucumber.io/report-collections/28ab3c23-79eb-4497-89f0-429a11c0eeff)
-
--------
-
-# Endpoint-Auth-Service
 
 In various use-cases, there is a need to apply authn/z to outgoing requests for components that do not handle this them-self(f.e. notifications in
 [NGSI-LD brokers](https://github.com/FIWARE/context.Orion-LD)). This service provides that by adding an [envoy-proxy](https://www.envoyproxy.io) 
