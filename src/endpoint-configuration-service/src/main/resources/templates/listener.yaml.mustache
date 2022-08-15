@@ -125,4 +125,6 @@ resources:
                           {{/endpoints}}
                           {{/virtualHosts}}
                 {{/enableWasmFilter}}
-                - name: envoy.filters.http.router
+                - name: http_router
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

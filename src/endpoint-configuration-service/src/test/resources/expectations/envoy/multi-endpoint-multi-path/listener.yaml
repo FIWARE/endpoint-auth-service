@@ -291,4 +291,6 @@ resources:
                                                 header_name: ":authority"
                                             value_match:
                                               exact: domain-2:6060
-                - name: envoy.filters.http.router
+                - name:  http_router
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
