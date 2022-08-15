@@ -1,12 +1,14 @@
-[![License badge](https://img.shields.io/badge/license-AGPL_3.0-orange)](https://opensource.org/licenses/AGPL-3.0)
+# Endpoint-Auth-Service
+
+[![](https://nexus.lab.fiware.org/repository/raw/public/badges/chapters/api-management.svg)](https://www.fiware.org/developers/catalogue/)
+[![License badge](https://img.shields.io/github/license/FIWARE/endpoint-auth-service.svg)](https://opensource.org/licenses/AGPL-3.0)
 [![Container Repository on Quay](https://img.shields.io/badge/quay.io-FIWARE-green "Container Repository on Quay")](https://quay.io/repository/fiware/endpoint-configuration-service?tab=tags)
+[![](https://img.shields.io/badge/tag-fiware-orange.svg?logo=stackoverflow)](http://stackoverflow.com/questions/tagged/fiware)
+<br>
+![Status](https://nexus.lab.fiware.org/static/badges/statuses/incubating.svg)
 [![Coverage Status](https://coveralls.io/repos/github/FIWARE/endpoint-auth-service/badge.svg?branch=main)](https://coveralls.io/github/FIWARE/endpoint-auth-service?branch=main)
 [![Unit-Test](https://github.com/fiware/endpoint-auth-service/actions/workflows/unit.yml/badge.svg)](https://github.com/fiware/endpoint-auth-service/actions/workflows/unit.yml)
 [![Integration-test](https://messages.cucumber.io/api/report-collections/28ab3c23-79eb-4497-89f0-429a11c0eeff/badge)](https://reports.cucumber.io/report-collections/28ab3c23-79eb-4497-89f0-429a11c0eeff)
-
--------
-
-# Endpoint-Auth-Service
 
 In various use-cases, there is a need to apply authn/z to outgoing requests for components that do not handle this them-self(f.e. notifications in
 [NGSI-LD brokers](https://github.com/FIWARE/context.Orion-LD)). This service provides that by adding an [envoy-proxy](https://www.envoyproxy.io) 
@@ -14,6 +16,9 @@ as [sidecar](https://www.oreilly.com/library/view/designing-distributed-systems/
 outgoing requests via ip-tables(see [iptables-init](./src/iptables-init)). The sidecar-proxy does request auth-information at the [auth-provider](./src/auth-provider) 
 and adds it to the requests accordingly. The endpoints to be handled and there auth-information can be configured through
 [endpoint-configuration-service](./src/endpoint-configuration-service).
+
+This project is part of [FIWARE](https://www.fiware.org/). For more information check the FIWARE Catalogue entry for the
+[API Management](https://github.com/Fiware/catalogue/tree/master/security).
 
 ## Overview
 
