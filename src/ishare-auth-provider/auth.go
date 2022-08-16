@@ -194,7 +194,7 @@ func getAuth(c *gin.Context) {
 		return
 	}
 
-	header := Header{"Authorization", res["access_token"].(string)}
+	header := Header{"Authorization", "Bearer " + res["access_token"].(string)}
 	headersList := HeadersList{header}
 
 	// Ishare tokens are defined to expire after max 30s. Thus, they should be cached for a little less time.
