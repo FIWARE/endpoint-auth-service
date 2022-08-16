@@ -2,6 +2,7 @@ FROM alpine:3.15
 
 ENV ENVOY_USER_ID=1337
 ENV ENVOY_PORT=15001
+ENV PORTS_TO_IGNORE=
 
 RUN apk add -U iptables && rm -rf /var/cache/apk/*
 
