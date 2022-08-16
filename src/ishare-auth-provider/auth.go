@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"net/http"
 	"net/url"
 	"time"
@@ -184,13 +183,13 @@ func getAuth(c *gin.Context) {
 	var res map[string]interface{}
 	err = json.NewDecoder(resp.Body).Decode(&res)
 	if err != nil {
-		logger.Warn("Was not able to decode idp response.")
+		logger.Warnf("Was not able to decode idp response. Err: %v", err)
 		c.AbortWithStatus(http.StatusBadGateway)
 		return
 	}
 
 	if res == nil || res["access_token"] == nil {
-		logger.Warn("Did not receive an access token from the idp. Resp: " + fmt.Sprint(res))
+		logger.Warnf("Did not receive an access token from the idp. Resp: %v", res)
 		c.AbortWithStatus(http.StatusBadGateway)
 		return
 	}
