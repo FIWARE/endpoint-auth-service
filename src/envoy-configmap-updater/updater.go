@@ -126,6 +126,6 @@ func updateConfigMap() {
 	if err != nil {
 		log.Warn("Was not able to update map", err)
 	} else {
-		log.Infof("Updated to %v", &updatedMap)
+		log.Infof("Updated to %v", *updatedMap)
 	}
 }
