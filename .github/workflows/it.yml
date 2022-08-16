@@ -32,11 +32,13 @@ jobs:
       run: |
         cd src/endpoint-configuration-service/
         mvn clean install jib:dockerBuild -DskipTests
+        
     - name: Build ip-tables container
       id: ip-tables
       run: |
         cd docker-compose/
         sudo ./iptables.sh
+
     - name: Run compose
       id: compose
       env:
@@ -47,6 +49,7 @@ jobs:
       run: |
         cd docker-compose/
         docker-compose up -d
+
     - name: Extract Branch Name
       run: echo "BRANCH=$(echo ${GITHUB_REF##*/})" >> $GITHUB_ENV
 
@@ -56,12 +59,14 @@ jobs:
       run: |
         cd integration-test/integration-test/
         mvn clean install -Dcucumber.publish-token=${{ secrets.CUCUMBER_PUBLISH_TOKEN }}
+
     - name: Run tests
       id: test-dev
       if: env.BRANCH != 'main'
       run: |
         cd integration-test/integration-test/
         mvn clean install -Dcucumber.publish-token=${{ secrets.CUCUMBER_PUBLISH_TOKEN_DEV }}
+
     - name: Collect logs
       if: ${{ failure() }}
       run: |

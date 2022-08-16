@@ -7,8 +7,12 @@ resources:
         port_value: 15001
     traffic_direction: OUTBOUND
     listener_filters:
-      - name: envoy.filters.listener.tls_inspector
-      - name: envoy.filters.listener.original_dst
+      - name: tls_inspector
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.listener.tls_inspector.v3.TlsInspector
+      - name: original_dst
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.listener.original_dst.v3.OriginalDst
     filter_chains:
       - name: https_chain
         filter_chain_match:
@@ -287,4 +291,6 @@ resources:
                                                 header_name: ":authority"
                                             value_match:
                                               exact: domain-2:6060
-                - name: envoy.filters.http.router
+                - name: http_router
+                  typed_config:
+                    "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
