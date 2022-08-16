@@ -121,8 +121,10 @@ func updateConfigMap() {
 	log.Infof("New listener.yaml: %s", string(listenerYamlFile))
 	log.Infof("New cluster.yaml: %s", string(clusterYamlFile))
 
-	_, err = maps.Update(context.TODO(), cm, metav1.UpdateOptions{})
+	updatedMap, err := maps.Update(context.TODO(), cm, metav1.UpdateOptions{})
 	if err != nil {
 		log.Warn("Was not able to update map", err)
+	} else {
+		log.Infof("Updated to %v", &updatedMap)
 	}
 }
