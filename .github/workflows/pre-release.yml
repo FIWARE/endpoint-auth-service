@@ -97,10 +97,6 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - name: Run clair
-        run: |
-          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-
   envoy-configmap-updater:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
@@ -127,10 +123,6 @@ jobs:
           registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-
-      - name: Run clair
-        run: |
-          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
   envoy-resource-updater:
     needs: [ "generate-version" ]
@@ -159,10 +151,6 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - name: Run clair
-        run: |
-          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-
   mesh-extension-updater:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
@@ -190,10 +178,6 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - name: Run clair
-        run: |
-          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-
   envoy:
     needs: [ "generate-version" ]
     runs-on: ubuntu-latest
@@ -220,10 +204,6 @@ jobs:
           registry: ${{ env.REGISTRY }}/${{ env.REPOSITORY }}
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
-
-      - name: Run clair
-        run: |
-          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
 
   ishare-auth-provider:
 
@@ -253,10 +233,6 @@ jobs:
           username: ${{ secrets.QUAY_USERNAME }}
           password: ${{ secrets.QUAY_PASSWORD }}
 
-      - name: Run clair
-        run: |
-          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/${{ steps.build-image.outputs.image }}:${{ needs.generate-version.outputs.version }}
-
   endpoint-configuration-service:
 
     needs: [ "generate-version" ]
@@ -278,11 +254,6 @@ jobs:
           cd src/endpoint-configuration-service/
           mvn versions:set -DnewVersion=${{ needs.generate-version.outputs.version }}
           mvn clean install deploy -DskipTests -Dimage.tag=${{ needs.generate-version.outputs.version }} -Dimage.registry="${{ env.REGISTRY }}/" -Dimage.repository="${{ env.REPOSITORY }}"
-
-      - name: Run clair
-        run: |
-          .github/run-clair.sh ${{ env.REGISTRY }}/${{ env.REPOSITORY }}/endpoint-configuration-service:${{ needs.generate-version.outputs.version }}
-
 
   service-mesh-extension:
 
