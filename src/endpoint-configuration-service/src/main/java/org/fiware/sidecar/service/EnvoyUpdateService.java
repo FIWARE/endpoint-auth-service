@@ -58,57 +58,69 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 	 * Apply the actual configuration, retrieved from the repository
 	 */
 	void applyConfiguration() {
-
-		log.debug("Applying configuration to envoy config.");
-
-		List<MustacheEndpoint> mustacheEndpoints = StreamSupport
-				.stream(endpointRepository.findAll().spliterator(), true)
-				.map(endpointMapper::endpointToMustacheEndpoint)
-				.toList();
-
-		List<MustacheAuthType> mustacheAuthTypes = mustacheEndpoints
-				.stream()
-				.map(MustacheEndpoint::authType)
-				.distinct()
-				.map(MustacheAuthType::new)
-				.toList();
-
-		List<MustacheVirtualHost> mustacheVirtualHosts = getMustacheVirtualHosts();
+		try {
 
 
-		EnvoyProperties.AddressConfig socketAddress = envoyProperties.getSocketAddress();
-		EnvoyProperties.AddressConfig authAddress = envoyProperties.getExternalAuth();
+			log.debug("Applying configuration to envoy config.");
 
-		Map<String, Object> mustacheRenderContext = new HashMap<>();
-		mustacheRenderContext.put("socketAddress", socketAddress.getAddress());
-		mustacheRenderContext.put("socketPort", socketAddress.getPort());
-		mustacheRenderContext.put("authServiceAddress", authAddress.getAddress());
-		mustacheRenderContext.put("authServicePort", authAddress.getPort());
-		mustacheRenderContext.put("wasmFilterPath", envoyProperties.getWasmFilterPath());
-		mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
-		mustacheRenderContext.put("endpoints", mustacheEndpoints);
-		mustacheRenderContext.put("authTypes", mustacheAuthTypes);
-		mustacheRenderContext.put("enableWasmFilter", mustacheAuthTypes.isEmpty() ? null : "true");
+			List<MustacheEndpoint> mustacheEndpoints = StreamSupport
+					.stream(endpointRepository.findAll().spliterator(), true)
+					.map(endpointMapper::endpointToMustacheEndpoint)
+					.toList();
 
-		if (!Files.exists(Path.of(envoyProperties.getListenerYamlPath()))) {
-			try {
-				Files.createFile(Path.of(envoyProperties.getListenerYamlPath()));
-			} catch (IOException e) {
-				throw new EnvoyUpdateException("Was not able to create listener.yaml", e);
+			log.debug("Mustache endpoints created.");
+
+			List<MustacheAuthType> mustacheAuthTypes = mustacheEndpoints
+					.stream()
+					.map(MustacheEndpoint::authType)
+					.distinct()
+					.map(MustacheAuthType::new)
+					.toList();
+
+			log.debug("Mustache authtypes created.");
+
+			List<MustacheVirtualHost> mustacheVirtualHosts = getMustacheVirtualHosts();
+
+			log.debug("Mustache vhosts created.");
+
+			EnvoyProperties.AddressConfig socketAddress = envoyProperties.getSocketAddress();
+			EnvoyProperties.AddressConfig authAddress = envoyProperties.getExternalAuth();
+
+			Map<String, Object> mustacheRenderContext = new HashMap<>();
+			mustacheRenderContext.put("socketAddress", socketAddress.getAddress());
+			mustacheRenderContext.put("socketPort", socketAddress.getPort());
+			mustacheRenderContext.put("authServiceAddress", authAddress.getAddress());
+			mustacheRenderContext.put("authServicePort", authAddress.getPort());
+			mustacheRenderContext.put("wasmFilterPath", envoyProperties.getWasmFilterPath());
+			mustacheRenderContext.put("virtualHosts", mustacheVirtualHosts);
+			mustacheRenderContext.put("endpoints", mustacheEndpoints);
+			mustacheRenderContext.put("authTypes", mustacheAuthTypes);
+			mustacheRenderContext.put("enableWasmFilter", mustacheAuthTypes.isEmpty() ? null : "true");
+
+			log.debug("Mustache render-context created.");
+
+			if (!Files.exists(Path.of(envoyProperties.getListenerYamlPath()))) {
+				try {
+					Files.createFile(Path.of(envoyProperties.getListenerYamlPath()));
+				} catch (IOException e) {
+					throw new EnvoyUpdateException("Was not able to create listener.yaml", e);
+				}
 			}
-		}
-		if (!Files.exists(Path.of(envoyProperties.getClusterYamlPath()))) {
-			try {
-				Files.createFile(Path.of(envoyProperties.getClusterYamlPath()));
-			} catch (IOException e) {
-				throw new EnvoyUpdateException("Was not able to create cluster.yaml", e);
+			if (!Files.exists(Path.of(envoyProperties.getClusterYamlPath()))) {
+				try {
+					Files.createFile(Path.of(envoyProperties.getClusterYamlPath()));
+				} catch (IOException e) {
+					throw new EnvoyUpdateException("Was not able to create cluster.yaml", e);
+				}
 			}
-		}
 
-		// BE AWARE: Order matters here. Due to the dynamic resource updates of envoy, first updating the listeners can lead to illegally referencing clusters
-		// that do not yet exist.
-		updateEnvoyConfig(envoyProperties.getClusterYamlPath(), clusterTemplate, mustacheRenderContext, "Was not able to update cluster.yaml");
-		updateEnvoyConfig(envoyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
+			// BE AWARE: Order matters here. Due to the dynamic resource updates of envoy, first updating the listeners can lead to illegally referencing clusters
+			// that do not yet exist.
+			updateEnvoyConfig(envoyProperties.getClusterYamlPath(), clusterTemplate, mustacheRenderContext, "Was not able to update cluster.yaml");
+			updateEnvoyConfig(envoyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
+		} catch (Throwable t) {
+			log.error("Unexpected error.", t);
+		}
 	}
 
 	/*
