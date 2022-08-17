@@ -60,7 +60,7 @@ meshExtension:
     - name: label
       value: label-value
 
-# Congiuration when running with plain envoy
+# Configuration when running with plain envoy
 ---
 envoy:
   enabled: true
