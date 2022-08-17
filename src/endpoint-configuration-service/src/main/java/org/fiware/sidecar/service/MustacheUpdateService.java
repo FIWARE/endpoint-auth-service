@@ -2,7 +2,6 @@ package org.fiware.sidecar.service;
 
 import com.github.mustachejava.MustacheFactory;
 import lombok.RequiredArgsConstructor;
-import org.fiware.sidecar.configuration.EnvoyProperties;
 import org.fiware.sidecar.configuration.GeneralProperties;
 import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.model.MustacheEndpoint;
@@ -48,7 +47,7 @@ public abstract class MustacheUpdateService implements UpdateService {
 					return v1;
 				}));
 
-		List<MustacheVirtualHost> mustacheVirtualHosts = endpointMap
+		return endpointMap
 				.entrySet().stream()
 				.map(entry -> new MustacheVirtualHost(
 						entry.getKey(),
@@ -59,7 +58,6 @@ public abstract class MustacheUpdateService implements UpdateService {
 								.collect(Collectors.toSet()),
 						extendEndpointList(entry.getValue())))
 				.toList();
-		return mustacheVirtualHosts;
 	}
 
 	abstract List<MustacheEndpoint> extendEndpointList(List<MustacheEndpoint> endpointList);

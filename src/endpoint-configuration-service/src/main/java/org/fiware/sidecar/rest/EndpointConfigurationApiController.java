@@ -9,13 +9,11 @@ import org.fiware.sidecar.api.EndpointConfigurationApi;
 import org.fiware.sidecar.exception.CredentialsConfigNotFound;
 import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.model.AuthType;
-import org.fiware.sidecar.model.AuthTypeVO;
 import org.fiware.sidecar.model.EndpointInfoVO;
 import org.fiware.sidecar.model.EndpointRegistrationVO;
 import org.fiware.sidecar.persistence.Endpoint;
 import org.fiware.sidecar.persistence.EndpointRepository;
 import org.fiware.sidecar.service.EndpointWriteService;
-import org.fiware.sidecar.service.EnvoyUpdateService;
 import org.fiware.sidecar.service.UpdateService;
 
 import javax.transaction.Transactional;
@@ -33,6 +31,9 @@ import java.util.stream.StreamSupport;
 @RequiredArgsConstructor
 public class EndpointConfigurationApiController implements EndpointConfigurationApi {
 
+	private static final int HTTPS_DEFAULT_PORT = 443;
+	private static final int HTTP_DEFAULT_PORT = 80;
+
 	private final List<EndpointWriteService> subscriberWriteServices;
 	private final EndpointRepository endpointRepository;
 	private final EndpointMapper endpointMapper;
@@ -47,6 +48,18 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 
 		if (endpointRepository.findByDomainAndPath(endpointRegistrationVO.getDomain(), endpointRegistrationVO.getPath()).isPresent()) {
 			return HttpResponse.status(HttpStatus.CONFLICT);
+		}
+
+		if (endpointRegistrationVO.targetPort() == null && endpointRegistrationVO.port() == null) {
+			if (endpointRegistrationVO.useHttps()) {
+				log.debug("Setting the target port the https default: {}.", HTTPS_DEFAULT_PORT);
+				endpointRegistrationVO.targetPort(HTTPS_DEFAULT_PORT);
+			} else {
+				log.debug("Setting the target port the http default: {}.", HTTP_DEFAULT_PORT);
+				endpointRegistrationVO.targetPort(HTTP_DEFAULT_PORT);
+			}
+		} else if (endpointRegistrationVO.targetPort() == null) {
+			endpointRegistrationVO.targetPort(endpointRegistrationVO.port());
 		}
 
 		Endpoint endpoint = endpointRepository.save(endpointMapper.endpointRegistrationVoToEndpoint(endpointRegistrationVO));

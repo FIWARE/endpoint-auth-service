@@ -225,6 +225,12 @@ components:
           description: "Domain that the Endpoint will receive notifications at."
           type: string
           example: "myEndpoint.com"
+        port:
+          description: "Port that the endpoint will receive notifications at."
+          type: integer
+        targetPort:
+          description: "Port to contact at the actual endpoint. Can be used to overwrite the one in `port`, for example when http default port(80) should be overwritten with https(443)."
+          type: integer
         path:
           description: "Path that the Endpoint will receive notifications at."
           type: string
@@ -247,7 +253,9 @@ components:
         port:
           description: "Port that the endpoint will receive notifications at."
           type: integer
-          default: 80
+        targetPort:
+          description: "Port to contact at the actual endpoint. Can be used to overwrite the one in `port`, for example when http default port(80) should be overwritten with https(443)."
+          type: integer
         path:
           description: "Path that the endpoint will receive notifications at."
           type: string

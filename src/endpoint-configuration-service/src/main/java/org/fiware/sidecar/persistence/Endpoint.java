@@ -23,6 +23,7 @@ public class Endpoint {
 	private String domain;
 	private String path;
 	private int port;
+	private int targetPort;
 	private boolean useHttps;
 	private AuthType authType;
 	private String iShareClientId;
