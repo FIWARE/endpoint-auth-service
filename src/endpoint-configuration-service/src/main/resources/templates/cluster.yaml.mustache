@@ -39,7 +39,7 @@ resources:
                 socket_address:
                   protocol: TCP
                   address: "{{domain}}"
-                  port_value: {{port}}
+                  port_value: {{targetPort}}
     transport_socket:
       name: envoy.transport_sockets.tls
       typed_config:
@@ -60,7 +60,7 @@ resources:
                 socket_address:
                   protocol: TCP
                   address: "{{domain}}"
-                  port_value: {{port}}
+                  port_value: {{targetPort}}
   {{/httpsPort}}
   {{/endpoints}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster

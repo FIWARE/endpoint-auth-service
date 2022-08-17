@@ -194,6 +194,7 @@ class EnvoyUpdateServiceTest {
 		endpoint.setDomain(domain);
 		endpoint.setPath(path);
 		endpoint.setPort(port);
+		endpoint.setTargetPort(port);
 		endpoint.setAuthType(authType);
 		endpoint.setUseHttps(https);
 		return endpoint;
