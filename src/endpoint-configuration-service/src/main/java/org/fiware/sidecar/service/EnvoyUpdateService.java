@@ -59,16 +59,12 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 	 */
 	void applyConfiguration() {
 		try {
-
-
 			log.debug("Applying configuration to envoy config.");
 
 			List<MustacheEndpoint> mustacheEndpoints = StreamSupport
 					.stream(endpointRepository.findAll().spliterator(), true)
 					.map(endpointMapper::endpointToMustacheEndpoint)
 					.toList();
-
-			log.debug("Mustache endpoints created.");
 
 			List<MustacheAuthType> mustacheAuthTypes = mustacheEndpoints
 					.stream()
@@ -77,11 +73,7 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 					.map(MustacheAuthType::new)
 					.toList();
 
-			log.debug("Mustache authtypes created.");
-
 			List<MustacheVirtualHost> mustacheVirtualHosts = getMustacheVirtualHosts();
-
-			log.debug("Mustache vhosts created.");
 
 			EnvoyProperties.AddressConfig socketAddress = envoyProperties.getSocketAddress();
 			EnvoyProperties.AddressConfig authAddress = envoyProperties.getExternalAuth();
@@ -119,7 +111,8 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 			updateEnvoyConfig(envoyProperties.getClusterYamlPath(), clusterTemplate, mustacheRenderContext, "Was not able to update cluster.yaml");
 			updateEnvoyConfig(envoyProperties.getListenerYamlPath(), listenerTemplate, mustacheRenderContext, "Was not able to update listener.yaml");
 		} catch (Throwable t) {
-			log.error("Unexpected error.", t);
+			// catch all, since the method runs inside an executor that will swallow all the exceptions.
+			log.error("Unexpected error when applying the config.", t);
 		}
 	}
 

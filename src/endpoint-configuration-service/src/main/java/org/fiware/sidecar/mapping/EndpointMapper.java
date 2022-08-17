@@ -22,15 +22,9 @@ import java.util.UUID;
 @Mapper(componentModel = "jsr330")
 public interface EndpointMapper {
 
-	@Mapping(target = "targetPort", expression = "java(setToNullIfZero(endpoint.getTargetPort()))")
+	@Mapping(target = "targetPort", expression = "java(EndpointMapper.MappingHelper.setToNullIfZero(endpoint.getTargetPort()))")
 	EndpointInfoVO endpointToEndpointInfoVo(Endpoint endpoint);
 
-	default Integer setToNullIfZero(int integerValue) {
-		if (integerValue == 0) {
-			return null;
-		}
-		return integerValue;
-	}
 
 	@Mapping(source = "authCredentials.iShareClientId", target = "IShareClientId")
 	@Mapping(source = "authCredentials.iShareIdpId", target = "IShareIdpId")
@@ -42,9 +36,7 @@ public interface EndpointMapper {
 
 	AuthTypeVO authTypeToAuthTypeVo(AuthType authType);
 
-
 	@Mapping(source = "useHttps", target = "httpsPort", qualifiedByName = "useHttpsMustacheMapping")
-	@Mapping(target = "targetPort", expression = "java(endpoint.getTargetPort())")
 	MustacheEndpoint endpointToMustacheEndpoint(Endpoint endpoint);
 
 	MustacheMetaData metaDataToMustacheMetadata(MeshExtensionProperties.MetaData metaData);
@@ -73,5 +65,16 @@ public interface EndpointMapper {
 
 	default String map(UUID value) {
 		return value.toString();
+	}
+
+	// helper class to prevent mapstruct creating a default mapping for int->Integer
+	class MappingHelper {
+		public static Integer setToNullIfZero(int integerValue) {
+			if (integerValue == 0) {
+				return null;
+			}
+			return integerValue;
+		}
+
 	}
 }
