@@ -49,6 +49,7 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 
 	@PostConstruct
 	public void setupTemplates() {
+		log.info("Initiated the envoy update service.");
 		listenerTemplate = mustacheFactory.compile("./templates/listener.yaml.mustache");
 		clusterTemplate = mustacheFactory.compile("./templates/cluster.yaml.mustache");
 	}
