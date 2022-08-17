@@ -223,7 +223,7 @@ func TestGetAuthRoute(t *testing.T) {
 	accesTokenResponse := &http.Response{Body: io.NopCloser(strings.NewReader("{\"access_token\":\"myToken\"}"))}
 
 	tests := []test{
-		{testName: "Successful auth retrieval", testDomain: "test.domain", testPath: "/", mockIdpResponse: accesTokenResponse, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedHeader: "myToken", expectedCode: 200},
+		{testName: "Successful auth retrieval", testDomain: "test.domain", testPath: "/", mockIdpResponse: accesTokenResponse, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedHeader: "Bearer myToken", expectedCode: 200},
 		{testName: "502: No body returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{}, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedCode: 502},
 		{testName: "502: Invalid body returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{Body: io.NopCloser(strings.NewReader("myToken"))}, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedCode: 502},
 		{testName: "502: Json body withou token returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{Body: io.NopCloser(strings.NewReader("{\"valid\":\"json\"}"))}, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedCode: 502},

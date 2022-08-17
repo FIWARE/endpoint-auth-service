@@ -24,7 +24,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -33,9 +32,9 @@ import java.util.stream.StreamSupport;
 @Slf4j
 @Context
 @Requires(property = "envoy.enabled", value = "true")
-public class EnvoyUpdateService extends MustacheUpdateService{
+public class EnvoyUpdateService extends MustacheUpdateService {
 
-	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used", "/", null, "true", 0, "");
+	private static final MustacheEndpoint PASSTHROUGH_ENDPOINT = new MustacheEndpoint("passthrough", "not-used", "/", null, "true", 0, 0, "");
 
 	private final EnvoyProperties envoyProperties;
 
@@ -69,7 +68,7 @@ public class EnvoyUpdateService extends MustacheUpdateService{
 				.map(MustacheEndpoint::authType)
 				.distinct()
 				.map(MustacheAuthType::new)
-				.collect(Collectors.toList());
+				.toList();
 
 		List<MustacheVirtualHost> mustacheVirtualHosts = getMustacheVirtualHosts();
 
