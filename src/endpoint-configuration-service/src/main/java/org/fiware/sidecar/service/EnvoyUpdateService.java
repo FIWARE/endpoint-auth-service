@@ -127,6 +127,7 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 			FileWriter clusterFileWriter = new FileWriter(configFilename);
 			clusterTemplate.execute(clusterFileWriter, mustacheRenderContext).flush();
 			clusterFileWriter.close();
+			log.debug("Updated config at {}.", configFilename);
 		} catch (IOException e) {
 			throw new EnvoyUpdateException(message, e);
 		}
