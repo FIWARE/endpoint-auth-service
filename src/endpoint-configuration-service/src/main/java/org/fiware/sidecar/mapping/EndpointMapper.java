@@ -75,6 +75,5 @@ public interface EndpointMapper {
 			}
 			return integerValue;
 		}
-
 	}
 }

@@ -62,6 +62,11 @@ public class EndpointConfigurationApiController implements EndpointConfiguration
 			endpointRegistrationVO.targetPort(endpointRegistrationVO.port());
 		}
 
+		if(endpointRegistrationVO.port() == null) {
+			log.debug("Setting the http default port.");
+			endpointRegistrationVO.port(HTTP_DEFAULT_PORT);
+		}
+
 		Endpoint endpoint = endpointRepository.save(endpointMapper.endpointRegistrationVoToEndpoint(endpointRegistrationVO));
 
 		// type specific creations
