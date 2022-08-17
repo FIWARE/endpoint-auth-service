@@ -2,6 +2,8 @@ package org.fiware.sidecar.service;
 
 import com.github.mustachejava.MustacheFactory;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.log4j.Log4j;
+import lombok.extern.slf4j.Slf4j;
 import org.fiware.sidecar.configuration.GeneralProperties;
 import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.model.MustacheEndpoint;
@@ -17,6 +19,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
+@Slf4j
 @RequiredArgsConstructor
 public abstract class MustacheUpdateService implements UpdateService {
 
@@ -30,6 +33,7 @@ public abstract class MustacheUpdateService implements UpdateService {
 	 * Schedule the update with a configurable delay.
 	 */
 	public void scheduleConfigUpdate() {
+		log.debug("Schedule config update");
 		executorService.schedule(this::applyConfiguration, generalProperties.getUpdateDelayInS(), TimeUnit.SECONDS);
 	}
 
