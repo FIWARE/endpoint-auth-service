@@ -59,6 +59,8 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 	 */
 	void applyConfiguration() {
 
+		log.debug("Applying configuration to envoy config.");
+
 		List<MustacheEndpoint> mustacheEndpoints = StreamSupport
 				.stream(endpointRepository.findAll().spliterator(), true)
 				.map(endpointMapper::endpointToMustacheEndpoint)
@@ -125,6 +127,7 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 
 	private void updateEnvoyConfig(String configFilename, Mustache clusterTemplate, Map<String, Object> mustacheRenderContext, String message) {
 		try {
+			log.debug("Start updating {}.", configFilename);
 			FileWriter clusterFileWriter = new FileWriter(configFilename);
 			clusterTemplate.execute(clusterFileWriter, mustacheRenderContext).flush();
 			clusterFileWriter.close();
