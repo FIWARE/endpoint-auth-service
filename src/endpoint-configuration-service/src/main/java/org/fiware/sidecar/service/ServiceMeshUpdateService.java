@@ -5,7 +5,6 @@ import com.github.mustachejava.MustacheFactory;
 import io.micronaut.context.annotation.Context;
 import io.micronaut.context.annotation.Requires;
 import lombok.extern.slf4j.Slf4j;
-import org.fiware.sidecar.configuration.EnvoyProperties;
 import org.fiware.sidecar.configuration.GeneralProperties;
 import org.fiware.sidecar.configuration.MeshExtensionProperties;
 import org.fiware.sidecar.exception.EnvoyUpdateException;
@@ -16,7 +15,6 @@ import org.fiware.sidecar.model.MustacheEndpointDomain;
 import org.fiware.sidecar.model.MustacheMeshEndpoint;
 import org.fiware.sidecar.model.MustacheMetaData;
 import org.fiware.sidecar.model.MustachePath;
-import org.fiware.sidecar.model.MustacheVirtualHost;
 import org.fiware.sidecar.persistence.Endpoint;
 import org.fiware.sidecar.persistence.EndpointRepository;
 
@@ -31,7 +29,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ScheduledExecutorService;
-import java.util.stream.Collectors;
 import java.util.stream.StreamSupport;
 
 /**
@@ -78,15 +75,15 @@ public class ServiceMeshUpdateService extends MustacheUpdateService {
 		List<MustacheMeshEndpoint> mustacheMeshEndpoints = endpointsByAuthType
 				.entrySet()
 				.stream()
-				.map(entry -> new MustacheMeshEndpoint(entry.getKey(), endpointsByDomainToMustache(entry.getValue()))).collect(Collectors.toList());
+				.map(entry -> new MustacheMeshEndpoint(entry.getKey(), endpointsByDomainToMustache(entry.getValue()))).toList();
 
 		List<MustacheMetaData> annotations = meshExtensionProperties.getAnnotations().stream()
 				.map(endpointMapper::metaDataToMustacheMetadata)
-				.collect(Collectors.toList());
+				.toList();
 
 		List<MustacheMetaData> labels = meshExtensionProperties.getLabels().stream()
 				.map(endpointMapper::metaDataToMustacheMetadata)
-				.collect(Collectors.toList());
+				.toList();
 
 		Map<String, Object> mustacheRenderContext = new HashMap<>();
 		mustacheRenderContext.put("extensionName", meshExtensionProperties.getExtensionName());
@@ -119,11 +116,11 @@ public class ServiceMeshUpdateService extends MustacheUpdateService {
 	private List<MustacheEndpointDomain> endpointsByDomainToMustache(Map<String, List<Endpoint>> endpointsByDomainMap) {
 		return endpointsByDomainMap.entrySet().stream()
 				.map(entry -> new MustacheEndpointDomain(entry.getKey(), endpointsToMustachePaths(entry.getValue())))
-				.collect(Collectors.toList());
+				.toList();
 	}
 
 	private List<MustachePath> endpointsToMustachePaths(List<Endpoint> endpoints) {
-		return endpoints.stream().map(e -> new MustachePath(e.getPath())).collect(Collectors.toList());
+		return endpoints.stream().map(e -> new MustachePath(e.getPath())).toList();
 	}
 
 	@Override

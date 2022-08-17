@@ -182,17 +182,17 @@ public class StepDefinitions {
 
 	@Then("Data-Consumer should receive a request with an authorization-header.")
 	public void echo_server_should_receive_a_request_with_an_authorization_header() throws Exception {
-		assertLastRequestHasToken(ECHO_HOST, "myIShareToken", "The auth-token as it is provided by the mock-idp should have been sent.");
+		assertLastRequestHasToken(ECHO_HOST, "Bearer myIShareToken", "The auth-token as it is provided by the mock-idp should have been sent.");
 	}
 
 	@Then("Data-Consumer-2 should receive a request with an authorization-header.")
 	public void echo_server_2_should_receive_a_request_with_an_authorization_header() throws Exception {
-		assertLastRequestHasToken(ECHO_2_HOST, "myIShareToken", "The auth-token as it is provided by the mock-idp should have been sent.");
+		assertLastRequestHasToken(ECHO_2_HOST, "Bearer myIShareToken", "The auth-token as it is provided by the mock-idp should have been sent.");
 	}
 
 	@Then("Data-Consumer should receive requests with an authorization-header at the subpath.")
 	public void echo_server_should_receive_a_request_with_authorization_header_at_the_subpath() throws Exception {
-		assertTokenAtSubpath("/subpath", "myIShareToken", ECHO_HOST, "Authorization should have been added.");
+		assertTokenAtSubpath("/subpath", "Bearer myIShareToken", ECHO_HOST, "Authorization should have been added.");
 	}
 
 
@@ -203,12 +203,12 @@ public class StepDefinitions {
 
 	@Then("Data-Consumer should receive requests with an authorization-header.")
 	public void echo_server_should_receive_a_request_with_authorization_header() throws Exception {
-		assertAllRequestsHaveToken(ECHO_HOST, "myIShareToken", "A token should have been added.");
+		assertAllRequestsHaveToken(ECHO_HOST, "Bearer myIShareToken", "A token should have been added.");
 	}
 
 	@Then("Data-Consumer-2 should receive requests with an authorization-header.")
 	public void echo_server_2_should_receive_requests_with_authorization_header() throws Exception {
-		assertAllRequestsHaveToken(ECHO_2_HOST, "myIShareToken", "A token should have been added.");
+		assertAllRequestsHaveToken(ECHO_2_HOST, "Bearer myIShareToken", "A token should have been added.");
 	}
 
 	@Then("Data-Consumer should receive a request without an authorization-header.")

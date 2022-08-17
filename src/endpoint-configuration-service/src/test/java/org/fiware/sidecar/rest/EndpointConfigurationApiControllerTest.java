@@ -19,18 +19,20 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mockito;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 class EndpointConfigurationApiControllerTest {
@@ -48,11 +50,12 @@ class EndpointConfigurationApiControllerTest {
 
 	@ParameterizedTest
 	@MethodSource("endpointConfigurationValues")
-	public void createEndpoint_success(AuthTypeVO authTypeVO, String domain, Integer port, String path, Boolean useHttps) {
+	public void createEndpoint_success(AuthTypeVO authTypeVO, String domain, Integer port, Integer targetPort, String path, Boolean useHttps) {
 		EndpointRegistrationVO endpointRegistrationVO = new EndpointRegistrationVO()
 				.authType(authTypeVO)
 				.domain(domain)
 				.port(port)
+				.targetPort(targetPort)
 				.path(path)
 				.useHttps(useHttps)
 				.authCredentials(new AuthCredentialsVO()
@@ -63,13 +66,38 @@ class EndpointConfigurationApiControllerTest {
 
 		Endpoint e = new Endpoint();
 		e.setId(UUID.randomUUID());
+
+		ArgumentCaptor<Endpoint> captor = ArgumentCaptor.forClass(Endpoint.class);
 		when(endpointRepository.save(any())).thenReturn(e);
 
 		HttpResponse<Object> response = endpointConfigurationApiController.createEndpoint(endpointRegistrationVO);
 		Assertions.assertEquals(HttpStatus.CREATED, response.getStatus(), "The endpoint should have been created.");
 		response.getHeaders().findFirst("Location").equals(e.getId().toString());
+
+		verify(endpointRepository).save(captor.capture());
+		Endpoint persistedEndpoint = captor.getValue();
+		assertEndpointCorrectlyPersisted(endpointRegistrationVO, persistedEndpoint);
 	}
 
+	private void assertEndpointCorrectlyPersisted(EndpointRegistrationVO endpointRegistrationVO, Endpoint persistedEndpoint) {
+		Assertions.assertEquals(endpointRegistrationVO.authType().getValue(), persistedEndpoint.getAuthType().getValue(), "The correct auth type should be persisted.");
+		Assertions.assertEquals(endpointRegistrationVO.domain(), persistedEndpoint.getDomain(), "The correct domain should be persisted.");
+		Assertions.assertEquals(Optional.ofNullable(endpointRegistrationVO.port()).orElse(0), persistedEndpoint.getPort(), "The correct port should be persisted.");
+		Assertions.assertEquals(endpointRegistrationVO.path(), persistedEndpoint.getPath(), "The correct path should be persisted.");
+		Assertions.assertEquals(endpointRegistrationVO.useHttps(), persistedEndpoint.isUseHttps(), "The correct https usage should be persisted.");
+
+		if (endpointRegistrationVO.targetPort() != null) {
+			Assertions.assertEquals(endpointRegistrationVO.targetPort().intValue(), persistedEndpoint.getTargetPort(), "The correct target port should be persisted.");
+		} else if (endpointRegistrationVO.useHttps() && endpointRegistrationVO.port() == null) {
+			Assertions.assertEquals(443, persistedEndpoint.getTargetPort(), "The correct target port should be persisted.");
+		} else if (!endpointRegistrationVO.useHttps() && endpointRegistrationVO.port() == null) {
+			Assertions.assertEquals(80, persistedEndpoint.getTargetPort(), "The correct target port should be persisted.");
+		} else if (endpointRegistrationVO.port() != null) {
+			Assertions.assertEquals(endpointRegistrationVO.port(), persistedEndpoint.getTargetPort(), "The correct target port should be persisted.");
+		}
+
+
+	}
 
 	@Test
 	public void createEndpoint_duplicateDomain() {
@@ -161,19 +189,21 @@ class EndpointConfigurationApiControllerTest {
 
 		Arguments domains = Arguments.of("test.domain", "localhost", "127.0.0.1");
 		Arguments ports = Arguments.of(6060, null);
+		Arguments targetPorts = Arguments.of(null, 7070);
 		Arguments paths = Arguments.of("/", "/sub", "/sub/sub", null);
 		Arguments useHttps = Arguments.of(true, false);
 
 		List<Arguments> argumentsList = List.of(Arguments.of(AuthTypeVO.ISHARE));
 		argumentsList = permutateArguments(argumentsList, domains);
 		argumentsList = permutateArguments(argumentsList, ports);
+		argumentsList = permutateArguments(argumentsList, targetPorts);
 		argumentsList = permutateArguments(argumentsList, paths);
 		argumentsList = permutateArguments(argumentsList, useHttps);
 		return argumentsList.stream();
 	}
 
 	private static List<Arguments> permutateArguments(List<Arguments> argList, Arguments newArgs) {
-		return Arrays.stream(newArgs.get()).toList().stream().flatMap(p -> argList.stream().map(a -> appendArgument(a, p))).collect(Collectors.toList());
+		return Arrays.stream(newArgs.get()).toList().stream().flatMap(p -> argList.stream().map(a -> appendArgument(a, p))).toList();
 	}
 
 	private static <T> Arguments appendArgument(Arguments a, Object o) {
