@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
+	"strings"
 	"testing"
 	"time"
 
@@ -196,13 +197,13 @@ func verifyHeaders(t *testing.T, generalHeaders, expectedHeaders, resultHeaders 
 	for _, v := range resultHeaders {
 		var contains bool
 		for _, eh := range expectedHeaders {
-			if eh == v {
+			if strings.EqualFold(fmt.Sprint(eh), fmt.Sprint(v)) {
 				contains = true
 			}
 		}
 
 		for _, eh := range generalHeaders {
-			if eh == v {
+			if strings.EqualFold(fmt.Sprint(eh), fmt.Sprint(v)) {
 				contains = true
 			}
 		}
@@ -404,7 +405,7 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 			}
 
 			resultHeaders := host.GetCurrentRequestHeaders(id)
-
+			log.Print(resultHeaders)
 			verifyHeaders(t, hs, tc.expectedHeaders, resultHeaders, tc.testName)
 			endAction := host.GetCurrentHttpStreamAction(id)
 			verifyEndAction(t, endAction, tc.testName)
