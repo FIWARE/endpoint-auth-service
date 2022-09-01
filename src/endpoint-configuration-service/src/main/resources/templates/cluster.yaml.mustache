@@ -13,7 +13,7 @@ resources:
     type: STRICT_DNS
     connect_timeout: 10s
     lb_policy: ROUND_ROBIN
-    respect_dns_ttl: true
+    respect_dns_ttl: false
     dns_refresh_rate: 30s
     load_assignment:
       cluster_name: ext-authz
