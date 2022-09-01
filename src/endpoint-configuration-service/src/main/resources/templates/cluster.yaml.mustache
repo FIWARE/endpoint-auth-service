@@ -2,6 +2,7 @@ resources:
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: passthrough-https
     type: ORIGINAL_DST
+    dns_refresh_rate: 30s
     connectTimeout: 10s
     lbPolicy: CLUSTER_PROVIDED
     transport_socket:
@@ -31,6 +32,7 @@ resources:
     name: {{id}}
     connect_timeout: 15s
     type: STRICT_DNS
+    dns_refresh_rate: 30s
     lb_policy: ROUND_ROBIN
     load_assignment:
       cluster_name: {{id}}
@@ -53,6 +55,7 @@ resources:
     connect_timeout: 15s
     type: STRICT_DNS
     lb_policy: ROUND_ROBIN
+    dns_refresh_rate: 30s
     load_assignment:
       cluster_name: {{id}}
       endpoints:
@@ -69,6 +72,7 @@ resources:
     name: passthrough
     type: ORIGINAL_DST
     lbPolicy: CLUSTER_PROVIDED
+    dns_refresh_rate: 30s
     connectTimeout: 10s
     original_dst_lb_config:
       use_http_header: true
