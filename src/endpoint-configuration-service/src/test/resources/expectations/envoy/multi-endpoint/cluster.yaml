@@ -10,9 +10,11 @@ resources:
         "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: ext-authz
-    type: LOGICAL_DNS
+    type: STRICT_DNS
     connect_timeout: 10s
     lb_policy: ROUND_ROBIN
+    respect_dns_ttl: true
+    dns_refresh_rate: 30000
     load_assignment:
       cluster_name: ext-authz
       endpoints:
@@ -26,7 +28,7 @@ resources:
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: expected-0
     connect_timeout: 15s
-    type: LOGICAL_DNS
+    type: STRICT_DNS
     lb_policy: ROUND_ROBIN
     load_assignment:
       cluster_name: expected-0
@@ -45,7 +47,7 @@ resources:
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: expected-1
     connect_timeout: 15s
-    type: LOGICAL_DNS
+    type: STRICT_DNS
     lb_policy: ROUND_ROBIN
     load_assignment:
       cluster_name: expected-1
