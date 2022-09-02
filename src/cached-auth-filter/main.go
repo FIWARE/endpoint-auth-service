@@ -174,11 +174,13 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		proxywasm.LogDebug("Endpoint matching is enabled. Match the path")
 
 		authType, match := matchEndpoint(requestDomain, requestPath)
-		proxywasm.LogDebugf("Match result was %v - type %v", match, authType)
+		proxywasm.LogDebugf("Match result was %v", match)
 		if !match {
 			// early exit, nothing to handle for the filter
 			return types.ActionContinue
 		}
+
+		proxywasm.LogDebugf("AuthType is %v", authType)
 		return setHeader(authType)
 	} else {
 		// in case of 'handle all', we only have to maintain one cache entry
