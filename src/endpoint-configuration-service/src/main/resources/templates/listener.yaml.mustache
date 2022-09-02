@@ -67,22 +67,27 @@ resources:
                         name: "auth-filter"
                         root_id: "auth-filter"
                         configuration:
-                          "@type": "type.googleapis.com/google.protobuf.Struct"
-                          value:
-                            general:
-                              authProviderName: ext-authz
-                              authProviderAddress: "{{authServiceAddress}}:{{authServicePort}}"
-                              enableEndpointMatching: true
-                            endpoints:
-                              {{#meshEndpoints}}
-                              {{authType}}:
-                                {{#domains}}
-                                {{domain}}:
-                                  {{#paths}}
-                                  - {{path}}
-                                  {{/paths}}
-                                {{/domains}}
-                              {{/meshEndpoints}}
+                          "@type": "type.googleapis.com/google.protobuf.String"
+                          value: |
+                            {
+                              "general": {
+                                "authProviderName": "ext-authz",
+                                "authProviderAddress": "{{authServiceAddress}}:{{authServicePort}}",
+                                "enableEndpointMatching": true
+                              }, 
+                              "endpoints": {
+                                {{#meshEndpoints}}
+                                "{{authType}}":{
+                                  {{#domains}}
+                                  "{{domain}}": [
+                                    "{{path}}"
+                                    {{/paths}}
+                                  ]
+                                  {{/domains}}
+                                }
+                                {{/meshEndpoints}}
+                              }
+                            }
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           vm_id: "auth-filter"
