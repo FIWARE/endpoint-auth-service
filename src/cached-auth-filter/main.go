@@ -236,18 +236,18 @@ func matchEndpoint(domainString, pathString string) (authEntry EndpointAuthEntry
 	// if something matches, the length is bigger than 0
 	match = matchLength > 0
 
+	// the path matcher only checks one level
+	// to support multilevel matching, we need to trim down the requested path
 	if !match {
 		splittedPath := strings.Split(pathString, "/")
 		proxywasm.LogDebugf("%v", splittedPath)
 		if len(splittedPath) > 1 {
-			authEntry, match = matchEndpoint(domainString, strings.Replace(pathString, "/"+splittedPath[1], "", 1))
+			return matchEndpoint(domainString, strings.Replace(pathString, "/"+splittedPath[1], "", 1))
 		} else {
-			return
+			return authEntry, match
 		}
-
 	}
-
-	return
+	return authEntry, match
 }
 
 /**
