@@ -80,10 +80,10 @@ resources:
                                 "{{authType}}":{
                                   {{#domains}}
                                   "{{domain}}": [
+                                    {{#paths}}
                                     "{{path}}"
                                     {{/paths}}
                                   ]
-                                  {{/domain}}
                                   {{/domains}}
                                 }
                                 {{/meshEndpoints}}
