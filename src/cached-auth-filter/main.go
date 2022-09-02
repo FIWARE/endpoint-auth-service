@@ -236,6 +236,17 @@ func matchEndpoint(domainString, pathString string) (authEntry EndpointAuthEntry
 	// if something matches, the length is bigger than 0
 	match = matchLength > 0
 
+	if !match {
+		splittedPath := strings.Split(pathString, "/")
+		proxywasm.LogDebugf("%v", splittedPath)
+		if len(splittedPath) > 1 {
+			authEntry, match = matchEndpoint(domainString, strings.Replace(pathString, "/"+splittedPath[1], "", 1))
+		} else {
+			return
+		}
+
+	}
+
 	return
 }
 
