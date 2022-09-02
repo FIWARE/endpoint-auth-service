@@ -72,7 +72,7 @@ resources:
                             general:
                               authProviderName: ext-authz
                               authProviderAddress: {{authServiceAddress}}:{{authServicePort}}
-                            enableEndpointMatching: true
+                              enableEndpointMatching: true
                             endpoints:
                             {{#meshEndpoints}}
                               {{authType}}:
