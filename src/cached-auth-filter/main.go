@@ -297,6 +297,7 @@ func requestAuthProvider(authEntry EndpointAuthEntry, cas uint32) types.Action {
 	}
 	hs[methodIndex] = [2]string{":method", "GET"}
 	hs[pathIndex] = [2]string{":path", "/" + authEntry.AuthType + "/auth?domain=" + authEntry.Domain + "&path=" + authEntry.Path}
+	hs = append(hs, [2]string{"x-envoy-original-dst-host", config.AuthProviderAddress})
 
 	if _, err := proxywasm.DispatchHttpCall(config.AuthProviderName, hs, nil, nil, config.AuthRequestTimeout,
 		func(numHeaders, bodySize, numTrailers int) {

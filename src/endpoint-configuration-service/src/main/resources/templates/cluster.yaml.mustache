@@ -11,21 +11,13 @@ resources:
         "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: ext-authz
-    type: STRICT_DNS
+    type: ORIGINAL_DST
     connect_timeout: 10s
-    lb_policy: LEAST_REQUEST
+    lbPolicy: CLUSTER_PROVIDED
     dns_refresh_rate: 30s
-    load_assignment:
-      cluster_name: ext-authz
-      endpoints:
-        - lb_endpoints:
-          - endpoint:
-              address:
-                socket_address:
-                  protocol: TCP
-                  address: {{authServiceAddress}}
-                  port_value: {{authServicePort}}
-                  ipv4_compat: true
+    connectTimeout: 10s
+    original_dst_lb_config:
+      use_http_header: true
   {{#endpoints}}
   {{#httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
