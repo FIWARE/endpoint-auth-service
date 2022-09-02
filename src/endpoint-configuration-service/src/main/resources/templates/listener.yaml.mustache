@@ -64,7 +64,8 @@ resources:
                     type_url: type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
                     value:
                       config:
-                        name: "my_plugin"
+                        name: "auth-filter"
+                        root_id: "auth-filter"
                         configuration:
                           "@type": "type.googleapis.com/google.protobuf.Struct"
                           value:
@@ -83,6 +84,7 @@ resources:
                             {{/meshEndpoints}}
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
+                          vm_id: "auth-filter"
                           code:
                             local:
                               filename: "{{wasmFilterPath}}"
