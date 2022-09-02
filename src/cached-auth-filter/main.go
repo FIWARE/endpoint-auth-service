@@ -46,6 +46,7 @@ var parser fastjson.Parser
  */
 type PluginConfiguration struct {
 	AuthProviderName       string
+	AuthProviderAddress    string
 	AuthRequestTimeout     uint32
 	EnableEndpointMatching bool
 	AuthType               string
@@ -286,6 +287,7 @@ func requestAuthProvider(authEntry EndpointAuthEntry, cas uint32) types.Action {
 	var methodIndex int
 	var pathIndex int
 	for i, h := range hs {
+		proxywasm.LogDebugf("Header: %v", h)
 		if h[0] == ":method" {
 			methodIndex = i
 		}
@@ -531,6 +533,8 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig PluginC
 
 	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
+	authProviderAddress := parsedJson.GetStringBytes("authProviderAddress")
+
 	authType := parsedJson.GetStringBytes("authType")
 	// in case of error, the boolean zero value is used
 	parsedConfig.EnableEndpointMatching = parsedJson.GetBool("enableEndpointMatching")
@@ -545,6 +549,12 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig PluginC
 		parsedConfig.AuthProviderName = string(authProviderName)
 	} else {
 		proxywasm.LogWarnf("Use default authProvider: %v", defaultPluginConfig.AuthProviderName)
+	}
+	if authProviderAddress != nil {
+		parsedConfig.AuthProviderAddress = string(authProviderAddress)
+	} else {
+		// default to the cluster name, thus would still work with strict or logical dns clusters
+		parsedConfig.AuthProviderAddress = string(authProviderName)
 	}
 
 	if authType != nil {
