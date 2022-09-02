@@ -71,10 +71,10 @@ resources:
                           value:
                             general:
                               authProviderName: ext-authz
-                              authProviderAddress: {{authServiceAddress}}:{{authServicePort}}
+                              authProviderAddress: "{{authServiceAddress}}:{{authServicePort}}"
                               enableEndpointMatching: true
                             endpoints:
-                            {{#meshEndpoints}}
+                              {{#meshEndpoints}}
                               {{authType}}:
                                 {{#domains}}
                                 {{domain}}:
@@ -82,7 +82,7 @@ resources:
                                   - {{path}}
                                   {{/paths}}
                                 {{/domains}}
-                            {{/meshEndpoints}}
+                              {{/meshEndpoints}}
                         vm_config:
                           runtime: "envoy.wasm.runtime.v8"
                           vm_id: "auth-filter"
