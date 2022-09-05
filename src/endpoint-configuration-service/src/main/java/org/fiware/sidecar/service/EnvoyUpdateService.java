@@ -11,7 +11,11 @@ import org.fiware.sidecar.exception.EnvoyUpdateException;
 import org.fiware.sidecar.mapping.EndpointMapper;
 import org.fiware.sidecar.model.MustacheAuthType;
 import org.fiware.sidecar.model.MustacheEndpoint;
+import org.fiware.sidecar.model.MustacheEndpointDomain;
+import org.fiware.sidecar.model.MustacheMeshEndpoint;
+import org.fiware.sidecar.model.MustachePath;
 import org.fiware.sidecar.model.MustacheVirtualHost;
+import org.fiware.sidecar.persistence.Endpoint;
 import org.fiware.sidecar.persistence.EndpointRepository;
 
 import javax.annotation.PostConstruct;
@@ -19,7 +23,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -60,6 +66,19 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 	void applyConfiguration() {
 		try {
 			log.debug("Applying configuration to envoy config.");
+			Map<String, Map<String, List<Endpoint>>> endpointsByAuthType = new LinkedHashMap<>();
+
+			StreamSupport
+					// do not stream in parallel, will create duplicate keys in the map
+					.stream(endpointRepository.findAll().spliterator(), false)
+					.forEach(endpoint -> {
+						String authType = endpoint.getAuthType().toString();
+						Map<String, List<Endpoint>> endpointsByDomain = endpointsByAuthType.getOrDefault(authType, new LinkedHashMap<>());
+						List<Endpoint> endpointList = endpointsByDomain.getOrDefault(endpoint.getDomain(), new ArrayList<>());
+						endpointList.add(endpoint);
+						endpointsByDomain.put(endpoint.getDomain(), endpointList);
+						endpointsByAuthType.put(authType, endpointsByDomain);
+					});
 
 			List<MustacheEndpoint> mustacheEndpoints = StreamSupport
 					.stream(endpointRepository.findAll().spliterator(), true)
@@ -72,6 +91,11 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 					.distinct()
 					.map(MustacheAuthType::new)
 					.toList();
+
+			List<MustacheMeshEndpoint> mustacheMeshEndpoints = endpointsByAuthType
+					.entrySet()
+					.stream()
+					.map(entry -> new MustacheMeshEndpoint(entry.getKey(), endpointsByDomainToMustache(entry.getValue()))).toList();
 
 			List<MustacheVirtualHost> mustacheVirtualHosts = getMustacheVirtualHosts();
 
@@ -88,6 +112,7 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 			mustacheRenderContext.put("endpoints", mustacheEndpoints);
 			mustacheRenderContext.put("authTypes", mustacheAuthTypes);
 			mustacheRenderContext.put("enableWasmFilter", mustacheAuthTypes.isEmpty() ? null : "true");
+			mustacheRenderContext.put("meshEndpoints", mustacheMeshEndpoints);
 
 			log.debug("Mustache render-context created.");
 
@@ -140,6 +165,16 @@ public class EnvoyUpdateService extends MustacheUpdateService {
 		} catch (IOException e) {
 			throw new EnvoyUpdateException(message, e);
 		}
+	}
+
+	private List<MustacheEndpointDomain> endpointsByDomainToMustache(Map<String, List<Endpoint>> endpointsByDomainMap) {
+		return endpointsByDomainMap.entrySet().stream()
+				.map(entry -> new MustacheEndpointDomain(entry.getKey(), endpointsToMustachePaths(entry.getValue())))
+				.toList();
+	}
+
+	private List<MustachePath> endpointsToMustachePaths(List<Endpoint> endpoints) {
+		return endpoints.stream().map(e -> new MustachePath(e.getPath())).toList();
 	}
 
 }

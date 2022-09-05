@@ -4,6 +4,8 @@ resources:
     type: ORIGINAL_DST
     connectTimeout: 10s
     lbPolicy: CLUSTER_PROVIDED
+    respect_dns_ttl: true
+    dns_refresh_rate: 30s
     transport_socket:
       name: envoy.transport_sockets.tls
       typed_config:
@@ -13,6 +15,8 @@ resources:
     type: STRICT_DNS
     connect_timeout: 10s
     lb_policy: ROUND_ROBIN
+    respect_dns_ttl: true
+    dns_refresh_rate: 30s
     load_assignment:
       cluster_name: ext-authz
       endpoints:
