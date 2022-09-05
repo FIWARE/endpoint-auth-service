@@ -180,7 +180,7 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 			return types.ActionContinue
 		}
 
-		proxywasm.LogDebugf("AuthType is %v", authType)
+		proxywasm.LogDebugf("AuthType is %v", authType.AuthType)
 		return setHeader(authType)
 	} else {
 		// in case of 'handle all', we only have to maintain one cache entry
