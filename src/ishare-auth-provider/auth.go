@@ -2,12 +2,11 @@ package main
 
 import (
 	"crypto/rsa"
-	"encoding/base64"
 	"encoding/json"
-	"encoding/pem"
 	"errors"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +24,12 @@ const keyfile = "key.pem"
 * Name of the files containing the certificate chain. Needs to be the same as used by the configuration-service.
  */
 const certChainFile = "cert.cer"
+
+/**
+* Certificate component constants
+ */
+const beginCertificate = "-----BEGIN CERTIFICATE-----"
+const endCertificate = "-----END CERTIFICATE-----"
 
 /**
 * Struct for holding the required auth info.
@@ -56,7 +61,7 @@ var errCertDecode = errors.New("cert_decode_failed")
 type AuthGetterInterface interface {
 	getAuthInfo(domain string, path string) (authInfo AuthInfo, err error)
 	getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error)
-	getCertificate(credentialsFolderPath string) (encodedCert string, err error)
+	getCertificate(credentialsFolderPath string) (encodedCert []string, err error)
 }
 
 type AuthGetter struct{}
@@ -69,7 +74,7 @@ func (AuthGetter) getSigningKey(credentialsFolderPath string) (key *rsa.PrivateK
 	return getSigningKey(credentialsFolderPath)
 }
 
-func (AuthGetter) getCertificate(credentialsFolderPath string) (encodedCert string, err error) {
+func (AuthGetter) getCertificate(credentialsFolderPath string) (encodedCert []string, err error) {
 	return getEncodedCertificate(credentialsFolderPath)
 }
 
@@ -145,8 +150,7 @@ func getAuth(c *gin.Context) {
 		return
 	}
 
-	x5cCerts := [1]string{cert}
-	jwtToken.Header["x5c"] = x5cCerts
+	jwtToken.Header["x5c"] = cert
 
 	// sign the token
 	signedToken, err := jwtToken.SignedString(key)
@@ -270,20 +274,27 @@ func getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error
 /**
 * Read and encode(base64) certificate from file system
  */
-func getEncodedCertificate(credentialsFolderPath string) (encodedCert string, err error) {
+func getEncodedCertificate(credentialsFolderPath string) (encodedCert []string, err error) {
 	// read certificate file and set it in the token header
 	cert, err := globalFileAccessor.read(credentialsFolderPath + certChainFile)
 	if err != nil {
 		logger.Warn("Was not able to read the certificateChain file.", err)
 		return encodedCert, err
 	}
-	certCer, _ := pem.Decode(cert)
-	if certCer == nil {
+
+	certString := string(cert)
+	if !strings.Contains(certString, endCertificate) || !strings.Contains(certString, beginCertificate) {
 		logger.Warn("Was not able to decode certificate.")
 		return encodedCert, errCertDecode
 	}
-	encodedCert = base64.StdEncoding.EncodeToString(certCer.Bytes)
-	return encodedCert, err
+	certString = strings.ReplaceAll(certString, endCertificate, "")
+	certArray := strings.Split(certString, beginCertificate)
+
+	for i := range certArray {
+		certArray[i] = strings.ReplaceAll(certArray[i], beginCertificate, "")
+	}
+
+	return certArray, err
 }
 
 /**
