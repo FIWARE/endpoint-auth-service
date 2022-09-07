@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"hash/fnv"
 	"log"
-	"strings"
 	"testing"
 	"time"
 
@@ -197,13 +196,13 @@ func verifyHeaders(t *testing.T, generalHeaders, expectedHeaders, resultHeaders 
 	for _, v := range resultHeaders {
 		var contains bool
 		for _, eh := range expectedHeaders {
-			if strings.EqualFold(fmt.Sprint(eh), fmt.Sprint(v)) {
+			if eh == v {
 				contains = true
 			}
 		}
 
 		for _, eh := range generalHeaders {
-			if strings.EqualFold(fmt.Sprint(eh), fmt.Sprint(v)) {
+			if eh == v {
 				contains = true
 			}
 		}
@@ -405,7 +404,7 @@ func TestOnHttpRequestHeaders(t *testing.T) {
 			}
 
 			resultHeaders := host.GetCurrentRequestHeaders(id)
-			log.Print(resultHeaders)
+
 			verifyHeaders(t, hs, tc.expectedHeaders, resultHeaders, tc.testName)
 			endAction := host.GetCurrentHttpStreamAction(id)
 			verifyEndAction(t, endAction, tc.testName)
@@ -444,19 +443,19 @@ func TestParseConfig(t *testing.T) {
 			expectedAuthConfiguration:   defaultEndpointAuthConfig},
 		{testName: "Use default for everything else than endpoint matching.",
 			testConfig:                  "{\"general\": {\"enableEndpointMatching\":true}, \"endpoints\":{\"ISHARE\":{\"other-domain.org\": [\"/\"]}}}",
-			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, true, defaultPluginConfig.AuthType},
+			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, true, defaultPluginConfig.AuthType},
 			expectedAuthConfiguration:   defaultEndpointAuthConfig},
 		{testName: "Use default for everything else than provider name.",
 			testConfig:                  "{\"general\": {\"authProviderName\":\"outbound|80||ext-authz\"}}",
-			expectedPluginConfiguration: PluginConfiguration{"outbound|80||ext-authz", "outbound|80||ext-authz", defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
+			expectedPluginConfiguration: PluginConfiguration{"outbound|80||ext-authz", defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
 			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default for everything else than request timeout.",
 			testConfig:                  "{\"general\": {\"authRequestTimeout\":12}}",
-			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthProviderName, 12, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
+			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, 12, defaultPluginConfig.EnableEndpointMatching, defaultPluginConfig.AuthType},
 			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default for everything else than authType.",
 			testConfig:                  "{\"general\": {\"authType\":\"OIDC\"}}",
-			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, "OIDC"},
+			expectedPluginConfiguration: PluginConfiguration{defaultPluginConfig.AuthProviderName, defaultPluginConfig.AuthRequestTimeout, defaultPluginConfig.EnableEndpointMatching, "OIDC"},
 			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Use default in case of invalid general config.",
 			testConfig:                  "{\"general\": }}",
@@ -480,7 +479,7 @@ func TestParseConfig(t *testing.T) {
 			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 		{testName: "Set multiple configs.",
 			testConfig:                  "{\"general\": {\"enableEndpointMatching\": true,\"authRequestTimeout\": 42, \"authType\":\"OIDC\", \"authProviderName\":\"outbound|80||ext-authz\" }}",
-			expectedPluginConfiguration: PluginConfiguration{"outbound|80||ext-authz", "outbound|80||ext-authz", 42, true, "OIDC"},
+			expectedPluginConfiguration: PluginConfiguration{"outbound|80||ext-authz", 42, true, "OIDC"},
 			expectedAuthConfiguration:   EndpointAuthConfiguration{}},
 	}
 
@@ -584,8 +583,6 @@ func TestPathMatching(t *testing.T) {
 			testConfig: "{\"ISHARE\":{\"domain.org\": [\"/sub-path/\"]}}"},
 		{testName: "Match for sub-path of sub-path without /.", testPath: "/sub-path/p2", testDomain: "domain.org", expectedResult: true, expectedAuthType: "ISHARE",
 			testConfig: "{\"ISHARE\":{\"domain.org\": [\"/sub-path\"]}}"},
-		{testName: "Match for sub-path of sub-path without /.", testPath: "/sub-path/p2", testDomain: "domain.org", expectedResult: true, expectedAuthType: "ISHARE",
-			testConfig: "{\"ISHARE\":{\"domain.org\": [\"/\"]}}"},
 		{testName: "Match for sub-path of in complex config.", testPath: "/sub-path/p2", testDomain: "domain.org", expectedResult: true, expectedAuthType: "ISHARE",
 			testConfig: "{\"ISHARE\":{\"domain.org\": [\"/sub-path\"]}, \"OIC\": {\"domain.org\":[\"/\"]}}"},
 	}

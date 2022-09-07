@@ -46,7 +46,6 @@ var parser fastjson.Parser
  */
 type PluginConfiguration struct {
 	AuthProviderName       string
-	AuthProviderAddress    string
 	AuthRequestTimeout     uint32
 	EnableEndpointMatching bool
 	AuthType               string
@@ -174,13 +173,11 @@ func (ctx *httpContext) OnHttpRequestHeaders(numHeaders int, endOfStream bool) t
 		proxywasm.LogDebug("Endpoint matching is enabled. Match the path")
 
 		authType, match := matchEndpoint(requestDomain, requestPath)
-		proxywasm.LogDebugf("Match result was %v", match)
+		proxywasm.LogDebugf("Match result was %v - type %v", match, authType)
 		if !match {
 			// early exit, nothing to handle for the filter
 			return types.ActionContinue
 		}
-
-		proxywasm.LogDebugf("AuthType is %v", authType.AuthType)
 		return setHeader(authType)
 	} else {
 		// in case of 'handle all', we only have to maintain one cache entry
@@ -236,18 +233,7 @@ func matchEndpoint(domainString, pathString string) (authEntry EndpointAuthEntry
 	// if something matches, the length is bigger than 0
 	match = matchLength > 0
 
-	// the path matcher only checks one level
-	// to support multilevel matching, we need to trim down the requested path
-	if !match {
-		splittedPath := strings.Split(pathString, "/")
-		proxywasm.LogDebugf("%v", splittedPath)
-		if len(splittedPath) > 1 {
-			return matchEndpoint(domainString, strings.Replace(pathString, "/"+splittedPath[1], "", 1))
-		} else {
-			return authEntry, match
-		}
-	}
-	return authEntry, match
+	return
 }
 
 /**
@@ -300,7 +286,6 @@ func requestAuthProvider(authEntry EndpointAuthEntry, cas uint32) types.Action {
 	var methodIndex int
 	var pathIndex int
 	for i, h := range hs {
-		proxywasm.LogDebugf("Header: %v", h)
 		if h[0] == ":method" {
 			methodIndex = i
 		}
@@ -310,12 +295,7 @@ func requestAuthProvider(authEntry EndpointAuthEntry, cas uint32) types.Action {
 	}
 	hs[methodIndex] = [2]string{":method", "GET"}
 	hs[pathIndex] = [2]string{":path", "/" + authEntry.AuthType + "/auth?domain=" + authEntry.Domain + "&path=" + authEntry.Path}
-	hs = append(hs, [2]string{"x-envoy-original-dst-host", config.AuthProviderAddress})
-	hs = append(hs, [2]string{":authority", config.AuthProviderAddress})
 
-	for _, h := range hs {
-		proxywasm.LogDebugf("Header: %v", h)
-	}
 	if _, err := proxywasm.DispatchHttpCall(config.AuthProviderName, hs, nil, nil, config.AuthRequestTimeout,
 		func(numHeaders, bodySize, numTrailers int) {
 			proxywasm.LogDebugf("Callback on auth-request response.")
@@ -551,8 +531,6 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig PluginC
 
 	authRequestTimeout := parsedJson.GetInt("authRequestTimeout")
 	authProviderName := parsedJson.GetStringBytes("authProviderName")
-	authProviderAddress := parsedJson.GetStringBytes("authProviderAddress")
-
 	authType := parsedJson.GetStringBytes("authType")
 	// in case of error, the boolean zero value is used
 	parsedConfig.EnableEndpointMatching = parsedJson.GetBool("enableEndpointMatching")
@@ -567,12 +545,6 @@ func parsePluginConfigFromJson(parsedJson *fastjson.Value) (parsedConfig PluginC
 		parsedConfig.AuthProviderName = string(authProviderName)
 	} else {
 		proxywasm.LogWarnf("Use default authProvider: %v", defaultPluginConfig.AuthProviderName)
-	}
-	if authProviderAddress != nil {
-		parsedConfig.AuthProviderAddress = string(authProviderAddress)
-	} else {
-		// default to the cluster name, thus would still work with strict or logical dns clusters
-		parsedConfig.AuthProviderAddress = string(authProviderName)
 	}
 
 	if authType != nil {
