@@ -34,97 +34,97 @@ resources:
                 name: local_route
                 virtual_hosts:
                 {{#virtualHosts}}
-                  - name: {{domain}}
-                    domains:
-                      - '{{domain}}'
-                  {{#ports}}
-                      - '{{domain}}:{{port}}'
-                  {{/ports}}
-                    routes:
-                  {{#endpoints}}
-                      - match:
-                          prefix: "{{path}}"
-                        route:
-                          cluster: {{id}}
-                  {{/endpoints}}
+                   - name: {{domain}}
+                domains:
+                  - '{{domain}}'
+                {{#ports}}
+                   - '{{domain}}:{{port}}'
+                       {{/ports}}
+                routes:
+                {{#endpoints}}
+                   - match:
+                       prefix: "{{path}}"
+                       route:
+                         cluster: {{id}}
+                {{/endpoints}}
                 {{/virtualHosts}}
-                  - name: allow_any
-                    domains:
-                      - "*"
-                    routes:
-                      - match:
-                          prefix: "/"
-                        route:
-                          cluster: passthrough
+                - name: allow_any
+                  domains:
+                    - "*"
+                  routes:
+                    - match:
+                        prefix: "/"
+                      route:
+                        cluster: passthrough
               http_filters:
                 {{#enableWasmFilter}}
-                - name: composite
-                  typed_config:
-                    "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
-                    extension_config:
-                      name: composite
-                      typed_config:
-                        "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
-                    xds_matcher:
-                      matcher_list:
-                        matchers:
-                          {{#virtualHosts}}
-                          {{#endpoints}}
-                          {{^passthrough}}
-                          - on_match:
-                              action:
-                                name: composite-action
-                                typed_config:
-                                  "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
-                                  typed_config:
-                                    name: wasm
-                                    typed_config:
-                                      "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
-                                      config:
-                                        configuration:
-                                          "@type": "type.googleapis.com/google.protobuf.StringValue"
-                                          value: |
-                                            { "general": {"authType":"{{authType}}"} }
-                                        vm_config:
-                                          runtime: "envoy.wasm.runtime.v8"
-                                          code:
-                                            local:
-                                              filename: "{{wasmFilterPath}}"
-                            predicate:
-                              and_matcher:
-                                predicate:
-                                  - single_predicate:
-                                      input:
-                                        name: request-path
+                   - name: composite
+                       typed_config:
+                         "@type": type.googleapis.com/envoy.extensions.common.matching.v3.ExtensionWithMatcher
+                         extension_config:
+                           name: composite
+                           typed_config:
+                             "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.Composite
+                         xds_matcher:
+                           matcher_list:
+                             matchers:
+                               {{#virtualHosts}}
+                                 {{#endpoints}}
+                                    {{^passthrough}}
+                                  - on_match:
+                                      action:
+                                        name: composite-action
                                         typed_config:
-                                          "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                          header_name: ":path"
-                                      value_match:
-                                        prefix: {{path}}
-                                  - or_matcher:
+                                          "@type": type.googleapis.com/envoy.extensions.filters.http.composite.v3.ExecuteFilterAction
+                                          typed_config:
+                                            name: wasm
+                                            typed_config:
+                                              "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+                                              config:
+                                                configuration:
+                                                  "@type": "type.googleapis.com/google.protobuf.StringValue"
+                                                  value: |
+                                                    { "general": {"authType":"{{authType}}"} }
+                                                vm_config:
+                                                  runtime: "envoy.wasm.runtime.v8"
+                                                  code:
+                                                    local:
+                                                      filename: "{{wasmFilterPath}}"
                                       predicate:
-                                        - single_predicate:
-                                            input:
-                                              name: request-domain-no-port
-                                              typed_config:
-                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                                header_name: ":authority"
-                                            value_match:
-                                              exact: {{domain}}
-                                        {{#ports}}
-                                        - single_predicate:
-                                            input:
-                                              name: request-domain-{{port}}
-                                              typed_config:
-                                                "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
-                                                header_name: ":authority"
-                                            value_match:
-                                              exact: {{domain}}:{{port}}
-                                        {{/ports}}
-                          {{/passthrough}}
-                          {{/endpoints}}
-                          {{/virtualHosts}}
-                {{/enableWasmFilter}}
-                - name: http_router
+                                        and_matcher:
+                                          predicate:
+                                            - single_predicate:
+                                                input:
+                                                  name: request-path
+                                                  typed_config:
+                                                    "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                                    header_name: ":path"
+                                                value_match:
+                                                  prefix: {{path}}
+                               - or_matcher:
+                                   predicate:
+                                     - single_predicate:
+                                         input:
+                                           name: request-domain-no-port
+                                           typed_config:
+                                             "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                                             header_name: ":authority"
+                                         value_match:
+                                           exact: {{domain}}
+                  {{#ports}}
+                     - single_predicate:
+                         input:
+                           name: request-domain-{{port}}
                   typed_config:
-                    "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+                    "@type": type.googleapis.com/envoy.type.matcher.v3.HttpRequestHeaderMatchInput
+                    header_name: ":authority"
+                  value_match:
+                    exact: {{domain}}:{{port}}
+                  {{/ports}}
+                  {{/passthrough}}
+                  {{/endpoints}}
+                  {{/virtualHosts}}
+                  {{/enableWasmFilter}}
+                  - name: http_router
+                    typed_config:
+                      "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router

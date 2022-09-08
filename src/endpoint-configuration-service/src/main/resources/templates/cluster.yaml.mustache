@@ -17,33 +17,33 @@ resources:
       cluster_name: ext-authz
       endpoints:
         - lb_endpoints:
-          - endpoint:
-              address:
-                socket_address:
-                  protocol: TCP
-                  address: {{authServiceAddress}}
-                  port_value: {{authServicePort}}
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: {{authServiceAddress}}
+                    port_value: {{authServicePort}}
   {{#endpoints}}
-  {{#httpsPort}}
-  - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
-    name: {{id}}
+    {{#httpsPort}}
+       - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
+           name: {{id}}
     connect_timeout: 15s
-    type: STRICT_DNS
-    lb_policy: ROUND_ROBIN
-    load_assignment:
-      cluster_name: {{id}}
-      endpoints:
-        - lb_endpoints:
-          - endpoint:
-              address:
-                socket_address:
-                  protocol: TCP
-                  address: "{{domain}}"
-                  port_value: {{targetPort}}
-    transport_socket:
-      name: envoy.transport_sockets.tls
-      typed_config:
-        "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
+      type: STRICT_DNS
+      lb_policy: ROUND_ROBIN
+      load_assignment:
+        cluster_name: {{id}}
+  endpoints:
+    - lb_endpoints:
+        - endpoint:
+            address:
+              socket_address:
+                protocol: TCP
+                address: "{{domain}}"
+                port_value: {{targetPort}}
+  transport_socket:
+    name: envoy.transport_sockets.tls
+    typed_config:
+      "@type": type.googleapis.com/envoy.extensions.transport_sockets.tls.v3.UpstreamTlsContext
   {{/httpsPort}}
   {{^httpsPort}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
@@ -55,12 +55,12 @@ resources:
       cluster_name: {{id}}
       endpoints:
         - lb_endpoints:
-          - endpoint:
-              address:
-                socket_address:
-                  protocol: TCP
-                  address: "{{domain}}"
-                  port_value: {{targetPort}}
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: "{{domain}}"
+                    port_value: {{targetPort}}
   {{/httpsPort}}
   {{/endpoints}}
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
