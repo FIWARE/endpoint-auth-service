@@ -297,7 +297,7 @@ jobs:
 
       - name: Build wasm
         run: |
-          docker run -v $(pwd)/src/cached-auth-filter:/cached-auth-filter --workdir /cached-auth-filter tinygo/tinygo tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go     
+          docker run -v /etc/ssl/certs:/etc/ssl/certs -v $(pwd)/src/cached-auth-filter:/cached-auth-filter --workdir /cached-auth-filter tinygo/tinygo:0.26.0 tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go     
 
       - uses: actions/upload-artifact@v2
         with:

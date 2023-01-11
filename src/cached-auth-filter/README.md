@@ -15,8 +15,10 @@ tinygo build -o cache-filter.wasm -scheduler=none -target=wasi ./main.go
 ```
 or with a docker-container:
 ```shell
-docker run -v $(pwd)/:/cache-filter --workdir /cache-filter tinygo/tinygo tinygo build -o cache-filter.wasm -scheduler=none -target=wasi ./main.go
+docker run -v /etc/ssl/certs:/etc/ssl/certs -v $(pwd)/:/cache-filter --workdir /cache-filter tinygo/tinygo:0.26.0 tinygo build -o cache-filter.wasm -scheduler=none -target=wasi ./main.go
 ```
+> :bulb: The tinygo image is very reduced, therefor does not contain the ca's to trust github. They need to be mounted to the container.
+
 ## Configuration
 
 The filter supports two working-modes:
