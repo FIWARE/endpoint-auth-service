@@ -1,4 +1,4 @@
-FROM golang:1.19.2-alpine
+FROM golang:1.19.5-alpine
 
 ENV MESH_CONFIG_FOLDER="/mesh-config"
 ENV MESH_EXTENSION_FILE_NAME="service-mesh-extension.yaml"
