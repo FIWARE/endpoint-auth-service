@@ -1,4 +1,4 @@
-FROM golang:1.19.5-alpine
+FROM golang:1.19-alpine
 
 ENV PROXY_CONFIG_FOLDER="/proxy-config"
 ENV CONFIG_MAP_FOLDER="/configmap-folder"
