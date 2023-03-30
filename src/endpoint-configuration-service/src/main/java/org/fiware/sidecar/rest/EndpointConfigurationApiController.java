@@ -3,6 +3,7 @@ package org.fiware.sidecar.rest;
 import io.micronaut.http.HttpResponse;
 import io.micronaut.http.HttpStatus;
 import io.micronaut.http.annotation.Controller;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiware.sidecar.api.EndpointConfigurationApi;
@@ -16,7 +17,6 @@ import org.fiware.sidecar.persistence.EndpointRepository;
 import org.fiware.sidecar.service.EndpointWriteService;
 import org.fiware.sidecar.service.UpdateService;
 
-import javax.transaction.Transactional;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
