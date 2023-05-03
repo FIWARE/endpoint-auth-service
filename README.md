@@ -2,7 +2,7 @@
 
 [![](https://nexus.lab.fiware.org/repository/raw/public/badges/chapters/api-management.svg)](https://www.fiware.org/developers/catalogue/)
 [![License badge](https://img.shields.io/github/license/FIWARE/endpoint-auth-service.svg)](https://opensource.org/licenses/AGPL-3.0)
-[![Container Repository on Quay](https://img.shields.io/badge/quay.io-FIWARE-green "Container Repository on Quay")](https://quay.io/repository/fiware/endpoint-configuration-service?tab=tags)
+[![Docker badge](https://img.shields.io/badge/quay.io-fiware%2Fendpoint--configuration--service-grey?logo=red%20hat&labelColor=EE0000)](https://quay.io/repository/fiware/endpoint-configuration-service)
 [![](https://img.shields.io/badge/tag-fiware-orange.svg?logo=stackoverflow)](http://stackoverflow.com/questions/tagged/fiware)
 <br>
 ![Status](https://nexus.lab.fiware.org/static/badges/statuses/incubating.svg)
