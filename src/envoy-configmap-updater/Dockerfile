@@ -1,4 +1,4 @@
-FROM golang:1.19-alpine
+FROM golang:1.20.3-alpine
 
 ENV PROXY_CONFIG_FOLDER="/proxy-config"
 ENV PROXY_CONFIG_MAP="envoy-config"
