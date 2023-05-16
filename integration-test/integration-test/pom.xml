@@ -32,7 +32,7 @@
         <version.com.fasterxml.jackson.core.jackson-databind>2.14.2</version.com.fasterxml.jackson.core.jackson-databind>
 
         <!-- lazy dev -->
-        <version.org.projectlombok>1.18.24</version.org.projectlombok>
+        <version.org.projectlombok>1.18.26</version.org.projectlombok>
 
         <!-- test deps -->
         <version.org.junit>5.8.1</version.org.junit>
