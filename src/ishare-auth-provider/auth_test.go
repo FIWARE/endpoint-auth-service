@@ -52,7 +52,7 @@ type mockAuthGetter struct {
 	infoGetError error
 	mockKey      *rsa.PrivateKey
 	keyGetError  error
-	mockCert     string
+	mockCert     []string
 	certGetError error
 }
 
@@ -62,7 +62,7 @@ func (mag mockAuthGetter) getAuthInfo(domain string, path string) (authInfo Auth
 func (mag mockAuthGetter) getSigningKey(credentialsFolderPath string) (key *rsa.PrivateKey, err error) {
 	return mag.mockKey, mag.keyGetError
 }
-func (mag mockAuthGetter) getCertificate(credentialsFolderPath string) (encodedCert string, err error) {
+func (mag mockAuthGetter) getCertificate(credentialsFolderPath string) (encodedCert []string, err error) {
 	return mag.mockCert, mag.certGetError
 }
 
@@ -72,7 +72,7 @@ func TestGetEncodedCertificate(t *testing.T) {
 		testName     string
 		testCert     []byte
 		mockError    error
-		expectedCert string
+		expectedCert []string
 		expectError  error
 	}
 
@@ -81,8 +81,8 @@ func TestGetEncodedCertificate(t *testing.T) {
 	notReadableError := errors.New("no_readable_cert")
 
 	tests := []test{
-		{testName: "Successfully retrive cert", testCert: getPemEncoded("myCert"), expectedCert: "bXlDZXJ0"},
-		{testName: "Cert not pem encoded", testCert: []byte("myCert"), expectError: errCertDecode},
+		{testName: "Successfully retrive cert", testCert: getBytes("ROOT", "INTERMEDIATE", "CLIENT"), expectedCert: []string{" ROOT", "INTERMEDIATE", "CLIENT"}},
+		{testName: "Cert not pem encoded", testCert: []byte("ROOTINTERMEDIATECLIENT"), expectError: errCertDecode},
 		{testName: "Cert not readable", mockError: notReadableError, expectError: notReadableError},
 	}
 
@@ -93,11 +93,11 @@ func TestGetEncodedCertificate(t *testing.T) {
 
 		cert, err := getEncodedCertificate(testFolder)
 
-		if tc.expectedCert != cert {
-			t.Errorf(tc.testName + ": Did not receive the expected cert. Exoected: " + tc.expectedCert + " Actual: " + cert)
+		if fmt.Sprint(tc.expectedCert) != fmt.Sprint(cert) {
+			t.Errorf("%s: Did not receive the expected cert. Expected: %v Actual: %v", tc.testName, tc.expectedCert, cert)
 		}
 		if !errors.Is(err, tc.expectError) {
-			t.Errorf(tc.testName + ": Did not receive the expected error. Exoected: " + fmt.Sprint(tc.expectError) + " Actual: " + fmt.Sprint(err))
+			t.Errorf(tc.testName + ": Did not receive the expected error. Expected: " + fmt.Sprint(tc.expectError) + " Actual: " + fmt.Sprint(err))
 		}
 	}
 }
@@ -207,7 +207,7 @@ func TestGetAuthRoute(t *testing.T) {
 		testDomain        string
 		testPath          string
 		mockKey           *rsa.PrivateKey
-		mockCert          string
+		mockCert          []string
 		mockAuthInfo      AuthInfo
 		mockAuthInfoError error
 		mockKeyReadError  error
@@ -223,14 +223,14 @@ func TestGetAuthRoute(t *testing.T) {
 	accesTokenResponse := &http.Response{Body: io.NopCloser(strings.NewReader("{\"access_token\":\"myToken\"}"))}
 
 	tests := []test{
-		{testName: "Successful auth retrieval", testDomain: "test.domain", testPath: "/", mockIdpResponse: accesTokenResponse, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedHeader: "Bearer myToken", expectedCode: 200},
-		{testName: "502: No body returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{}, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedCode: 502},
-		{testName: "502: Invalid body returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{Body: io.NopCloser(strings.NewReader("myToken"))}, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedCode: 502},
-		{testName: "502: Json body withou token returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{Body: io.NopCloser(strings.NewReader("{\"valid\":\"json\"}"))}, mockKey: validKey, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedCode: 502},
+		{testName: "Successful auth retrieval", testDomain: "test.domain", testPath: "/", mockIdpResponse: accesTokenResponse, mockKey: validKey, mockCert: []string{"cert"}, mockAuthInfo: validAuthInfo, expectedHeader: "Bearer myToken", expectedCode: 200},
+		{testName: "502: No body returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{}, mockKey: validKey, mockCert: []string{"cert"}, mockAuthInfo: validAuthInfo, expectedCode: 502},
+		{testName: "502: Invalid body returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{Body: io.NopCloser(strings.NewReader("myToken"))}, mockKey: validKey, mockCert: []string{"cert"}, mockAuthInfo: validAuthInfo, expectedCode: 502},
+		{testName: "502: Json body withou token returned from idp", testDomain: "test.domain", testPath: "/", mockIdpResponse: &http.Response{Body: io.NopCloser(strings.NewReader("{\"valid\":\"json\"}"))}, mockKey: validKey, mockCert: []string{"cert"}, mockAuthInfo: validAuthInfo, expectedCode: 502},
 		{testName: "502: Error on config-service", testDomain: "test.domain", testPath: "/", mockAuthInfoError: errors.New("service_error"), expectedCode: 502},
 		{testName: "500: Error reading signing key", testDomain: "test.domain", testPath: "/", mockKeyReadError: errors.New("read_error"), expectedCode: 500},
 		{testName: "500: Error reading certificate", testDomain: "test.domain", testPath: "/", mockCertReadError: errors.New("read_error"), expectedCode: 500},
-		{testName: "500: Signing error - nil key", testDomain: "test.domain", testPath: "/", mockIdpResponse: accesTokenResponse, mockCert: "cert", mockAuthInfo: validAuthInfo, expectedCode: 500},
+		{testName: "500: Signing error - nil key", testDomain: "test.domain", testPath: "/", mockIdpResponse: accesTokenResponse, mockCert: []string{"cert"}, mockAuthInfo: validAuthInfo, expectedCode: 500},
 		{testName: "400: Empty path received", testDomain: "test.domain", testPath: "", expectedCode: 400},
 	}
 
@@ -288,10 +288,12 @@ func getValidKey() (*rsa.PrivateKey, error) {
 	return rsa.GenerateKey(rand.Reader, 2048)
 }
 
-func getPemEncoded(cert string) []byte {
-	certBlock := &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: []byte(cert),
-	}
-	return pem.EncodeToMemory(certBlock)
+func getBytes(root, intermediate, client string) []byte {
+	beginCert := "-----BEGIN CERTIFICATE-----"
+	endCert := "-----END CERTIFICATE-----"
+	fullRoot := fmt.Sprintf("%s%s%s", beginCert, root, endCert)
+	fullIntermediate := fmt.Sprintf("%s%s%s", beginCert, intermediate, endCert)
+	fullClient := fmt.Sprintf("%s%s%s", beginCert, client, endCert)
+	log.Info("Cert: " + fullRoot + fullIntermediate + fullClient)
+	return []byte(fullRoot + fullIntermediate + fullClient)
 }

@@ -17,12 +17,12 @@ resources:
       cluster_name: ext-authz
       endpoints:
         - lb_endpoints:
-          - endpoint:
-              address:
-                socket_address:
-                  protocol: TCP
-                  address: auth-service
-                  port_value: 7070
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: auth-service
+                    port_value: 7070
   - "@type": type.googleapis.com/envoy.config.cluster.v3.Cluster
     name: expected-0
     connect_timeout: 15s
@@ -32,12 +32,12 @@ resources:
       cluster_name: expected-0
       endpoints:
         - lb_endpoints:
-          - endpoint:
-              address:
-                socket_address:
-                  protocol: TCP
-                  address: "domain"
-                  port_value: 6060
+            - endpoint:
+                address:
+                  socket_address:
+                    protocol: TCP
+                    address: "domain"
+                    port_value: 6060
     transport_socket:
       name: envoy.transport_sockets.tls
       typed_config:

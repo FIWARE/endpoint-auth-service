@@ -8,7 +8,7 @@ WORKDIR /cached-auth-filter
 USER root
 RUN tinygo build -o cached-auth-filter.wasm -target=wasi ./main.go
 
-FROM envoyproxy/envoy:v1.23.0
+FROM envoyproxy/envoy:v1.23.1
 
 COPY --from=build /cached-auth-filter/cached-auth-filter.wasm /cached-auth-filter/cached-auth-filter.wasm
 RUN chmod a+rx /cached-auth-filter/cached-auth-filter.wasm
